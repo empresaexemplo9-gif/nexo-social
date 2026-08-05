@@ -2,7 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background-color: #09090b;
-  color: #f4f4f5;
+  /* Fundo quente com leve brilho retrô-futurista + textura de grão sutil */
+  background-color: #17120c;
+  color: #f3ece0;
+  background-image:
+    radial-gradient(1100px 600px at 12% -10%, rgba(219, 106, 63, 0.12), transparent 60%),
+    radial-gradient(900px 520px at 100% 0%, rgba(52, 195, 164, 0.10), transparent 55%),
+    radial-gradient(700px 700px at 50% 120%, rgba(219, 106, 63, 0.06), transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Títulos em serifa vintage (Fraunces) */
+h1,
+h2 {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.015em;
+  font-optical-sizing: auto;
+}
+
+/* Seleção quente */
+::selection {
+  background-color: #e8845a;
+  color: #17120c;
+}
+
+/* Barra de rolagem discreta e quente */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #17120c;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a2f24;
+  border-radius: 9999px;
+  border: 2px solid #17120c;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #574636;
+}
+
+/* Utilitário de textura de grão (aspecto de papel vintage) para heros/cartões */
+.texture-grain {
+  position: relative;
+}
+.texture-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0.6;
 }
