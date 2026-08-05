@@ -1,100 +1,41 @@
 'use client';
 
-import React, { useState } from 'react';
-
-type Category = 'Todos' | 'Tecnologia' | 'Música' | 'Moda' | 'Cultura' | 'Esporte';
-
-interface ContentItem {
-  id: string;
-  title: string;
-  category: Category;
-  snippet: string;
-  readTime: string;
-  imageUrl: string;
-  date: string;
-}
-
-interface EventItem {
-  id: string;
-  title: string;
-  category: Category;
-  date: string;
-  location: string;
-  imageUrl: string;
-  description: string;
-}
-
-const categories: Category[] = ['Todos', 'Tecnologia', 'Música', 'Moda', 'Cultura', 'Esporte'];
-
-const mockContents: ContentItem[] = [
-  {
-    id: '1',
-    title: 'A revolução dos frameworks leves na web moderna',
-    category: 'Tecnologia',
-    snippet: 'Como novas arquiteturas buscam máxima performance e menor consumo de recursos sem comprometer a experiência.',
-    readTime: '4 min',
-    date: 'Hoje',
-    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: '2',
-    title: 'Minimalismo e utilitarismo na moda urbana',
-    category: 'Moda',
-    snippet: 'Análise estética dos cortes limpos, tecidos tecnológicos e funcionalidade na cena urbana contemporânea.',
-    readTime: '5 min',
-    date: 'Ontem',
-    imageUrl: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: '3',
-    title: 'Sintetizadores analógicos e o resgate da textura sonora',
-    category: 'Música',
-    snippet: 'O movimento de produtores que preferem a calidez orgânica dos circuitos analógicos no estúdio digital.',
-    readTime: '6 min',
-    date: '02 Ago',
-    imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=800&q=80',
-  },
-  {
-    id: '4',
-    title: 'Arquitetura bioclimática nas grandes metrópoles',
-    category: 'Cultura',
-    snippet: 'Como o design urbano está se adaptando às mudanças climáticas integrando vegetação nativa aos edifícios.',
-    readTime: '5 min',
-    date: '01 Ago',
-    imageUrl: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80',
-  },
-];
-
-const mockEvents: EventItem[] = [
-  {
-    id: 'e1',
-    title: 'Encontro de Desenvolvimento Web & Inteligência Artificial',
-    category: 'Tecnologia',
-    date: '15 de Agosto • 19:00',
-    location: 'Hub de Inovação Local',
-    imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
-    description: 'Painel de discussões com especialistas em engenharia de software, modelos de linguagem e ecossistema web.',
-  },
-  {
-    id: 'e2',
-    title: 'Mostra Cultural: Arte, Som & Design Digital',
-    category: 'Cultura',
-    date: '22 de Agosto • 16:00',
-    location: 'Galeria de Arte do Centro',
-    imageUrl: 'https://images.unsplash.com/photo-1508997449629-303059a039c0?auto=format&fit=crop&w=800&q=80',
-    description: 'Exposição interativa reunindo artistas gerativos, instalações audiovisuais e design de experiência.',
-  },
-];
+import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
+import Navbar from '@/components/Navbar';
+import ContentCard from '@/components/ContentCard';
+import TopicGrid from '@/components/TopicGrid';
+import EventList from '@/components/EventList';
+import { usePreferences } from '@/lib/preferences';
+import { CONTENTS, EVENTS, TOPICS, topicLabel, type CategorySlug } from '@/lib/data';
 
 export default function Home() {
-  const [selectedCategory, setSelectedCategory] = useState<Category>('Todos');
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [email, setEmail] = useState<string>('');
-  const [subscribed, setSubscribed] = useState<boolean>(false);
+  const { prefs, ready, hasCompleted } = usePreferences();
+  const [selectedCategory, setSelectedCategory] = useState<'todos' | CategorySlug>('todos');
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
 
-  const filteredContents = selectedCategory === 'Todos'
-    ? mockContents
-    : mockContents.filter((item) => item.category === selectedCategory);
+  const interests = prefs.interests;
+
+  // Ordena os conteúdos priorizando os temas de interesse do usuário.
+  const orderedContents = useMemo(() => {
+    if (!interests.length) return CONTENTS;
+    return [...CONTENTS].sort((a, b) => {
+      const am = interests.includes(a.topic) ? 0 : 1;
+      const bm = interests.includes(b.topic) ? 0 : 1;
+      return am - bm;
+    });
+  }, [interests]);
+
+  const filteredContents =
+    selectedCategory === 'todos'
+      ? orderedContents
+      : orderedContents.filter((c) => c.topic === selectedCategory);
+
+  const forYou = useMemo(
+    () => CONTENTS.filter((c) => interests.includes(c.topic)).slice(0, 4),
+    [interests],
+  );
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,207 +46,211 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased selection:bg-emerald-500 selection:text-zinc-950">
-      {/* Navbar */}
-      <header className="border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <span className="text-xl font-bold tracking-tight text-white">
-              nexo<span className="text-emerald-400">.social</span>
-            </span>
-            <span className="text-xs bg-zinc-800/80 border border-zinc-700 text-zinc-300 px-2 py-0.5 rounded-full font-mono">
-              Agendrap
-            </span>
-          </div>
-          <nav className="hidden md:flex space-x-8 text-sm text-zinc-400">
-            <a href="#bom-dia" className="hover:text-emerald-400 transition">Bom Dia</a>
-            <a href="#entretenimento" className="hover:text-emerald-400 transition">Entretenimento</a>
-            <a href="#agenda" className="hover:text-emerald-400 transition">Agenda</a>
-            <a href="#newsletter" className="hover:text-emerald-400 transition">Newsletter</a>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased selection:bg-emerald-500 selection:text-zinc-950">
+      <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-emerald-950/40 border border-zinc-800 p-8 md:p-12">
+      <main className="mx-auto max-w-7xl space-y-16 px-4 py-10 sm:px-6 lg:px-8">
+        {/* Hero */}
+        <section className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-gradient-to-r from-zinc-900 via-zinc-900/90 to-emerald-950/40 p-8 md:p-12">
           <div className="max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-2 bg-emerald-950/80 border border-emerald-800/60 text-emerald-400 text-xs px-3 py-1 rounded-full font-medium">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Plataforma de Curadoria Premium
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-800/60 bg-emerald-950/80 px-3 py-1 text-xs font-medium text-emerald-400">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+              Plataforma de Curadoria Personalizada
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold text-white tracking-tight leading-tight">
-              Descoberta contínua em Esporte, Cultura, Moda e Tecnologia.
+            <h1 className="text-3xl font-bold leading-tight tracking-tight text-white md:text-5xl">
+              Descoberta contínua em Esporte, Cultura, Moda, Música e Tecnologia.
             </h1>
-            <p className="text-zinc-400 text-base md:text-lg leading-relaxed">
-              Uma experiência sem distrações e ruídos de redes sociais. Conteúdos selecionados e agenda essencial para o seu dia.
+            <p className="text-base leading-relaxed text-zinc-400 md:text-lg">
+              Conteúdos selecionados e eventos que aparecem por perto de você — sem o ruído das redes sociais.
             </p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link
+                href="/questionario"
+                className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+              >
+                {hasCompleted ? 'Ajustar meus interesses' : 'Personalizar minha experiência'}
+              </Link>
+              <a
+                href="#temas"
+                className="rounded-xl border border-zinc-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:border-emerald-500 hover:text-emerald-400"
+              >
+                Explorar temas
+              </a>
+            </div>
           </div>
         </section>
 
-        {/* Módulo Bom Dia */}
-        <section id="bom-dia" className="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 border-b border-zinc-800 pb-6">
+        {/* Banner de onboarding */}
+        {ready && !hasCompleted && (
+          <section className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-emerald-800/50 bg-emerald-950/30 p-6 md:flex-row">
             <div>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                ☀️ Módulo "Bom Dia"
-              </h2>
-              <p className="text-zinc-400 text-sm mt-1">Sua dose matinal de foco, trilhas e nutrição</p>
+              <h2 className="text-lg font-semibold text-white">Personalize sua home em 1 minuto</h2>
+              <p className="mt-1 text-sm text-zinc-400">
+                Responda ao questionário para receber conteúdos e eventos alinhados aos seus interesses e à sua região.
+              </p>
             </div>
-            <span className="text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-3 py-1 rounded-full w-fit">
-              Curadoria de Hoje
-            </span>
+            <Link
+              href="/questionario"
+              className="whitespace-nowrap rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+            >
+              Responder questionário →
+            </Link>
+          </section>
+        )}
+
+        {/* Para você (personalizado) */}
+        {ready && forYou.length > 0 && (
+          <section className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Para você</h2>
+                <p className="text-sm text-zinc-400">
+                  Baseado nos seus interesses: {interests.map(topicLabel).join(', ')}
+                </p>
+              </div>
+              <Link href="/questionario" className="text-xs text-emerald-400 hover:underline">
+                Ajustar
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {forYou.map((item) => (
+                <ContentCard key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Temas */}
+        <section id="temas" className="scroll-mt-20 space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Explore por tema</h2>
+            <p className="text-sm text-zinc-400">Cada assunto tem sua própria área com conteúdos aprofundados e agenda local.</p>
+          </div>
+          <TopicGrid highlight={interests} />
+        </section>
+
+        {/* Módulo Bom Dia */}
+        <section id="bom-dia" className="scroll-mt-20 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 md:p-8">
+          <div className="mb-8 flex flex-col justify-between gap-4 border-b border-zinc-800 pb-6 md:flex-row md:items-center">
+            <div>
+              <h2 className="flex items-center gap-2 text-2xl font-bold text-white">☀️ Módulo &quot;Bom Dia&quot;</h2>
+              <p className="mt-1 text-sm text-zinc-400">Sua dose matinal de foco, trilhas e nutrição</p>
+            </div>
+            <Link
+              href="/bom-dia"
+              className="w-fit rounded-full border border-emerald-800/50 bg-emerald-950/60 px-3 py-1 text-xs text-emerald-400 transition hover:bg-emerald-950"
+            >
+              Abrir módulo completo →
+            </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Trilha Matinal com Player */}
-            <div className="bg-zinc-900 border border-zinc-800/80 p-6 rounded-xl flex flex-col justify-between">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="flex flex-col justify-between rounded-xl border border-zinc-800/80 bg-zinc-900 p-6">
               <div>
-                <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">🎵 Trilha Matinal</span>
-                <h3 className="text-lg font-semibold text-white mt-2">Lofi Vibes & Ambient Focus</h3>
-                <p className="text-xs text-zinc-400 mt-1">Curadoria Agendrap • 45 min</p>
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">🎵 Trilha Matinal</span>
+                <h3 className="mt-2 text-lg font-semibold text-white">Lofi Vibes &amp; Ambient Focus</h3>
+                <p className="mt-1 text-xs text-zinc-400">Curadoria Agendrap • 45 min</p>
               </div>
-              <button
-                onClick={() => setIsPlaying(!isPlaying)}
-                className="mt-6 flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-sm py-2.5 px-4 rounded-xl transition"
+              <Link
+                href="/bom-dia#trilha"
+                className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
               >
-                {isPlaying ? '⏸️ Pausar Reprodução' : '▶️ Ouvir Trilha do Dia'}
-              </button>
+                ▶️ Ouvir Trilha do Dia
+              </Link>
             </div>
 
-            {/* Receita Rápida */}
-            <div className="bg-zinc-900 border border-zinc-800/80 p-6 rounded-xl">
-              <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">🥑 Nutrição Rápida</span>
-              <h3 className="text-lg font-semibold text-white mt-2">Toast de Abacate com Ovos Pochê</h3>
-              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                Pão de fermentação natural, abacate amassado com azeite extra virgem, pimenta preta e ovos pochê (10 min).
+            <Link href="/bom-dia#receita" className="group rounded-xl border border-zinc-800/80 bg-zinc-900 p-6 transition hover:border-zinc-700">
+              <span className="text-xs font-semibold uppercase tracking-wider text-amber-400">🥑 Nutrição Rápida</span>
+              <h3 className="mt-2 text-lg font-semibold text-white group-hover:text-emerald-400">Toast de Abacate com Ovos Pochê</h3>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                Pão de fermentação natural, abacate amassado com azeite, pimenta e ovos pochê. Ver receitas →
               </p>
-            </div>
+            </Link>
 
-            {/* Dica de Foco */}
-            <div className="bg-zinc-900 border border-zinc-800/80 p-6 rounded-xl">
-              <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">💡 Hábito Matinal</span>
-              <h3 className="text-lg font-semibold text-white mt-2">Primeiros 20 Minutos Sem Telas</h3>
-              <p className="text-xs text-zinc-400 mt-2 leading-relaxed">
-                Troque a checagem imediata de notificações por leitura, hidratação ou caminhada ao ar livre.
+            <Link href="/bom-dia#habito" className="group rounded-xl border border-zinc-800/80 bg-zinc-900 p-6 transition hover:border-zinc-700">
+              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-400">💡 Hábito Matinal</span>
+              <h3 className="mt-2 text-lg font-semibold text-white group-hover:text-emerald-400">Primeiros 20 Minutos Sem Telas</h3>
+              <p className="mt-2 text-xs leading-relaxed text-zinc-400">
+                Troque a checagem de notificações por leitura, hidratação ou caminhada. Ver hábitos →
               </p>
-            </div>
+            </Link>
           </div>
         </section>
 
         {/* Hub de Entretenimento */}
-        <section id="entretenimento" className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <section id="entretenimento" className="scroll-mt-20 space-y-6">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
               <h2 className="text-2xl font-bold text-white">Hub de Entretenimento</h2>
-              <p className="text-zinc-400 text-sm">Editorial independente e recomendações em destaque</p>
+              <p className="text-sm text-zinc-400">Editorial independente e recomendações em destaque</p>
             </div>
-
-            {/* Filtros */}
             <div className="flex flex-wrap gap-2">
-              {categories.map((cat) => (
+              <button
+                onClick={() => setSelectedCategory('todos')}
+                className={`rounded-xl px-3.5 py-1.5 text-xs font-medium transition ${
+                  selectedCategory === 'todos' ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
+                }`}
+              >
+                Todos
+              </button>
+              {TOPICS.map((t) => (
                 <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
-                    selectedCategory === cat
-                      ? 'bg-emerald-500 text-zinc-950 font-semibold'
-                      : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
+                  key={t.slug}
+                  onClick={() => setSelectedCategory(t.slug)}
+                  className={`rounded-xl px-3.5 py-1.5 text-xs font-medium transition ${
+                    selectedCategory === t.slug ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
                   }`}
                 >
-                  {cat}
+                  {t.label}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredContents.map((item) => (
-              <article key={item.id} className="group bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition flex flex-col justify-between">
-                <div>
-                  <div className="relative h-44 overflow-hidden">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                    />
-                    <span className="absolute top-3 left-3 bg-zinc-950/80 backdrop-blur-md text-emerald-400 text-xs px-2.5 py-1 rounded-lg border border-zinc-800 font-medium">
-                      {item.category}
-                    </span>
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center justify-between text-xs text-zinc-500 mb-2">
-                      <span>{item.date}</span>
-                      <span>{item.readTime}</span>
-                    </div>
-                    <h3 className="text-base font-semibold text-white group-hover:text-emerald-400 transition leading-snug">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-zinc-400 mt-2 line-clamp-3 leading-relaxed">
-                      {item.snippet}
-                    </p>
-                  </div>
-                </div>
-              </article>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {filteredContents.slice(0, 8).map((item) => (
+              <ContentCard key={item.id} item={item} />
             ))}
           </div>
         </section>
 
-        {/* Agenda Tecnológica & Cultural */}
-        <section id="agenda" className="space-y-6">
+        {/* Agenda */}
+        <section id="agenda" className="scroll-mt-20 space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-white">Agenda Tecnológica & Cultural</h2>
-            <p className="text-zinc-400 text-sm">Eventos e encontros selecionados na região</p>
+            <h2 className="text-2xl font-bold text-white">Agenda Tecnológica &amp; Cultural</h2>
+            <p className="text-sm text-zinc-400">
+              Eventos selecionados que aparecem de acordo com o seu perfil e a sua proximidade.
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {mockEvents.map((evt) => (
-              <div key={evt.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden flex flex-col sm:flex-row">
-                <img src={evt.imageUrl} alt={evt.title} className="w-full sm:w-48 h-48 object-cover" />
-                <div className="p-5 flex flex-col justify-between flex-1">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-mono text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">
-                        {evt.date}
-                      </span>
-                      <span className="text-xs text-zinc-500">{evt.category}</span>
-                    </div>
-                    <h3 className="text-base font-semibold text-white leading-snug">{evt.title}</h3>
-                    <p className="text-xs text-zinc-400 mt-1">📍 {evt.location}</p>
-                    <p className="text-xs text-zinc-400 mt-2 line-clamp-2 leading-relaxed">{evt.description}</p>
-                  </div>
-                  <button className="mt-4 text-xs font-medium text-emerald-400 hover:text-emerald-300 self-start transition">
-                    Ver Detalhes do Evento →
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <EventList events={EVENTS} showFilters />
         </section>
 
-        {/* Captura de Newsletter */}
-        <section id="newsletter" className="bg-gradient-to-r from-zinc-900 via-zinc-900 to-emerald-950/30 border border-zinc-800 rounded-3xl p-8 md:p-12 text-center max-w-3xl mx-auto space-y-4">
-          <h2 className="text-2xl font-bold text-white">Receba a curadoria matinal por e-mail</h2>
-          <p className="text-zinc-400 text-sm">
-            Toda manhã, os melhores destaques de tecnologia, música, cultura e estilo diretamente na sua caixa de entrada.
+        {/* Newsletter */}
+        <section
+          id="newsletter"
+          className="mx-auto max-w-3xl space-y-4 rounded-3xl border border-zinc-800 bg-gradient-to-r from-zinc-900 via-zinc-900 to-emerald-950/30 p-8 text-center md:p-12"
+        >
+          <h2 className="text-2xl font-bold text-white">Receba a curadoria por e-mail</h2>
+          <p className="text-sm text-zinc-400">
+            Os melhores destaques de tecnologia, música, cultura, moda e esporte — na frequência que você escolher.
           </p>
           {subscribed ? (
-            <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-400 p-4 rounded-xl text-sm font-medium">
-              ✓ Inscrição realizada com sucesso! Você receberá nossa próxima edição.
+            <div className="rounded-xl border border-emerald-800 bg-emerald-950/80 p-4 text-sm font-medium text-emerald-400">
+              ✓ Inscrição realizada! Você receberá a curadoria {prefs.frequency}.
             </div>
           ) : (
-            <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto pt-2">
+            <form onSubmit={handleSubscribe} className="mx-auto flex max-w-md flex-col gap-3 pt-2 sm:flex-row">
               <input
                 type="email"
                 required
                 placeholder="seu.email@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500 flex-1"
+                className="flex-1 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-emerald-500 focus:outline-none"
               />
               <button
                 type="submit"
-                className="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold text-sm px-6 py-2.5 rounded-xl transition"
+                className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
               >
                 Inscrever-se
               </button>
@@ -315,7 +260,14 @@ export default function Home() {
       </main>
 
       <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-600">
-        nexo-social / Agendrap — Curadoria de Entretenimento Premium
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
+          <span>nexo-social / Agendrap — Curadoria personalizada</span>
+          <div className="flex gap-4">
+            <Link href="/questionario" className="hover:text-zinc-400">Questionário</Link>
+            <Link href="/login" className="hover:text-zinc-400">Criar conta</Link>
+            <Link href="/bom-dia" className="hover:text-zinc-400">Bom Dia</Link>
+          </div>
+        </div>
       </footer>
     </div>
   );
