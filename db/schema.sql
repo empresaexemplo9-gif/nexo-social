@@ -4,6 +4,12 @@
 -- Cada conta (pessoal ou organização) é um TENANT isolado. A conta
 -- administradora da plataforma (super admin) é identificada pelo e-mail
 -- thiagohccarvalho00@gmail.com e tem acesso global.
+--
+-- Este script é IDEMPOTENTE: pode ser executado quantas vezes for necessário,
+-- inclusive sobre um banco que já tinha uma versão anterior das tabelas
+-- (contents/events/bom_dia/subscribers criadas sem `tenant_id`). As migrações
+-- com ALTER TABLE ... ADD COLUMN IF NOT EXISTS garantem que as colunas novas
+-- existam antes das políticas de RLS que as utilizam.
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -107,6 +113,26 @@ CREATE TABLE IF NOT EXISTS subscribers (
 );
 
 -- =============================================================================
+-- Migrações idempotentes
+-- Garante que colunas novas existam em tabelas que já haviam sido criadas por
+-- uma versão anterior deste esquema (é o que evita o erro 42703 tenant_id).
+-- =============================================================================
+ALTER TABLE contents    ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+ALTER TABLE contents    ADD COLUMN IF NOT EXISTS subtopic TEXT;
+ALTER TABLE contents    ADD COLUMN IF NOT EXISTS body TEXT;
+
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS city TEXT;
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS price TEXT DEFAULT 'Gratuito';
+
+ALTER TABLE bom_dia     ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
+
+ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL;
+ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS frequency TEXT DEFAULT 'semanal';
+
+-- =============================================================================
 -- Helpers de autorização
 -- =============================================================================
 
@@ -180,38 +206,51 @@ ALTER TABLE bom_dia ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
 
 -- Tenants: membros veem o próprio tenant; admin vê tudo.
+DROP POLICY IF EXISTS tenants_select ON tenants;
 CREATE POLICY tenants_select ON tenants FOR SELECT
   USING (is_platform_admin() OR id = current_tenant_id());
+DROP POLICY IF EXISTS tenants_update ON tenants;
 CREATE POLICY tenants_update ON tenants FOR UPDATE
   USING (is_platform_admin() OR owner_id = auth.uid());
 
 -- Profiles: cada um vê/edita o próprio; admin vê todos.
+DROP POLICY IF EXISTS profiles_select ON profiles;
 CREATE POLICY profiles_select ON profiles FOR SELECT
   USING (is_platform_admin() OR id = auth.uid() OR tenant_id = current_tenant_id());
+DROP POLICY IF EXISTS profiles_update ON profiles;
 CREATE POLICY profiles_update ON profiles FOR UPDATE
   USING (is_platform_admin() OR id = auth.uid());
 
 -- Preferências: cada usuário gerencia as suas.
+DROP POLICY IF EXISTS prefs_all ON user_preferences;
 CREATE POLICY prefs_all ON user_preferences FOR ALL
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
 -- Conteúdos, eventos e bom_dia: leitura pública; escrita do dono do tenant ou admin.
+DROP POLICY IF EXISTS contents_read ON contents;
 CREATE POLICY contents_read ON contents FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS contents_write ON contents;
 CREATE POLICY contents_write ON contents FOR ALL
   USING (is_platform_admin() OR tenant_id = current_tenant_id())
   WITH CHECK (is_platform_admin() OR tenant_id = current_tenant_id());
 
+DROP POLICY IF EXISTS events_read ON events;
 CREATE POLICY events_read ON events FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS events_write ON events;
 CREATE POLICY events_write ON events FOR ALL
   USING (is_platform_admin() OR tenant_id = current_tenant_id())
   WITH CHECK (is_platform_admin() OR tenant_id = current_tenant_id());
 
+DROP POLICY IF EXISTS bomdia_read ON bom_dia;
 CREATE POLICY bomdia_read ON bom_dia FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS bomdia_write ON bom_dia;
 CREATE POLICY bomdia_write ON bom_dia FOR ALL
   USING (is_platform_admin() OR tenant_id = current_tenant_id())
   WITH CHECK (is_platform_admin() OR tenant_id = current_tenant_id());
 
 -- Newsletter: qualquer um se inscreve; somente admin lê a lista.
+DROP POLICY IF EXISTS subscribers_insert ON subscribers;
 CREATE POLICY subscribers_insert ON subscribers FOR INSERT WITH CHECK (TRUE);
+DROP POLICY IF EXISTS subscribers_select ON subscribers;
 CREATE POLICY subscribers_select ON subscribers FOR SELECT USING (is_platform_admin());
