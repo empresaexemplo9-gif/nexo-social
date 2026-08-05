@@ -2,12 +2,12 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseEnv } from './supabase-config';
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const { url, anonKey, isConfigured } = getSupabaseEnv();
+const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 
-export const isSupabaseConfigured = Boolean(url && anonKey);
+export const isSupabaseConfigured = isConfigured;
 export const hasServiceRole = Boolean(url && serviceKey);
 
 /**
@@ -15,23 +15,27 @@ export const hasServiceRole = Boolean(url && serviceKey);
  * autenticada. Use em Route Handlers e páginas que dependem do usuário logado.
  */
 export function createServerSupabase(): SupabaseClient | null {
-  if (!isSupabaseConfigured) return null;
+  if (!isConfigured || !url) return null;
   const cookieStore = cookies();
-  return createServerClient(url, anonKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll();
+  try {
+    return createServerClient(url, anonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+          } catch {
+            // Server Component (somente leitura) — o middleware renova a sessão.
+          }
+        },
       },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-        } catch {
-          // Chamado a partir de um Server Component (somente leitura) — ignorado.
-          // O middleware é responsável por renovar a sessão.
-        }
-      },
-    },
-  });
+    });
+  } catch (e) {
+    console.error('[supabase] Falha ao criar o cliente de servidor:', e);
+    return null;
+  }
 }
 
 /**
@@ -39,8 +43,13 @@ export function createServerSupabase(): SupabaseClient | null {
  * (conteúdos, eventos, bom_dia) que podem ser cacheadas/ISR.
  */
 export function createAnonServerClient(): SupabaseClient | null {
-  if (!isSupabaseConfigured) return null;
-  return createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  if (!isConfigured || !url) return null;
+  try {
+    return createClient(url, anonKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  } catch (e) {
+    console.error('[supabase] Falha ao criar o cliente anônimo:', e);
+    return null;
+  }
 }
 
 /**
@@ -48,6 +57,11 @@ export function createAnonServerClient(): SupabaseClient | null {
  * privilegiadas (seed, leitura de inscritos). `null` sem SUPABASE_SERVICE_ROLE_KEY.
  */
 export function createAdminClient(): SupabaseClient | null {
-  if (!hasServiceRole) return null;
-  return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  if (!url || !serviceKey) return null;
+  try {
+    return createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  } catch (e) {
+    console.error('[supabase] Falha ao criar o cliente admin:', e);
+    return null;
+  }
 }

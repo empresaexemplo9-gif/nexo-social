@@ -1,20 +1,25 @@
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getSupabaseEnv } from './supabase-config';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-/**
- * Indica se as credenciais do Supabase foram configuradas. Quando `false`, a
- * aplicação opera em "modo demonstração": leituras usam o dataset semente
- * (lib/data.ts) e as telas de auth exibem avisos amigáveis.
- */
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+const { url, anonKey, isConfigured } = getSupabaseEnv();
 
 /**
- * Cliente Supabase do navegador (sessão via cookies, sincronizada com o
- * servidor através de @supabase/ssr). É `null` quando não configurado.
+ * Indica se as credenciais do Supabase foram configuradas (e são válidas).
+ * Quando `false`, a aplicação opera em "modo demonstração".
  */
-export const supabase: SupabaseClient | null = isSupabaseConfigured
-  ? createBrowserClient(supabaseUrl, supabaseAnonKey)
-  : null;
+export const isSupabaseConfigured = isConfigured;
+
+function createBrowserSupabase(): SupabaseClient | null {
+  if (!isConfigured || !url) return null;
+  try {
+    return createBrowserClient(url, anonKey);
+  } catch (e) {
+    // URL/credenciais inválidas não devem quebrar a aplicação — cai para demo.
+    console.error('[supabase] Falha ao criar o cliente do navegador:', e);
+    return null;
+  }
+}
+
+/** Cliente Supabase do navegador. `null` quando não configurado. */
+export const supabase: SupabaseClient | null = createBrowserSupabase();
