@@ -57,8 +57,20 @@ export default function Questionnaire() {
     );
   };
 
-  const finish = () => {
+  const finish = async () => {
     complete({ interests, city, radiusKm, frequency });
+    // Persiste no backend quando o usuário está autenticado (best-effort:
+    // um 401 em modo anônimo é esperado e ignorado — o localStorage garante
+    // a personalização local).
+    try {
+      await fetch('/api/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interests, city, radiusKm, frequency }),
+      });
+    } catch {
+      /* segue apenas com localStorage */
+    }
     router.push('/');
   };
 

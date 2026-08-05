@@ -39,38 +39,60 @@ export default function AdminPage() {
     setEvent((prev) => ({ ...prev, city, lat: coords?.lat ?? prev.lat, lng: coords?.lng ?? prev.lng }));
   };
 
-  const persist = async (table: string, row: Record<string, unknown>, successMsg: string) => {
-    if (!isSupabaseConfigured || !supabase) {
+  const [busy, setBusy] = useState(false);
+
+  // Envia para a API protegida (autorização de admin validada no servidor).
+  const submit = async (endpoint: string, payload: Record<string, unknown>, successMsg: string) => {
+    if (authState === 'demo') {
       setMessage(`${successMsg} (modo demonstração — configure o Supabase para persistir)`);
       return;
     }
-    const { error } = await supabase.from(table).insert(row);
-    setMessage(error ? `❌ ${error.message}` : successMsg);
+    setBusy(true);
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json().catch(() => ({}));
+      setMessage(res.ok ? successMsg : `❌ ${json.error || 'Falha ao salvar'}`);
+    } catch {
+      setMessage('❌ Erro de rede ao salvar.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleSaveContent = async (e: React.FormEvent) => {
     e.preventDefault();
-    await persist('contents', {
-      title: content.title, category: content.topic, snippet: content.snippet,
-      body: content.body, subtopic: content.subtopic, read_time: content.readTime, image_url: content.imageUrl,
-    }, '✓ Conteúdo publicado no Hub!');
+    await submit('/api/admin/contents', content, '✓ Conteúdo publicado no Hub!');
   };
 
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault();
-    await persist('events', {
-      title: event.title, category: event.topic, event_date: event.date, city: event.city,
-      location: event.venue, lat: event.lat, lng: event.lng, image_url: event.imageUrl,
-      description: event.description, price: event.price,
-    }, '✓ Evento cadastrado na Agenda!');
+    await submit('/api/admin/events', event, '✓ Evento cadastrado na Agenda!');
   };
 
   const handleSaveBomDia = async (e: React.FormEvent) => {
     e.preventDefault();
-    await persist('bom_dia', {
-      soundtrack_title: bomDia.soundtrackTitle, soundtrack_artist: bomDia.soundtrackArtist,
-      recipe_title: bomDia.recipeTitle, recipe_description: bomDia.recipeDescription, quick_tip: bomDia.quickTip,
-    }, '✓ Curadoria "Bom Dia" atualizada!');
+    await submit('/api/admin/bom-dia', bomDia, '✓ Curadoria "Bom Dia" publicada!');
+  };
+
+  const handleSeed = async () => {
+    if (authState === 'demo') {
+      setMessage('Seed indisponível em modo demonstração — configure o Supabase.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch('/api/seed', { method: 'POST' });
+      const json = await res.json().catch(() => ({}));
+      setMessage(res.ok ? `✓ Banco populado: ${JSON.stringify(json.seeded)}` : `❌ ${json.error || 'Falha no seed'}`);
+    } catch {
+      setMessage('❌ Erro de rede no seed.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (authState === 'loading') {
@@ -116,7 +138,17 @@ export default function AdminPage() {
                 : `Conectado como ${currentEmail}`}
             </p>
           </div>
-          <Link href="/" className="text-xs text-emerald-400 hover:underline">← Voltar para a Home</Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSeed}
+              disabled={busy}
+              className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-emerald-500 hover:text-emerald-400 disabled:opacity-50"
+              title="Popular o banco com o dataset inicial"
+            >
+              🌱 Popular banco
+            </button>
+            <Link href="/" className="text-xs text-emerald-400 hover:underline">← Voltar para a Home</Link>
+          </div>
         </div>
 
         {authState === 'demo' && (
