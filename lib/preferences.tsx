@@ -12,6 +12,16 @@ export type Frequency = 'diaria' | 'semanal' | 'mensal';
 
 export interface UserPreferences {
   interests: CategorySlug[];
+  /** Subtemas escolhidos dentro de cada tema (afina a indicação). */
+  subtopics: string[];
+  /** Gêneros musicais — alimentam a trilha do Spotify. */
+  musicGenres: string[];
+  /** Gêneros de cinema e séries. */
+  filmGenres: string[];
+  /** Gêneros literários. */
+  bookGenres: string[];
+  /** Hobbies praticados. */
+  hobbies: string[];
   city: string | null;
   radiusKm: number;
   frequency: Frequency;
@@ -20,6 +30,11 @@ export interface UserPreferences {
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
   interests: [],
+  subtopics: [],
+  musicGenres: [],
+  filmGenres: [],
+  bookGenres: [],
+  hobbies: [],
   city: null,
   radiusKm: 50,
   frequency: 'semanal',

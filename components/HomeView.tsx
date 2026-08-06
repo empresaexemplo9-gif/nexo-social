@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Icon from '@/components/icons';
 import AgendaTimeline from '@/components/AgendaTimeline';
-import TopicGrid from '@/components/TopicGrid';
 import { usePreferences } from '@/lib/preferences';
 import type { ContentItem, EventItem } from '@/lib/data';
 
@@ -68,18 +67,25 @@ export default function HomeView({ events }: Props) {
         {/* AGENDA PESSOAL — o coração da home */}
         <AgendaTimeline events={events} />
 
-        {/* Nichos: as indicações de cada tema ficam dentro do próprio botão */}
-        <section id="temas" className="scroll-mt-20 space-y-5">
-          <div className="flex items-end justify-between gap-4">
+        {/* Interesses e hobbies — área própria */}
+        <section className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 sm:flex-row sm:items-center">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-950/60 text-emerald-400">
+              <Icon name="sparkles" size={20} />
+            </span>
             <div>
-              <h2 className="text-2xl font-semibold text-zinc-50">Seus nichos</h2>
-              <p className="mt-1 text-sm text-zinc-300">Toque em um tema para ver as indicações dele.</p>
+              <h2 className="text-lg font-semibold text-zinc-50">Interesses e hobbies</h2>
+              <p className="mt-0.5 text-sm text-zinc-300">
+                Sua trilha no Spotify, seus nichos e indicações de filmes e livros.
+              </p>
             </div>
-            <Link href="/questionario" className="shrink-0 text-xs text-emerald-400 hover:underline">
-              editar
-            </Link>
           </div>
-          <TopicGrid events={events} />
+          <Link
+            href="/interesses"
+            className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+          >
+            Abrir <Icon name="arrowRight" size={16} />
+          </Link>
         </section>
 
         {/* Bom Dia */}

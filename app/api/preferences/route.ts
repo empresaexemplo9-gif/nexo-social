@@ -20,16 +20,22 @@ export async function PUT(request: Request) {
   if (!sb) return NextResponse.json({ error: 'Supabase não configurado.' }, { status: 503 });
   if (!user) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
 
-  let body: { interests?: string[]; city?: string | null; radiusKm?: number; frequency?: string };
+  let body: { interests?: string[]; city?: string | null; radiusKm?: number; frequency?: string; [k: string]: unknown };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Corpo inválido.' }, { status: 400 });
   }
 
+  const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
   const row = {
     user_id: user.id,
-    interests: Array.isArray(body.interests) ? body.interests : [],
+    interests: arr(body.interests),
+    subtopics: arr((body as any).subtopics),
+    music_genres: arr((body as any).musicGenres),
+    film_genres: arr((body as any).filmGenres),
+    book_genres: arr((body as any).bookGenres),
+    hobbies: arr((body as any).hobbies),
     city: body.city ?? null,
     radius_km: Number.isFinite(body.radiusKm) ? body.radiusKm : 50,
     frequency: body.frequency ?? 'semanal',

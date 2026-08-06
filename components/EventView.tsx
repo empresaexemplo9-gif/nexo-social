@@ -126,7 +126,7 @@ export default function EventView({ event, related }: Props) {
           </section>
         )}
       </main>
-      <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">nexo-social / Agendrap — Agenda</footer>
+      <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">nexo.social — Agenda</footer>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export interface BomDiaData {
 
 export const BOM_DIA_FALLBACK: BomDiaData = {
   soundtrackTitle: 'Lofi Vibes & Ambient Focus',
-  soundtrackArtist: 'Curadoria Agendrap',
+  soundtrackArtist: 'Curadoria nexo.social',
   recipeTitle: 'Toast de Abacate com Ovos Pochê',
   recipeDescription:
     'Pão de fermentação natural, abacate amassado com azeite extra virgem, pimenta preta e ovos pochê (10 min).',
