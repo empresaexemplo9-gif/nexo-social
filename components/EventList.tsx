@@ -5,6 +5,7 @@ import EventCard from './EventCard';
 import { usePreferences } from '@/lib/preferences';
 import { cityCoords, TOPICS, type CategorySlug, type EventItem } from '@/lib/data';
 import { haversineKm, type LatLng } from '@/lib/geo';
+import Icon from './icons';
 
 type GeoState = 'idle' | 'loading' | 'granted' | 'denied' | 'unsupported';
 
@@ -64,9 +65,9 @@ export default function EventList({ events, showFilters = false, emptyLabel }: P
   const topicsInEvents = TOPICS.filter((t) => events.some((e) => e.topic === t.slug));
 
   let statusLabel = 'Ordenado por relevância';
-  if (gps) statusLabel = '📍 Ordenado pela sua localização atual';
-  else if (origin && prefs.city) statusLabel = `📍 Ordenado por proximidade de ${prefs.city}`;
-  else if (interests.length) statusLabel = '⭐ Ordenado pelos seus interesses';
+  if (gps) statusLabel = 'Ordenado pela sua localização atual';
+  else if (origin && prefs.city) statusLabel = `Ordenado por proximidade de ${prefs.city}`;
+  else if (interests.length) statusLabel = 'Ordenado pelos seus interesses';
 
   return (
     <div className="space-y-4">
@@ -79,12 +80,12 @@ export default function EventList({ events, showFilters = false, emptyLabel }: P
               disabled={geoState === 'loading'}
               className="rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-950/70 disabled:opacity-60"
             >
-              {geoState === 'loading' ? 'Localizando…' : '📍 Usar minha localização'}
+              {geoState === 'loading' ? 'Localizando…' : 'Usar minha localização'}
             </button>
           )}
           {geoState === 'granted' && (
             <span className="rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-400">
-              ✓ Localização ativa
+              Localização ativa
             </span>
           )}
         </div>
@@ -118,7 +119,7 @@ export default function EventList({ events, showFilters = false, emptyLabel }: P
                 filter === t.slug ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
               }`}
             >
-              {t.icon} {t.label}
+              <span className="inline-flex items-center gap-1.5"><Icon name={t.icon} size={14} /> {t.label}</span>
             </button>
           ))}
         </div>

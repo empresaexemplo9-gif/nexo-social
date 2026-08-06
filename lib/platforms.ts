@@ -6,6 +6,7 @@
 // usuário direto para o resultado relevante.
 
 import type { EventItem, Topic, CategorySlug } from './data';
+import type { IconName } from '@/components/icons';
 
 export type PlatformKind = 'musica' | 'video' | 'ingresso';
 
@@ -13,7 +14,8 @@ export interface PlatformLink {
   label: string;
   url: string;
   kind: PlatformKind;
-  icon: string;
+  /** Chave do ícone SVG — sem emoji. */
+  icon: IconName;
 }
 
 const q = (s: string) => encodeURIComponent(s.trim());
@@ -29,10 +31,10 @@ function mediaQuery(event: EventItem): string {
 export function ticketLinks(event: EventItem): PlatformLink[] {
   const term = `${event.title} ${event.city}`;
   return [
-    { kind: 'ingresso', icon: '🎟️', label: 'Sympla', url: `https://www.sympla.com.br/eventos?s=${q(term)}` },
-    { kind: 'ingresso', icon: '🎫', label: 'Eventbrite', url: `https://www.eventbrite.com.br/d/brazil/${q(event.city)}/?q=${q(event.title)}` },
-    { kind: 'ingresso', icon: '🎪', label: 'Ticketmaster', url: `https://www.ticketmaster.com.br/search?q=${q(term)}` },
-    { kind: 'ingresso', icon: '📍', label: 'Bandsintown', url: `https://www.bandsintown.com/search?query=${q(event.artist || event.city)}` },
+    { kind: 'ingresso', icon: 'ticket', label: 'Sympla', url: `https://www.sympla.com.br/eventos?s=${q(term)}` },
+    { kind: 'ingresso', icon: 'ticket', label: 'Eventbrite', url: `https://www.eventbrite.com.br/d/brazil/${q(event.city)}/?q=${q(event.title)}` },
+    { kind: 'ingresso', icon: 'ticket', label: 'Ticketmaster', url: `https://www.ticketmaster.com.br/search?q=${q(term)}` },
+    { kind: 'ingresso', icon: 'mapPin', label: 'Bandsintown', url: `https://www.bandsintown.com/search?query=${q(event.artist || event.city)}` },
   ];
 }
 
@@ -40,10 +42,10 @@ export function ticketLinks(event: EventItem): PlatformLink[] {
 export function mediaLinks(event: EventItem): PlatformLink[] {
   const term = mediaQuery(event);
   return [
-    { kind: 'musica', icon: '🎧', label: 'Spotify', url: `https://open.spotify.com/search/${q(term)}` },
-    { kind: 'musica', icon: '🎼', label: 'YouTube Music', url: `https://music.youtube.com/search?q=${q(term)}` },
-    { kind: 'musica', icon: '🎶', label: 'Deezer', url: `https://www.deezer.com/search/${q(term)}` },
-    { kind: 'video', icon: '▶️', label: 'YouTube', url: `https://www.youtube.com/results?search_query=${q(term)}` },
+    { kind: 'musica', icon: 'headphones', label: 'Spotify', url: `https://open.spotify.com/search/${q(term)}` },
+    { kind: 'musica', icon: 'music', label: 'YouTube Music', url: `https://music.youtube.com/search?q=${q(term)}` },
+    { kind: 'musica', icon: 'music', label: 'Deezer', url: `https://www.deezer.com/search/${q(term)}` },
+    { kind: 'video', icon: 'video', label: 'YouTube', url: `https://www.youtube.com/results?search_query=${q(term)}` },
   ];
 }
 
@@ -61,11 +63,11 @@ export function topicPlatformLinks(topic: Topic, city?: string | null): Platform
   const base = topic.label;
   const withCity = city ? `${base} ${city}` : base;
   const links: PlatformLink[] = [
-    { kind: 'ingresso', icon: '🎟️', label: `Eventos de ${base} no Sympla`, url: `https://www.sympla.com.br/eventos?s=${q(withCity)}` },
-    { kind: 'video', icon: '▶️', label: `${base} no YouTube`, url: `https://www.youtube.com/results?search_query=${q(base)}` },
+    { kind: 'ingresso', icon: 'ticket', label: `Eventos de ${base} no Sympla`, url: `https://www.sympla.com.br/eventos?s=${q(withCity)}` },
+    { kind: 'video', icon: 'video', label: `${base} no YouTube`, url: `https://www.youtube.com/results?search_query=${q(base)}` },
   ];
   if (topic.slug === 'musica') {
-    links.push({ kind: 'musica', icon: '🎧', label: 'Playlists no Spotify', url: `https://open.spotify.com/search/${q(base)}` });
+    links.push({ kind: 'musica', icon: 'headphones', label: 'Playlists no Spotify', url: `https://open.spotify.com/search/${q(base)}` });
   }
   return links;
 }

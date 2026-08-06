@@ -137,7 +137,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
             onClick={load}
             className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500"
           >
-            ↻ Atualizar
+            Atualizar
           </button>
           <button
             onClick={testAll}
@@ -200,7 +200,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
                   </div>
                 )}
 
-                {p.caveat && <p className="text-[11px] text-zinc-500">⚠️ {p.caveat}</p>}
+                {p.caveat && <p className="text-[11px] text-zinc-500">{p.caveat}</p>}
 
                 {/* Resultado do teste */}
                 {t && (
@@ -216,7 +216,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
                       <span className="ml-2 font-normal opacity-60">{t.durationMs} ms</span>
                     </p>
                     {t.sample && <p className="mt-1 opacity-80">{t.sample}</p>}
-                    {t.hint && <p className="mt-2 border-t border-white/10 pt-2 opacity-90">💡 {t.hint}</p>}
+                    {t.hint && <p className="mt-2 border-t border-white/10 pt-2 opacity-90">{t.hint}</p>}
                   </div>
                 )}
 
@@ -235,7 +235,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
                       className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-40"
                       title={p.ready ? 'Importar eventos para a agenda' : 'Configure a chave primeiro'}
                     >
-                      {busy[`${p.id}:import`] ? 'Importando…' : '⬇ Importar eventos'}
+                      {busy[`${p.id}:import`] ? 'Importando…' : 'Importar eventos'}
                     </button>
                   )}
                   <a
@@ -288,7 +288,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
             <p className="mt-1 opacity-80">
               recebidos: {importResult.fetched} • gravados: {importResult.inserted} • ignorados: {importResult.skipped}
             </p>
-            {importResult.hint && <p className="mt-2 border-t border-white/10 pt-2 opacity-90">💡 {importResult.hint}</p>}
+            {importResult.hint && <p className="mt-2 border-t border-white/10 pt-2 opacity-90">{importResult.hint}</p>}
             {importResult.errors.length > 0 && (
               <ul className="mt-2 list-inside list-disc font-mono text-[11px] opacity-80">
                 {importResult.errors.map((e, i) => (

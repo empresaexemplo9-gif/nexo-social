@@ -7,6 +7,7 @@ import EventCard from '@/components/EventCard';
 import { getTopic, type EventItem } from '@/lib/data';
 import { eventPlatformLinks, KIND_LABEL } from '@/lib/platforms';
 import { relativeLabel } from '@/lib/datetime';
+import Icon from './icons';
 
 interface Props {
   event: EventItem;
@@ -20,7 +21,7 @@ export default function EventView({ event, related }: Props) {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${event.coords.lat},${event.coords.lng}`;
 
   return (
-    <div className="min-h-screen bg-grain font-sans text-zinc-100 antialiased">
+    <div className="min-h-screen font-sans text-zinc-100 antialiased">
       <Navbar />
       <main className="mx-auto max-w-5xl space-y-12 px-4 py-10 sm:px-6 lg:px-8">
         <div>
@@ -40,7 +41,7 @@ export default function EventView({ event, related }: Props) {
                   {event.date}
                 </span>
                 <Link href={`/tema/${event.topic}`} className="text-xs text-zinc-400 hover:text-zinc-100">
-                  {topic?.icon} {topic?.label}
+                  <Icon name={topic?.icon ?? 'calendar'} size={15} /> {topic?.label}
                 </Link>
                 <span className="text-xs text-zinc-500">{event.price}</span>
               </div>
@@ -81,7 +82,7 @@ export default function EventView({ event, related }: Props) {
                           rel="noopener noreferrer"
                           className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-200 transition hover:border-clay-500 hover:text-clay-300"
                         >
-                          {l.icon} {l.label}
+                          <Icon name={l.icon} size={14} /> {l.label}
                         </a>
                       ))}
                     </div>
@@ -107,7 +108,7 @@ export default function EventView({ event, related }: Props) {
                   rel="noopener noreferrer"
                   className="rounded-xl border border-zinc-700 px-6 py-2.5 text-sm font-semibold text-zinc-100 transition hover:border-clay-500 hover:text-clay-300"
                 >
-                  🗺️ Ver rota no mapa
+                  <Icon name="mapPin" size={16} /> Ver rota no mapa
                 </a>
               </div>
             </div>

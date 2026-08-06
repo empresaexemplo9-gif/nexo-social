@@ -146,7 +146,7 @@ export default function AdminPage() {
               className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-emerald-500 hover:text-emerald-400 disabled:opacity-50"
               title="Popular o banco com o dataset inicial"
             >
-              🌱 Popular banco
+              Popular banco
             </button>
             <Link href="/" className="text-xs text-emerald-400 hover:underline">← Voltar para a Home</Link>
           </div>
@@ -164,7 +164,7 @@ export default function AdminPage() {
         )}
 
         <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
-          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', '☀️ Editar Bom Dia'], ['integrations', '🔌 Integrações']] as [Tab, string][]).map(
+          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', 'Editar Bom Dia'], ['integrations', 'Integrações']] as [Tab, string][]).map(
             ([tab, label]) => (
               <button
                 key={tab}
