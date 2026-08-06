@@ -1,13 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { isPlatformAdmin } from '@/lib/auth';
-import { normalizeSupabaseUrl } from '@/lib/supabase-config';
+import { resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config';
 
-const url = normalizeSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
-const anonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '').trim();
+const url = resolveSupabaseUrl();
+const anonKey = PUBLISHABLE_ANON_KEY;
 
 export async function middleware(request: NextRequest) {
-  // Sem Supabase configurado (ou URL inválida) → modo demonstração, sem proteção.
   if (!url || !anonKey) return NextResponse.next();
 
   try {
