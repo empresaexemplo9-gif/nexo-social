@@ -442,3 +442,10 @@ DROP POLICY IF EXISTS notifications_select ON notifications;
 CREATE POLICY notifications_select ON notifications FOR SELECT USING (user_id = auth.uid());
 DROP POLICY IF EXISTS notifications_update ON notifications;
 CREATE POLICY notifications_update ON notifications FOR UPDATE USING (user_id = auth.uid());
+
+-- Preferências detalhadas (questionário ampliado: música, cinema, livros, hobbies)
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS subtopics TEXT[] DEFAULT '{}';
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS music_genres TEXT[] DEFAULT '{}';
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS film_genres TEXT[] DEFAULT '{}';
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS book_genres TEXT[] DEFAULT '{}';
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS hobbies TEXT[] DEFAULT '{}';

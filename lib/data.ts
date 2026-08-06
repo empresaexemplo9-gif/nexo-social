@@ -11,13 +11,22 @@ export type CategorySlug =
   | 'musica'
   | 'moda'
   | 'cultura'
-  | 'esporte';
+  | 'esporte'
+  | 'cinema'
+  | 'livros'
+  | 'gastronomia'
+  | 'viagem'
+  | 'games'
+  | 'bem-estar'
+  | 'arte';
 
 export interface Topic {
   slug: CategorySlug;
   label: string;
   /** Chave do ícone SVG (components/icons.tsx) — sem emoji. */
-  icon: 'cpu' | 'music' | 'shirt' | 'masks' | 'activity';
+  icon:
+    | 'cpu' | 'music' | 'shirt' | 'masks' | 'activity'
+    | 'film' | 'book' | 'utensils' | 'plane' | 'gamepad' | 'heart' | 'palette';
   tagline: string;
   description: string;
   subtopics: string[];
@@ -205,6 +214,118 @@ export const TOPICS: Topic[] = [
       border: 'border-sky-800/50',
       solid: 'bg-sky-500',
       gradient: 'from-sky-500/20 to-sky-900/10',
+    },
+  },
+  {
+    slug: 'cinema',
+    label: 'Cinema & Séries',
+    icon: 'film',
+    tagline: 'Do autoral ao blockbuster',
+    description:
+      'Lançamentos, cinema autoral, séries, festivais e a cultura audiovisual que move salas e streamings.',
+    subtopics: ['Lançamentos', 'Cinema Autoral', 'Séries', 'Documentários', 'Festivais', 'Animação'],
+    accent: {
+      text: 'text-violet-400',
+      bg: 'bg-violet-950/40',
+      border: 'border-violet-800/50',
+      solid: 'bg-violet-500',
+      gradient: 'from-violet-500/20 to-violet-900/10',
+    },
+  },
+  {
+    slug: 'livros',
+    label: 'Livros & Leitura',
+    icon: 'book',
+    tagline: 'Histórias que ficam',
+    description:
+      'Lançamentos literários, clubes de leitura, autores brasileiros, quadrinhos e o mercado editorial independente.',
+    subtopics: ['Ficção', 'Não-ficção', 'Clubes de Leitura', 'Quadrinhos', 'Poesia', 'Autores Brasileiros'],
+    accent: {
+      text: 'text-orange-400',
+      bg: 'bg-orange-950/40',
+      border: 'border-orange-800/50',
+      solid: 'bg-orange-500',
+      gradient: 'from-orange-500/20 to-orange-900/10',
+    },
+  },
+  {
+    slug: 'gastronomia',
+    label: 'Gastronomia',
+    icon: 'utensils',
+    tagline: 'Sabor, técnica e origem',
+    description:
+      'Cozinha autoral, ingredientes brasileiros, panificação, cafés especiais e a cena gastronômica das cidades.',
+    subtopics: ['Cozinha Autoral', 'Panificação', 'Cafés Especiais', 'Vinhos & Cervejas', 'Comida de Rua', 'Vegetariano'],
+    accent: {
+      text: 'text-red-400',
+      bg: 'bg-red-950/40',
+      border: 'border-red-800/50',
+      solid: 'bg-red-500',
+      gradient: 'from-red-500/20 to-red-900/10',
+    },
+  },
+  {
+    slug: 'viagem',
+    label: 'Viagem',
+    icon: 'plane',
+    tagline: 'Perto ou longe, com propósito',
+    description:
+      'Roteiros de bate-volta, turismo de base comunitária, ecoturismo e as descobertas possíveis na sua região.',
+    subtopics: ['Bate-volta', 'Ecoturismo', 'Turismo Urbano', 'Praias', 'Trilhas', 'Viagem Econômica'],
+    accent: {
+      text: 'text-cyan-400',
+      bg: 'bg-cyan-950/40',
+      border: 'border-cyan-800/50',
+      solid: 'bg-cyan-500',
+      gradient: 'from-cyan-500/20 to-cyan-900/10',
+    },
+  },
+  {
+    slug: 'games',
+    label: 'Games',
+    icon: 'gamepad',
+    tagline: 'Jogos, cena e competição',
+    description:
+      'Jogos independentes, e-sports, desenvolvimento de games e a comunidade que se encontra para jogar.',
+    subtopics: ['Indies', 'E-sports', 'RPG de Mesa', 'Retrô', 'Game Dev', 'Board Games'],
+    accent: {
+      text: 'text-lime-400',
+      bg: 'bg-lime-950/40',
+      border: 'border-lime-800/50',
+      solid: 'bg-lime-500',
+      gradient: 'from-lime-500/20 to-lime-900/10',
+    },
+  },
+  {
+    slug: 'bem-estar',
+    label: 'Bem-estar',
+    icon: 'heart',
+    tagline: 'Corpo, mente e rotina',
+    description:
+      'Saúde mental, sono, meditação, yoga e hábitos que sustentam uma rotina possível — sem fórmula mágica.',
+    subtopics: ['Saúde Mental', 'Meditação', 'Yoga', 'Sono', 'Nutrição', 'Rotina'],
+    accent: {
+      text: 'text-teal-400',
+      bg: 'bg-teal-950/40',
+      border: 'border-teal-800/50',
+      solid: 'bg-teal-500',
+      gradient: 'from-teal-500/20 to-teal-900/10',
+    },
+  },
+  {
+    slug: 'arte',
+    label: 'Arte & Fotografia',
+    icon: 'palette',
+    tagline: 'Olhar, técnica e expressão',
+    description:
+      'Fotografia, ilustração, cerâmica, arte urbana e oficinas para quem quer produzir, não só observar.',
+    subtopics: ['Fotografia', 'Ilustração', 'Cerâmica', 'Arte Urbana', 'Oficinas', 'Exposições'],
+    accent: {
+      text: 'text-pink-400',
+      bg: 'bg-pink-950/40',
+      border: 'border-pink-800/50',
+      solid: 'bg-pink-500',
+      gradient: 'from-pink-500/20 to-pink-900/10',
     },
   },
 ];
@@ -395,7 +516,169 @@ export const CONTENTS: ContentItem[] = [
     body: 'A performance sustentável depende tanto do descanso quanto do treino. Reunimos evidências sobre recuperação ativa e prevenção de lesões.',
     readTime: '4 min', date: '31 Jul', imageUrl: img('photo-1544367567-0f2fcb009e0b'),
   },
+  // ----- Cinema & Séries -----
+  { id: 'cin-1', topic: 'cinema', subtopic: 'Cinema Autoral',
+    title: 'O novo cinema brasileiro conquista as telas internacionais',
+    snippet: 'Produções nacionais ganham espaço em festivais e plataformas globais.',
+    body: 'Da retomada aos prêmios recentes, o cinema brasileiro consolidou uma linguagem própria. Analisamos as produções que estão redefinindo a percepção do país lá fora.',
+    readTime: '6 min', date: 'Hoje', imageUrl: img('photo-1489599849927-2ee91cede3ba') },
+  { id: 'cin-2', topic: 'cinema', subtopic: 'Séries',
+    title: 'A era das minisséries: histórias fechadas ganham o público',
+    snippet: 'Formatos curtos vencem a fadiga das temporadas intermináveis.',
+    body: 'Com seis a oito episódios, a minissérie entrega arco completo sem exigir anos de fidelidade. Discutimos como isso mudou o roteiro televisivo.',
+    readTime: '5 min', date: 'Ontem', imageUrl: img('photo-1522869635100-9f4c5e86aa37') },
+
+  // ----- Livros & Leitura -----
+  { id: 'liv-1', topic: 'livros', subtopic: 'Autores Brasileiros',
+    title: 'Novas vozes da literatura brasileira contemporânea',
+    snippet: 'Autoras e autores que renovam a ficção nacional fora do eixo tradicional.',
+    body: 'A literatura brasileira vive um momento de descentralização: vozes do Norte, Nordeste e das periferias ocupam prateleiras antes restritas. Mapeamos os nomes que valem acompanhar.',
+    readTime: '7 min', date: 'Hoje', imageUrl: img('photo-1524995997946-a1c2e315a42f') },
+  { id: 'liv-2', topic: 'livros', subtopic: 'Clubes de Leitura',
+    title: 'Clubes de leitura viram ponto de encontro nas cidades',
+    snippet: 'Ler deixou de ser solitário: encontros mensais criam comunidade.',
+    body: 'De bares a livrarias de bairro, os clubes de leitura se multiplicam. Conversamos com organizadores sobre como montar e manter um grupo ativo.',
+    readTime: '4 min', date: '02 Ago', imageUrl: img('photo-1521587760476-6c12a4b040da') },
+
+  // ----- Gastronomia -----
+  { id: 'gas-1', topic: 'gastronomia', subtopic: 'Cozinha Autoral',
+    title: 'Ingredientes brasileiros no centro da alta gastronomia',
+    snippet: 'Chefs abandonam a referência europeia e olham para a biodiversidade local.',
+    body: 'Baru, pequi, tucupi e jambu deixaram o regionalismo para se tornar assinatura. Mostramos como a despensa brasileira redefiniu a cozinha autoral.',
+    readTime: '6 min', date: 'Hoje', imageUrl: img('photo-1504674900247-0877df9cc836') },
+  { id: 'gas-2', topic: 'gastronomia', subtopic: 'Cafés Especiais',
+    title: 'Café especial: do grão rastreado à xícara',
+    snippet: 'Torrefações artesanais aproximam produtor e consumidor.',
+    body: 'A terceira onda do café amadureceu no Brasil. Explicamos torra, método e como identificar um café realmente especial sem esnobismo.',
+    readTime: '5 min', date: 'Ontem', imageUrl: img('photo-1495474472287-4d71bcdd2085') },
+
+  // ----- Viagem -----
+  { id: 'via-1', topic: 'viagem', subtopic: 'Bate-volta',
+    title: 'Bate-volta: descobertas a menos de 200 km de casa',
+    snippet: 'Viagens curtas de fim de semana, sem planejamento complexo.',
+    body: 'Nem toda viagem exige férias. Reunimos critérios para montar roteiros de um dia que cabem no orçamento e no calendário.',
+    readTime: '5 min', date: 'Hoje', imageUrl: img('photo-1476514525535-07fb3b4ae5f1') },
+  { id: 'via-2', topic: 'viagem', subtopic: 'Ecoturismo',
+    title: 'Turismo de base comunitária ganha força no Brasil',
+    snippet: 'Comunidades locais assumem o protagonismo — e a renda — do turismo.',
+    body: 'Quando quem recebe também organiza, o dinheiro fica na comunidade. Analisamos experiências que unem conservação e geração de renda.',
+    readTime: '6 min', date: '01 Ago', imageUrl: img('photo-1501785888041-af3ef285b470') },
+
+  // ----- Games -----
+  { id: 'gam-1', topic: 'games', subtopic: 'Indies',
+    title: 'Games independentes brasileiros no cenário global',
+    snippet: 'Estúdios pequenos exportam jogos autorais com identidade local.',
+    body: 'Com equipes enxutas e financiamento criativo, estúdios brasileiros lançam títulos premiados. Conversamos sobre o caminho do indie nacional.',
+    readTime: '6 min', date: 'Hoje', imageUrl: img('photo-1552820728-8b83bb6b773f') },
+  { id: 'gam-2', topic: 'games', subtopic: 'RPG de Mesa',
+    title: 'RPG de mesa vive novo auge entre adultos',
+    snippet: 'Encontros presenciais resgatam o jogo analógico e a narrativa coletiva.',
+    body: 'Longe das telas, mesas de RPG reúnem grupos semanalmente. Explicamos por onde começar e como encontrar uma mesa perto de você.',
+    readTime: '5 min', date: 'Ontem', imageUrl: img('photo-1611996575749-79a3a250f948') },
+
+  // ----- Bem-estar -----
+  { id: 'bem-1', topic: 'bem-estar', subtopic: 'Saúde Mental',
+    title: 'Rotina possível: o fim da obsessão por produtividade',
+    snippet: 'Menos otimização, mais sustentabilidade emocional no dia a dia.',
+    body: 'A cultura da alta performance cobrou seu preço. Reunimos evidências sobre rotinas realistas que sustentam saúde mental a longo prazo.',
+    readTime: '6 min', date: 'Hoje', imageUrl: img('photo-1506126613408-eca07ce68773') },
+  { id: 'bem-2', topic: 'bem-estar', subtopic: 'Sono',
+    title: 'Higiene do sono: o hábito mais subestimado',
+    snippet: 'Dormir bem influencia humor, memória e imunidade mais do que se imagina.',
+    body: 'Luz, horário e temperatura importam mais que qualquer suplemento. Traduzimos a ciência do sono em ajustes práticos.',
+    readTime: '5 min', date: '02 Ago', imageUrl: img('photo-1541781774459-bb2af2f05b55') },
+
+  // ----- Arte & Fotografia -----
+  { id: 'art-1', topic: 'arte', subtopic: 'Fotografia',
+    title: 'Fotografia analógica resiste — e cresce — na era digital',
+    snippet: 'Filme, revelação e a paciência como parte do processo criativo.',
+    body: 'O retorno do analógico não é nostalgia: é escolha estética e ritmo. Falamos com fotógrafos sobre o que muda ao voltar ao filme.',
+    readTime: '5 min', date: 'Hoje', imageUrl: img('photo-1452780212940-6f5c0d14d848') },
+  { id: 'art-2', topic: 'arte', subtopic: 'Arte Urbana',
+    title: 'Muralismo transforma bairros em galerias a céu aberto',
+    snippet: 'Grandes painéis reposicionam a arte fora dos museus.',
+    body: 'Do grafite ao mural autorizado, a arte urbana disputa o espaço público. Analisamos os projetos que mudaram a paisagem das cidades.',
+    readTime: '6 min', date: 'Ontem', imageUrl: img('photo-1499781350541-7783f6c6a0c8') },
+
+  // ----- Reforço dos nichos novos -----
+  { id: 'cin-3', topic: 'cinema', subtopic: 'Streaming',
+    title: 'Como escolher o que assistir sem perder a noite rolando o catálogo',
+    snippet: 'Critérios simples para cortar a paralisia de decisão nas plataformas.',
+    body: 'Duração, humor do dia e disposição para legenda pesam mais do que nota de crítica. Montamos um método rápido de escolha — e uma lista de apoio por gênero.',
+    readTime: '4 min', date: 'Hoje', imageUrl: img('photo-1517604931442-7e0c8ed2963c') },
+  { id: 'cin-4', topic: 'cinema', subtopic: 'Clássicos',
+    title: 'Dez clássicos que envelheceram bem — e um que não',
+    snippet: 'Revisitar filmes antigos revela mais sobre o presente do que parece.',
+    body: 'Assistir a um clássico hoje é também medir o que mudou no olhar do público. Selecionamos títulos disponíveis de graça e explicamos por onde começar.',
+    readTime: '7 min', date: 'Ontem', imageUrl: img('photo-1440404653325-ab127d49abc1') },
+
+  { id: 'liv-3', topic: 'livros', subtopic: 'Hábito de Leitura',
+    title: 'Voltar a ler: 20 minutos por dia mudam o ano',
+    snippet: 'Menos meta anual, mais ritual diário curto e possível.',
+    body: 'Trocar a meta de "50 livros por ano" por um bloco fixo de leitura reduz a culpa e aumenta a constância. Mostramos como encaixar na rotina.',
+    readTime: '5 min', date: 'Hoje', imageUrl: img('photo-1512820790803-83ca734da794') },
+  { id: 'liv-4', topic: 'livros', subtopic: 'Domínio Público',
+    title: 'Bibliotecas gratuitas que quase ninguém usa',
+    snippet: 'Milhares de obras legais e de graça, do clássico ao técnico.',
+    body: 'Domínio Público, Open Library e acervos universitários oferecem catálogo enorme sem custo. Reunimos os melhores pontos de partida e como baixar.',
+    readTime: '6 min', date: '03 Ago', imageUrl: img('photo-1507842217343-583bb7270b66') },
+
+  { id: 'gas-3', topic: 'gastronomia', subtopic: 'Cozinha do Dia a Dia',
+    title: 'Cinco jantares de 20 minutos com o que já tem em casa',
+    snippet: 'Menos receita fechada, mais estrutura que aceita substituição.',
+    body: 'Uma base, uma proteína, um ácido e uma gordura: com esse esqueleto dá para improvisar sem depender de lista de compras. Trazemos cinco combinações testadas.',
+    readTime: '5 min', date: 'Hoje', imageUrl: img('photo-1466637574441-749b8f19452f') },
+  { id: 'gas-4', topic: 'gastronomia', subtopic: 'Origem',
+    title: 'Ingredientes brasileiros que saíram do interior para o menu',
+    snippet: 'Pequi, jambu, baru e cia. ganham espaço na alta gastronomia.',
+    body: 'A valorização de ingredientes regionais reorganizou cardápios e cadeias de fornecimento. Conversamos com cozinheiros sobre o que isso muda na prática.',
+    readTime: '7 min', date: 'Ontem', imageUrl: img('photo-1476224203421-9ac39bcb3327') },
+
+  { id: 'via-3', topic: 'viagem', subtopic: 'Bate-volta',
+    title: 'Viagens de um dia a menos de 150 km de casa',
+    snippet: 'Sair cedo, voltar à noite e ainda descansar de verdade.',
+    body: 'O bate-volta bem planejado cabe no orçamento e no fim de semana. Montamos roteiros por região com transporte, parada obrigatória e horário ideal.',
+    readTime: '6 min', date: 'Hoje', imageUrl: img('photo-1469854523086-cc02fe5d8800') },
+  { id: 'via-4', topic: 'viagem', subtopic: 'Viajar Barato',
+    title: 'O que realmente reduz o custo de uma viagem',
+    snippet: 'Data flexível vence promoção relâmpago quase sempre.',
+    body: 'Comparamos as táticas que aparecem em todo guia com o que os dados mostram: flexibilidade de data, bagagem de mão e hospedagem fora do centro fazem o maior corte.',
+    readTime: '5 min', date: '01 Ago', imageUrl: img('photo-1436491865332-7a61a109cc05') },
+
+  { id: 'gam-3', topic: 'games', subtopic: 'Games Nacionais',
+    title: 'Estúdios brasileiros que estão exportando jogos',
+    snippet: 'De projetos solo a equipes premiadas em festivais internacionais.',
+    body: 'O game dev nacional amadureceu: há financiamento, publisher e público. Mapeamos os estúdios e os títulos que valem jogar agora.',
+    readTime: '6 min', date: 'Hoje', imageUrl: img('photo-1493711662062-fa541adb3fc8') },
+  { id: 'gam-4', topic: 'games', subtopic: 'Jogar com Pouco Tempo',
+    title: 'Jogos que respeitam quem tem uma hora por semana',
+    snippet: 'Sessões curtas, salvamento generoso e zero FOMO.',
+    body: 'Nem todo jogo exige 80 horas. Selecionamos títulos com progressão fatiada, feitos para quem joga pouco e não quer perder o fio da história.',
+    readTime: '5 min', date: 'Ontem', imageUrl: img('photo-1550745165-9bc0b252726f') },
+
+  { id: 'bem-3', topic: 'bem-estar', subtopic: 'Saúde Mental',
+    title: 'Ansiedade no trabalho: o que ajuda antes da terapia',
+    snippet: 'Pausas estruturadas e limites de agenda reduzem o pico.',
+    body: 'Terapia é o caminho principal, mas ajustes de rotina aliviam o dia a dia enquanto isso. Reunimos práticas com evidência e sem promessa milagrosa.',
+    readTime: '6 min', date: 'Hoje', imageUrl: img('photo-1544367567-0f2fcb009e0b') },
+  { id: 'bem-4', topic: 'bem-estar', subtopic: 'Movimento',
+    title: 'Caminhar continua sendo o exercício mais subestimado',
+    snippet: 'Barato, sem equipamento e com adesão alta a longo prazo.',
+    body: 'Antes de assinar academia, vale olhar o que a caminhada regular entrega: pressão, humor e sono melhores. Explicamos ritmo, duração e como progredir.',
+    readTime: '4 min', date: '04 Ago', imageUrl: img('photo-1476480862126-209bfaa8edc8') },
+
+  { id: 'art-3', topic: 'arte', subtopic: 'Fotografia com Celular',
+    title: 'Fotos melhores com o celular que você já tem',
+    snippet: 'Luz e enquadramento resolvem mais que megapixels.',
+    body: 'Três ajustes mudam o resultado imediatamente: travar a exposição, procurar luz lateral e limpar o fundo. Mostramos exemplos antes e depois.',
+    readTime: '5 min', date: 'Hoje', imageUrl: img('photo-1502920917128-1aa500764cbd') },
+  { id: 'art-4', topic: 'arte', subtopic: 'Museus',
+    title: 'Museus com entrada gratuita que valem o dia inteiro',
+    snippet: 'Acervos permanentes de graça em várias capitais.',
+    body: 'Boa parte dos grandes museus tem dia gratuito fixo ou entrada livre no acervo permanente. Organizamos por cidade, com dica de horário vazio.',
+    readTime: '6 min', date: 'Ontem', imageUrl: img('photo-1544967082-d9d25d867d66') },
 ];
+
 
 export function contentsByTopic(topic: CategorySlug): ContentItem[] {
   return CONTENTS.filter((c) => c.topic === topic);
@@ -497,7 +780,32 @@ const EVENT_SEEDS: EventSeed[] = [
   { id: 'ev-esp-3', topic: 'esporte', title: 'Pedal Coletivo pela Cidade', city: 'São Paulo', venue: 'Ciclovia Paulista', inDays: 1, hourUtc: 12, durationH: 4, price: 'Gratuito', image: 'photo-1517649763962-0c623066013b', description: 'Passeio de bicicleta guiado com foco em mobilidade urbana e segurança viária.', tags: ['ciclismo', 'mobilidade'] },
   { id: 'ev-esp-4', topic: 'esporte', title: 'Clínica de Recuperação Ativa & Mobilidade', city: 'Campinas', venue: 'Centro Esportivo Taquaral', inDays: 9, hourUtc: 13, price: 'R$ 40', image: 'photo-1544367567-0f2fcb009e0b', description: 'Workshop prático sobre sono, mobilidade articular e prevenção de lesões.', tags: ['wellness', 'treino'] },
   { id: 'ev-esp-5', topic: 'esporte', title: 'Torneio de Vôlei de Praia', city: 'Niterói', venue: 'Praia de Icaraí', inDays: 13, hourUtc: 12, durationH: 8, price: 'Gratuito', image: 'photo-1612872087720-bb876e2e67d1', description: 'Torneio amador aberto a duplas, com categorias iniciante e avançada.', tags: ['vôlei', 'praia'] },
+  // ---------------- Novos nichos ----------------
+  { id: 'ev-cin-1', topic: 'cinema', title: 'Sessão Comentada: Cinema Brasileiro Contemporâneo', city: 'São Paulo', venue: 'Cinesala', inDays: 3, hourUtc: 22, price: 'R$ 25', image: 'photo-1489599849927-2ee91cede3ba', description: 'Exibição seguida de debate com crítico convidado sobre a produção nacional recente.', tags: ['cinema', 'debate'] },
+  { id: 'ev-cin-2', topic: 'cinema', title: 'Maratona de Documentários', city: 'Belo Horizonte', venue: 'Cine Humberto Mauro', inDays: 8, hourUtc: 18, durationH: 7, price: 'Gratuito', image: 'photo-1522869635100-9f4c5e86aa37', description: 'Três documentários premiados em sessão contínua, com mesa de encerramento.', tags: ['documentário'] },
+  { id: 'ev-liv-1', topic: 'livros', title: 'Clube de Leitura: Ficção Brasileira', city: 'São Paulo', venue: 'Livraria da Vila', inDays: 1, hourUtc: 22, price: 'Gratuito', image: 'photo-1521587760476-6c12a4b040da', description: 'Encontro mensal para discutir o livro do mês, aberto a novos participantes.', tags: ['leitura', 'clube'] },
+  { id: 'ev-liv-2', topic: 'livros', title: 'Noite de Autógrafos & Poesia', city: 'Porto Alegre', venue: 'Casa de Cultura Mario Quintana', inDays: 6, hourUtc: 22, price: 'Gratuito', image: 'photo-1524995997946-a1c2e315a42f', description: 'Lançamento coletivo de autores locais com sarau aberto ao público.', tags: ['poesia', 'lançamento'] },
+  { id: 'ev-gas-1', topic: 'gastronomia', title: 'Feira de Produtores & Comida de Rua', city: 'São Paulo', venue: 'Praça Benedito Calixto', inDays: 2, hourUtc: 14, durationH: 8, price: 'Gratuito', image: 'photo-1504674900247-0877df9cc836', description: 'Produtores locais, food trucks autorais e oficinas rápidas de cozinha.', tags: ['feira', 'comida de rua'] },
+  { id: 'ev-gas-2', topic: 'gastronomia', title: 'Workshop de Cafés Especiais', city: 'Curitiba', venue: 'Torrefação Central', inDays: 9, hourUtc: 17, price: 'R$ 90', image: 'photo-1495474472287-4d71bcdd2085', description: 'Degustação guiada e prática de métodos de extração com barista campeão.', tags: ['café', 'workshop'] },
+  { id: 'ev-via-1', topic: 'viagem', title: 'Trilha Guiada ao Amanhecer', city: 'Petrópolis', venue: 'Parque Nacional da Serra dos Órgãos', inDays: 5, hourUtc: 9, durationH: 6, price: 'R$ 60', image: 'photo-1501785888041-af3ef285b470', description: 'Trilha de dificuldade média com guia credenciado e café da manhã na chegada.', tags: ['trilha', 'ecoturismo'] },
+  { id: 'ev-via-2', topic: 'viagem', title: 'Encontro de Viajantes: Roteiros de Bate-volta', city: 'Campinas', venue: 'Hub Cultural', inDays: 12, hourUtc: 22, price: 'Gratuito', image: 'photo-1476514525535-07fb3b4ae5f1', description: 'Troca de roteiros curtos e dicas práticas para viagens de um dia na região.', tags: ['viagem', 'roteiros'] },
+  { id: 'ev-gam-1', topic: 'games', title: 'Mostra de Games Independentes', city: 'São Paulo', venue: 'Red Bull Gaming Hub', inDays: 4, hourUtc: 17, durationH: 6, price: 'R$ 30', image: 'photo-1552820728-8b83bb6b773f', description: 'Demonstrações jogáveis de estúdios nacionais e conversa com desenvolvedores.', tags: ['indies', 'game dev'] },
+  { id: 'ev-gam-2', topic: 'games', title: 'Mesa Aberta de RPG', city: 'Florianópolis', venue: 'Espaço Dado Crítico', inDays: 7, hourUtc: 21, durationH: 4, price: 'R$ 20', image: 'photo-1611996575749-79a3a250f948', description: 'Sessão para iniciantes: personagens prontos e mestre experiente.', tags: ['rpg', 'iniciantes'] },
+  { id: 'ev-bem-1', topic: 'bem-estar', title: 'Yoga no Parque', city: 'Rio de Janeiro', venue: 'Parque Lage', inDays: 1, hourUtc: 11, durationH: 2, price: 'Gratuito', image: 'photo-1506126613408-eca07ce68773', description: 'Prática ao ar livre para todos os níveis, com tapetes disponíveis no local.', tags: ['yoga', 'ao ar livre'] },
+  { id: 'ev-bem-2', topic: 'bem-estar', title: 'Roda de Conversa sobre Saúde Mental', city: 'Recife', venue: 'Centro Cultural', inDays: 10, hourUtc: 22, price: 'Gratuito', image: 'photo-1541781774459-bb2af2f05b55', description: 'Conversa mediada por psicólogos sobre rotina, ansiedade e limites.', tags: ['saúde mental'] },
+  { id: 'ev-art-1', topic: 'arte', title: 'Oficina de Fotografia Analógica', city: 'São Paulo', venue: 'Ateliê Fotográfico', inDays: 6, hourUtc: 17, durationH: 4, price: 'R$ 120', image: 'photo-1452780212940-6f5c0d14d848', description: 'Da carga do filme à revelação: prática completa em laboratório.', tags: ['fotografia', 'oficina'] },
+  { id: 'ev-art-2', topic: 'arte', title: 'Circuito de Arte Urbana', city: 'Belo Horizonte', venue: 'Bairro Santa Tereza', inDays: 11, hourUtc: 14, durationH: 4, price: 'Gratuito', image: 'photo-1499781350541-7783f6c6a0c8', description: 'Caminhada guiada pelos principais murais do bairro com os próprios artistas.', tags: ['arte urbana', 'mural'] },
+
+  // Reforço dos nichos novos — mais opções e mais cidades
+  { id: 'ev-cin-3', topic: 'cinema', title: 'Cine ao Ar Livre: Clássicos na Praça', city: 'Curitiba', venue: 'Praça da Espanha', inDays: 5, hourUtc: 23, durationH: 3, price: 'Gratuito', image: 'photo-1440404653325-ab127d49abc1', description: 'Projeção gratuita de clássicos restaurados, com cobertor e cadeira por conta do público.', tags: ['ao ar livre', 'clássicos'] },
+  { id: 'ev-liv-3', topic: 'livros', title: 'Feira de Troca de Livros', city: 'Belo Horizonte', venue: 'Praça da Liberdade', inDays: 4, hourUtc: 13, durationH: 6, price: 'Gratuito', image: 'photo-1507842217343-583bb7270b66', description: 'Traga livros que já leu e leve outros — sem dinheiro envolvido.', tags: ['troca', 'feira'] },
+  { id: 'ev-gas-3', topic: 'gastronomia', title: 'Aula Aberta: Cozinha de Segunda a Sexta', city: 'Recife', venue: 'Mercado da Boa Vista', inDays: 7, hourUtc: 21, durationH: 3, price: 'R$ 45', image: 'photo-1466637574441-749b8f19452f', description: 'Cinco jantares rápidos preparados ao vivo, com degustação e receitas impressas.', tags: ['aula', 'prática'] },
+  { id: 'ev-via-3', topic: 'viagem', title: 'Caminhada Histórica pelo Centro', city: 'Salvador', venue: 'Pelourinho', inDays: 3, hourUtc: 13, durationH: 3, price: 'R$ 40', image: 'photo-1469854523086-cc02fe5d8800', description: 'Roteiro a pé com guia local contando a história dos casarões e das ladeiras.', tags: ['city tour', 'história'] },
+  { id: 'ev-gam-3', topic: 'games', title: 'Campeonato Aberto de Jogos de Luta', city: 'Rio de Janeiro', venue: 'Arena Gamer Tijuca', inDays: 9, hourUtc: 18, durationH: 8, price: 'R$ 25', image: 'photo-1493711662062-fa541adb3fc8', description: 'Chaveamento aberto, inscrição no local e premiação para os quatro primeiros.', tags: ['campeonato', 'fighting'] },
+  { id: 'ev-bem-3', topic: 'bem-estar', title: 'Corrida Leve de 5 km', city: 'Curitiba', venue: 'Parque Barigui', inDays: 6, hourUtc: 10, durationH: 2, price: 'Gratuito', image: 'photo-1476480862126-209bfaa8edc8', description: 'Pelotão para iniciantes, ritmo de conversa e alongamento guiado no fim.', tags: ['corrida', 'iniciantes'] },
+  { id: 'ev-art-3', topic: 'arte', title: 'Domingo Gratuito no Museu', city: 'São Paulo', venue: 'Pinacoteca do Estado', inDays: 2, hourUtc: 13, durationH: 7, price: 'Gratuito', image: 'photo-1544967082-d9d25d867d66', description: 'Acervo permanente com entrada livre e visita mediada de hora em hora.', tags: ['museu', 'gratuito'] },
 ];
+
 
 export const EVENTS: EventItem[] = EVENT_SEEDS.map((s) => {
   const { startsAt, endsAt } = inDays(s.inDays, s.hourUtc ?? 22, s.durationH ?? 3);

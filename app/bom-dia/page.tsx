@@ -12,11 +12,11 @@ export const metadata = {
 };
 
 const tracks = [
-  { title: 'Ambient Focus I', artist: 'Curadoria Agendrap', duration: '6:12' },
-  { title: 'Lofi Sunrise', artist: 'Curadoria Agendrap', duration: '4:48' },
-  { title: 'Deep Work Pad', artist: 'Curadoria Agendrap', duration: '7:30' },
-  { title: 'Morning Piano', artist: 'Curadoria Agendrap', duration: '5:05' },
-  { title: 'Slow Bloom', artist: 'Curadoria Agendrap', duration: '6:40' },
+  { title: 'Ambient Focus I', artist: 'Curadoria nexo.social', duration: '6:12' },
+  { title: 'Lofi Sunrise', artist: 'Curadoria nexo.social', duration: '4:48' },
+  { title: 'Deep Work Pad', artist: 'Curadoria nexo.social', duration: '7:30' },
+  { title: 'Morning Piano', artist: 'Curadoria nexo.social', duration: '5:05' },
+  { title: 'Slow Bloom', artist: 'Curadoria nexo.social', duration: '6:40' },
 ];
 
 const recipes = [
@@ -138,7 +138,7 @@ export default async function BomDiaPage() {
           </Link>
         </section>
       </main>
-      <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">nexo-social / Agendrap — Bom Dia</footer>
+      <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">nexo.social — Bom Dia</footer>
     </div>
   );
 }

@@ -13,9 +13,9 @@ import { TOPICS } from '@/lib/data';
 const links = [
   { href: '/', label: 'Início', icon: 'calendar' as const },
   { href: '/agenda', label: 'Compromissos', icon: 'calendarCheck' as const },
-  { href: '/#temas', label: 'Nichos', icon: 'compass' as const },
+  { href: '/interesses', label: 'Interesses', icon: 'sparkles' as const },
   { href: '/bom-dia', label: 'Bom Dia', icon: 'sunrise' as const },
-  { href: '/questionario', label: 'Meus temas', icon: 'sparkles' as const },
+  { href: '/questionario', label: 'Questionário', icon: 'compass' as const },
 ];
 
 export default function Navbar() {
@@ -57,34 +57,49 @@ export default function Navbar() {
 
         {/* Desktop */}
         <nav className="hidden items-center gap-1 text-sm md:flex">
-          <div className="relative" onMouseLeave={() => setTopicsOpen(false)}>
-            <button
-              onClick={() => setTopicsOpen((v) => !v)}
-              onMouseEnter={() => setTopicsOpen(true)}
-              className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-emerald-300"
-            >
-              <Icon name="compass" size={16} /> Nichos
-            </button>
-            {topicsOpen && (
-              <div className="absolute left-0 top-full w-56 rounded-2xl border border-zinc-800 bg-zinc-900 p-2 shadow-soft">
-                {TOPICS.map((t) => (
-                  <Link
-                    key={t.slug}
-                    href={`/tema/${t.slug}`}
-                    className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-50"
-                  >
-                    <span className={t.accent.text}>
-                      <Icon name={t.icon} size={17} />
-                    </span>
-                    {t.label}
-                  </Link>
-                ))}
+          {links.map((l) =>
+            l.href === '/interesses' ? (
+              // "Interesses e hobbies" abre a área completa e lista os nichos ao passar o mouse.
+              <div key={l.href} className="relative" onMouseLeave={() => setTopicsOpen(false)}>
+                <Link
+                  href="/interesses"
+                  onMouseEnter={() => setTopicsOpen(true)}
+                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2 transition hover:bg-zinc-900 hover:text-emerald-300 ${
+                    pathname.startsWith('/interesses') || pathname.startsWith('/tema') ? 'text-emerald-400' : 'text-zinc-300'
+                  }`}
+                >
+                  <Icon name={l.icon} size={16} /> {l.label}
+                  <Icon name="chevronRight" size={13} className="rotate-90 opacity-60" />
+                </Link>
+                {topicsOpen && (
+                  <div className="absolute left-0 top-full w-60 rounded-2xl border border-zinc-800 bg-zinc-900 p-2 shadow-soft">
+                    <Link
+                      href="/interesses"
+                      onClick={() => setTopicsOpen(false)}
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-300 transition hover:bg-zinc-800"
+                    >
+                      <Icon name="sparkles" size={17} /> Interesses e hobbies
+                    </Link>
+                    <div className="my-1 h-px bg-zinc-800" />
+                    <div className="max-h-[60vh] overflow-y-auto">
+                      {TOPICS.map((t) => (
+                        <Link
+                          key={t.slug}
+                          href={`/tema/${t.slug}`}
+                          onClick={() => setTopicsOpen(false)}
+                          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-800 hover:text-zinc-50"
+                        >
+                          <span className={t.accent.text}>
+                            <Icon name={t.icon} size={17} />
+                          </span>
+                          {t.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          {links
-            .filter((l) => l.href !== '/#temas')
-            .map((l) => (
+            ) : (
               <Link
                 key={l.href}
                 href={l.href}
@@ -94,7 +109,8 @@ export default function Navbar() {
               >
                 <Icon name={l.icon} size={16} /> {l.label}
               </Link>
-            ))}
+            ),
+          )}
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">

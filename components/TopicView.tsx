@@ -106,7 +106,7 @@ export default function TopicView({ slug, contents, events }: Props) {
           </Link>
         </section>
       </main>
-      <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">nexo-social / Agendrap — {topic.label}</footer>
+      <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">nexo.social — {topic.label}</footer>
     </div>
   );
 }

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
     .from('bom_dia')
     .insert({
       soundtrack_title: b.soundtrackTitle,
-      soundtrack_artist: b.soundtrackArtist ?? 'Curadoria Agendrap',
+      soundtrack_artist: b.soundtrackArtist ?? 'Curadoria nexo.social',
       recipe_title: b.recipeTitle,
       recipe_description: b.recipeDescription ?? '',
       quick_tip: b.quickTip ?? '',

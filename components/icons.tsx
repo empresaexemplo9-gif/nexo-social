@@ -37,7 +37,14 @@ export type IconName =
   | 'refresh'
   | 'download'
   | 'alert'
-  | 'plug';
+  | 'plug'
+  | 'book'
+  | 'film'
+  | 'gamepad'
+  | 'palette'
+  | 'plane'
+  | 'utensils'
+  | 'heart';
 
 interface Props extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -192,6 +199,38 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M12 17v4" />
     </>
   ),
+  book: (
+    <>
+      <path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v16H7.5A2.5 2.5 0 0 0 5 20.5V4.5Z" />
+      <path d="M5 20.5A2.5 2.5 0 0 1 7.5 18H19v4H7.5A2.5 2.5 0 0 1 5 20.5Z" />
+    </>
+  ),
+  film: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="M3 9h18M3 15h18M8 4v16M16 4v16" />
+    </>
+  ),
+  gamepad: (
+    <>
+      <path d="M7 12h4M9 10v4M15.5 11.5v.01M17.5 13.5v.01" />
+      <path d="M7.5 7h9a4.5 4.5 0 0 1 4.4 3.6l.7 4a3.2 3.2 0 0 1-5.7 2.5L15 16H9l-.9 1.1a3.2 3.2 0 0 1-5.7-2.5l.7-4A4.5 4.5 0 0 1 7.5 7Z" />
+    </>
+  ),
+  palette: (
+    <>
+      <path d="M12 3a9 9 0 1 0 0 18c1.4 0 2-1 2-1.8 0-1.6-1.6-1.7-1.6-3 0-1 .8-1.7 1.9-1.7H16a5 5 0 0 0 5-5c0-3.6-4-6.5-9-6.5Z" />
+      <path d="M7.5 11v.01M10 7.5v.01M14.5 7.5v.01" />
+    </>
+  ),
+  plane: <path d="M10.5 20.5 12 15l7.5-2.2a2 2 0 0 0 0-3.8L4 4l2.5 6.5L4 17l6.5-3.5" />,
+  utensils: (
+    <>
+      <path d="M6 3v8a2.5 2.5 0 0 0 5 0V3M8.5 11v10" />
+      <path d="M17 3c-1.7 1-2.5 3-2.5 5.5S15.3 13 17 14v7" />
+    </>
+  ),
+  heart: <path d="M12 20s-7-4.4-7-9.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7 3.1C19 15.6 12 20 12 20Z" />,
 };
 
 const FILLED: IconName[] = ['play', 'bookmarkFilled', 'sparkles'];
