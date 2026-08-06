@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import EventCard from '@/components/EventCard';
 import { getTopic, type EventItem } from '@/lib/data';
+import { eventPlatformLinks, KIND_LABEL } from '@/lib/platforms';
+import { relativeLabel } from '@/lib/datetime';
 
 interface Props {
   event: EventItem;
@@ -14,6 +16,7 @@ interface Props {
 export default function EventView({ event, related }: Props) {
   const [confirmed, setConfirmed] = useState(false);
   const topic = getTopic(event.topic);
+  const platformLinks = eventPlatformLinks(event);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${event.coords.lat},${event.coords.lng}`;
 
   return (
@@ -53,11 +56,41 @@ export default function EventView({ event, related }: Props) {
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                   <p className="text-xs uppercase tracking-wide text-zinc-500">Quando</p>
                   <p className="mt-1 text-sm font-medium text-zinc-100">{event.date}</p>
+                  {event.startsAt && (
+                    <p className="text-sm font-medium text-clay-300">{relativeLabel(event.startsAt, event.endsAt)}</p>
+                  )}
                   <p className="text-sm text-zinc-400">Entrada: {event.price}</p>
                 </div>
               </div>
 
               <p className="text-base leading-relaxed text-zinc-200">{event.description}</p>
+
+              {/* Plataformas externas: ingressos, música e vídeo */}
+              <div className="space-y-3 rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4">
+                {(['ingresso', 'musica', 'video'] as const).map((kind) => {
+                  const links = platformLinks.filter((l) => l.kind === kind);
+                  if (!links.length) return null;
+                  return (
+                    <div key={kind} className="flex flex-wrap items-center gap-2">
+                      <span className="w-24 shrink-0 text-xs uppercase tracking-wide text-zinc-500">{KIND_LABEL[kind]}</span>
+                      {links.map((l) => (
+                        <a
+                          key={l.label}
+                          href={l.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-200 transition hover:border-clay-500 hover:text-clay-300"
+                        >
+                          {l.icon} {l.label}
+                        </a>
+                      ))}
+                    </div>
+                  );
+                })}
+                <p className="text-[11px] text-zinc-500">
+                  Buscas abertas nas plataformas parceiras — a disponibilidade de ingressos é de responsabilidade de cada site.
+                </p>
+              </div>
 
               <div className="flex flex-wrap gap-3 pt-2">
                 <button

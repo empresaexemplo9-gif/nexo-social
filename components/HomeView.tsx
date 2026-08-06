@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import ContentCard from '@/components/ContentCard';
 import TopicGrid from '@/components/TopicGrid';
 import EventList from '@/components/EventList';
+import Recommendations from '@/components/Recommendations';
 import { usePreferences } from '@/lib/preferences';
 import { TOPICS, topicLabel, type CategorySlug, type ContentItem, type EventItem } from '@/lib/data';
 
@@ -34,10 +35,6 @@ export default function HomeView({ contents, events }: Props) {
   const filteredContents =
     selectedCategory === 'todos' ? orderedContents : orderedContents.filter((c) => c.topic === selectedCategory);
 
-  const forYou = useMemo(
-    () => contents.filter((c) => interests.includes(c.topic)).slice(0, 4),
-    [interests, contents],
-  );
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,23 +109,8 @@ export default function HomeView({ contents, events }: Props) {
           </section>
         )}
 
-        {/* Para você */}
-        {ready && forYou.length > 0 && (
-          <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-zinc-50">Para você</h2>
-                <p className="text-sm text-zinc-300">Baseado nos seus interesses: {interests.map(topicLabel).join(', ')}</p>
-              </div>
-              <Link href="/questionario" className="text-xs text-emerald-400 hover:underline">Ajustar</Link>
-            </div>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {forYou.map((item) => (
-                <ContentCard key={item.id} item={item} />
-              ))}
-            </div>
-          </section>
-        )}
+        {/* Indicações automáticas (algoritmo: perfil + proximidade + tempo) */}
+        <Recommendations events={events} contents={contents} />
 
         {/* Temas */}
         <section id="temas" className="scroll-mt-20 space-y-6">

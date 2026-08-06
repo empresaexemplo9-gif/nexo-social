@@ -29,6 +29,22 @@ export function haversineKm(a: LatLng, b: LatLng): number {
 }
 
 /**
+ * Ordena itens geolocalizados por proximidade de uma origem, anexando a
+ * distância calculada. Não filtra — apenas ordena.
+ */
+export function sortByProximity<T extends { coords: LatLng }>(
+  items: T[],
+  origin: LatLng | null,
+): (T & { distanceKm: number | null })[] {
+  const list = items.map((item) => ({
+    ...item,
+    distanceKm: origin ? haversineKm(origin, item.coords) : null,
+  }));
+  if (!origin) return list;
+  return list.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+}
+
+/**
  * Formata uma distância (km) de forma amigável para o usuário.
  */
 export function formatDistance(km: number): string {

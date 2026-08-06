@@ -34,6 +34,7 @@ export async function POST() {
     const rows = EVENTS.map((e) => ({
       title: e.title, category: e.topic, event_date: e.date, city: e.city, location: e.venue,
       lat: e.coords.lat, lng: e.coords.lng, image_url: e.imageUrl, description: e.description, price: e.price,
+      starts_at: e.startsAt ?? null, ends_at: e.endsAt ?? null, tags: e.tags ?? null, artist: e.artist ?? null,
     }));
     const { error } = await sb.from('events').insert(rows);
     result.events = error ? `erro: ${error.message}` : rows.length;
