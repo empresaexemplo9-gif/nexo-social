@@ -49,6 +49,17 @@ Abra http://localhost:3000.
 | `POST` | `/api/admin/bom-dia` | Publica curadoria Bom Dia | Admin |
 | `POST` | `/api/seed` | Popula o banco | Admin |
 
+## 🔌 Integrações externas (opcional)
+
+O app já funciona sem nenhuma chave de terceiros: as indicações usam o catálogo
+próprio + **links de busca** para Sympla, Eventbrite, Ticketmaster, Bandsintown,
+Spotify, YouTube Music, Deezer e YouTube.
+
+Para importar eventos e mídias automaticamente, veja o passo a passo em
+**[`docs/integracoes.md`](docs/integracoes.md)** — quais APIs são gratuitas,
+como obter cada chave e quais não valem a pena (a busca pública do Eventbrite
+foi descontinuada e a do Sympla é restrita ao organizador).
+
 ## 🧱 Arquitetura
 
 - `app/` — páginas (server components) + Route Handlers (`app/api/*`).
