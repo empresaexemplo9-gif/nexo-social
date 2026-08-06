@@ -3,6 +3,7 @@ import './globals.css';
 import { Fraunces, Space_Grotesk } from 'next/font/google';
 import { PreferencesProvider } from '@/lib/preferences';
 import { AgendaProvider } from '@/lib/agenda';
+import { ReadingProvider } from '@/lib/reading';
 
 // Fraunces: serif "old style" com calor vintage — usada nos títulos.
 const display = Fraunces({
@@ -32,7 +33,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={`${display.variable} ${sans.variable}`}>
       <body className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
         <PreferencesProvider>
-          <AgendaProvider>{children}</AgendaProvider>
+          <AgendaProvider>
+            <ReadingProvider>{children}</ReadingProvider>
+          </AgendaProvider>
         </PreferencesProvider>
       </body>
     </html>

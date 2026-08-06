@@ -14,6 +14,7 @@ const links = [
   { href: '/', label: 'Início', icon: 'calendar' as const },
   { href: '/agenda', label: 'Compromissos', icon: 'calendarCheck' as const },
   { href: '/interesses', label: 'Interesses', icon: 'sparkles' as const },
+  { href: '/livros', label: 'Livros', icon: 'library' as const },
   { href: '/bom-dia', label: 'Bom Dia', icon: 'sunrise' as const },
   { href: '/questionario', label: 'Questionário', icon: 'compass' as const },
 ];
@@ -79,6 +80,13 @@ export default function Navbar() {
                       className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-300 transition hover:bg-zinc-800"
                     >
                       <Icon name="sparkles" size={17} /> Interesses e hobbies
+                    </Link>
+                    <Link
+                      href="/livros"
+                      onClick={() => setTopicsOpen(false)}
+                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-300 transition hover:bg-zinc-800"
+                    >
+                      <Icon name="library" size={17} /> Livros que li esse ano
                     </Link>
                     <div className="my-1 h-px bg-zinc-800" />
                     <div className="max-h-[60vh] overflow-y-auto">

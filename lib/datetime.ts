@@ -18,6 +18,19 @@ const timeFmt = new Intl.DateTimeFormat('pt-BR', {
 
 const weekdayFmt = new Intl.DateTimeFormat('pt-BR', { timeZone: TZ, weekday: 'short' });
 
+const partsFmt = new Intl.DateTimeFormat('en-CA', {
+  timeZone: TZ,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+
+/** Ano, mês e dia no fuso de São Paulo — base das seleções semanais/mensais. */
+export function saoPauloParts(d: Date = new Date()): { year: number; month: number; day: number } {
+  const [year, month, day] = partsFmt.format(d).split('-').map(Number);
+  return { year, month, day };
+}
+
 /** "12 de ago • 19:00" */
 export function formatEventDate(iso: string): string {
   const d = new Date(iso);

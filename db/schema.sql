@@ -449,3 +449,61 @@ ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS music_genres TEXT[] DEFAUL
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS film_genres TEXT[] DEFAULT '{}';
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS book_genres TEXT[] DEFAULT '{}';
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS hobbies TEXT[] DEFAULT '{}';
+
+-- ---------------------------------------------------------------------------
+-- Livros que li esse ano + audiolivros
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS reading_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  author TEXT,
+  -- 'livro' ou 'audiolivro'
+  kind TEXT NOT NULL DEFAULT 'livro',
+  -- 'quero-ler' | 'lendo' | 'lido'
+  status TEXT NOT NULL DEFAULT 'lido',
+  source TEXT,
+  external_id TEXT,
+  url TEXT,
+  cover_url TEXT,
+  rating SMALLINT CHECK (rating IS NULL OR (rating >= 1 AND rating <= 5)),
+  notes TEXT,
+  started_at DATE,
+  finished_at DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Migrações para bases que já tinham a tabela.
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'livro';
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'lido';
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS source TEXT;
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS external_id TEXT;
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS url TEXT;
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS cover_url TEXT;
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS rating SMALLINT;
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS started_at DATE;
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS finished_at DATE;
+ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS reading_log_user_idx ON reading_log (user_id, finished_at DESC);
+-- Evita duplicar a mesma obra vinda da mesma fonte.
+CREATE UNIQUE INDEX IF NOT EXISTS reading_log_unique_source
+  ON reading_log (user_id, source, external_id)
+  WHERE source IS NOT NULL AND external_id IS NOT NULL;
+
+ALTER TABLE reading_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS reading_log_select ON reading_log;
+CREATE POLICY reading_log_select ON reading_log FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS reading_log_insert ON reading_log;
+CREATE POLICY reading_log_insert ON reading_log FOR INSERT WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS reading_log_update ON reading_log;
+CREATE POLICY reading_log_update ON reading_log FOR UPDATE USING (user_id = auth.uid());
+DROP POLICY IF EXISTS reading_log_delete ON reading_log;
+CREATE POLICY reading_log_delete ON reading_log FOR DELETE USING (user_id = auth.uid());
+
+-- Meta anual de leitura (ex.: 12 livros em 2026).
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS reading_goal SMALLINT DEFAULT 12;
