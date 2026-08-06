@@ -293,3 +293,152 @@ DROP POLICY IF EXISTS subscribers_insert ON subscribers;
 CREATE POLICY subscribers_insert ON subscribers FOR INSERT WITH CHECK (TRUE);
 DROP POLICY IF EXISTS subscribers_select ON subscribers;
 CREATE POLICY subscribers_select ON subscribers FOR SELECT USING (is_platform_admin());
+
+-- =============================================================================
+-- AGENDA SOCIAL — compromissos, convites, contatos, recados e notificações
+-- =============================================================================
+
+-- Compromissos criados pelo usuário (podem ou não referenciar um evento).
+CREATE TABLE IF NOT EXISTS appointments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  starts_at TIMESTAMPTZ NOT NULL,
+  ends_at TIMESTAMPTZ,
+  location TEXT,
+  city TEXT,
+  event_id UUID REFERENCES events(id) ON DELETE SET NULL,
+  is_group BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS appointments_owner_idx ON appointments (owner_id, starts_at);
+
+-- Participantes: cada convidado apenas CONFIRMA ou DESMARCA.
+CREATE TABLE IF NOT EXISTS appointment_participants (
+  appointment_id UUID NOT NULL REFERENCES appointments(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'confirmado', 'recusado')),
+  responded_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  PRIMARY KEY (appointment_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS participants_user_idx ON appointment_participants (user_id);
+
+-- Contatos ("adicionar usuários à minha agenda").
+CREATE TABLE IF NOT EXISTS connections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  contact_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'aceito', 'recusado')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, contact_id),
+  CHECK (user_id <> contact_id)
+);
+
+-- Caixa de recados.
+CREATE TABLE IF NOT EXISTS messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  from_user UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  to_user UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  appointment_id UUID REFERENCES appointments(id) ON DELETE SET NULL,
+  body TEXT NOT NULL,
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS messages_to_idx ON messages (to_user, created_at DESC);
+
+-- Notificações.
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT,
+  link TEXT,
+  appointment_id UUID REFERENCES appointments(id) ON DELETE CASCADE,
+  actor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  read_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS notifications_user_idx ON notifications (user_id, created_at DESC);
+
+-- --- Helpers SECURITY DEFINER (evitam recursão entre as políticas) ----------
+CREATE OR REPLACE FUNCTION is_appointment_owner(p_appointment UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM appointments WHERE id = p_appointment AND owner_id = auth.uid());
+$$;
+
+CREATE OR REPLACE FUNCTION is_appointment_participant(p_appointment UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM appointment_participants
+    WHERE appointment_id = p_appointment AND user_id = auth.uid()
+  );
+$$;
+
+-- Busca um usuário pelo e-mail para convidar, expondo apenas o mínimo.
+CREATE OR REPLACE FUNCTION find_profile_by_email(p_email TEXT)
+RETURNS TABLE (id UUID, full_name TEXT, email TEXT)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT p.id, p.full_name, p.email
+  FROM profiles p
+  WHERE lower(p.email) = lower(trim(p_email))
+  LIMIT 1;
+$$;
+
+-- --- RLS --------------------------------------------------------------------
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE appointment_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS appointments_select ON appointments;
+CREATE POLICY appointments_select ON appointments FOR SELECT
+  USING (owner_id = auth.uid() OR is_appointment_participant(id));
+DROP POLICY IF EXISTS appointments_insert ON appointments;
+CREATE POLICY appointments_insert ON appointments FOR INSERT WITH CHECK (owner_id = auth.uid());
+DROP POLICY IF EXISTS appointments_update ON appointments;
+CREATE POLICY appointments_update ON appointments FOR UPDATE USING (owner_id = auth.uid());
+DROP POLICY IF EXISTS appointments_delete ON appointments;
+CREATE POLICY appointments_delete ON appointments FOR DELETE USING (owner_id = auth.uid());
+
+DROP POLICY IF EXISTS participants_select ON appointment_participants;
+CREATE POLICY participants_select ON appointment_participants FOR SELECT
+  USING (user_id = auth.uid() OR is_appointment_owner(appointment_id) OR is_appointment_participant(appointment_id));
+DROP POLICY IF EXISTS participants_insert ON appointment_participants;
+CREATE POLICY participants_insert ON appointment_participants FOR INSERT
+  WITH CHECK (is_appointment_owner(appointment_id));
+-- Cada convidado responde apenas a própria participação (confirmar/desmarcar).
+DROP POLICY IF EXISTS participants_update ON appointment_participants;
+CREATE POLICY participants_update ON appointment_participants FOR UPDATE
+  USING (user_id = auth.uid() OR is_appointment_owner(appointment_id));
+DROP POLICY IF EXISTS participants_delete ON appointment_participants;
+CREATE POLICY participants_delete ON appointment_participants FOR DELETE
+  USING (user_id = auth.uid() OR is_appointment_owner(appointment_id));
+
+DROP POLICY IF EXISTS connections_select ON connections;
+CREATE POLICY connections_select ON connections FOR SELECT
+  USING (user_id = auth.uid() OR contact_id = auth.uid());
+DROP POLICY IF EXISTS connections_insert ON connections;
+CREATE POLICY connections_insert ON connections FOR INSERT WITH CHECK (user_id = auth.uid());
+DROP POLICY IF EXISTS connections_update ON connections;
+CREATE POLICY connections_update ON connections FOR UPDATE
+  USING (user_id = auth.uid() OR contact_id = auth.uid());
+DROP POLICY IF EXISTS connections_delete ON connections;
+CREATE POLICY connections_delete ON connections FOR DELETE
+  USING (user_id = auth.uid() OR contact_id = auth.uid());
+
+DROP POLICY IF EXISTS messages_select ON messages;
+CREATE POLICY messages_select ON messages FOR SELECT
+  USING (from_user = auth.uid() OR to_user = auth.uid());
+DROP POLICY IF EXISTS messages_insert ON messages;
+CREATE POLICY messages_insert ON messages FOR INSERT WITH CHECK (from_user = auth.uid());
+DROP POLICY IF EXISTS messages_update ON messages;
+CREATE POLICY messages_update ON messages FOR UPDATE USING (to_user = auth.uid());
+
+DROP POLICY IF EXISTS notifications_select ON notifications;
+CREATE POLICY notifications_select ON notifications FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS notifications_update ON notifications;
+CREATE POLICY notifications_update ON notifications FOR UPDATE USING (user_id = auth.uid());

@@ -24,7 +24,7 @@ const sans = Space_Grotesk({
 export const metadata = {
   title: 'nexo.social — sua agenda pessoal',
   description: 'Sua agenda pessoal de eventos e conteúdos, perto de você.',
-  icons: { icon: '/logo.png', apple: '/logo.png' },
+  icons: { icon: '/logo.svg', apple: '/logo.png' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

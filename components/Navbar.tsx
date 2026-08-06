@@ -2,15 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import Icon from './icons';
+import LogoMark from './Logo';
+import NotificationsBell from './NotificationsBell';
 import { supabase } from '@/lib/supabase';
 import { isPlatformAdmin } from '@/lib/auth';
 import { TOPICS } from '@/lib/data';
 
 const links = [
-  { href: '/', label: 'Agenda', icon: 'calendar' as const },
+  { href: '/', label: 'Início', icon: 'calendar' as const },
+  { href: '/agenda', label: 'Compromissos', icon: 'calendarCheck' as const },
   { href: '/#temas', label: 'Nichos', icon: 'compass' as const },
   { href: '/bom-dia', label: 'Bom Dia', icon: 'sunrise' as const },
   { href: '/questionario', label: 'Meus temas', icon: 'sparkles' as const },
@@ -47,10 +49,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="relative block h-9 w-9 shrink-0 overflow-hidden rounded-xl ring-1 ring-zinc-800">
-            {/* A arte enviada contém o logotipo completo; recortamos o monograma. */}
-            <Image src="/logo.png" alt="nexo.social" fill sizes="36px" priority className="scale-[2.45] object-cover" style={{ objectPosition: '51% 40%' }} />
-          </span>
+          <LogoMark size={34} />
           <span className="text-lg font-semibold tracking-tight text-zinc-50">
             nexo<span className="text-emerald-400">.social</span>
           </span>
@@ -101,6 +100,7 @@ export default function Navbar() {
         <div className="hidden items-center gap-2 md:flex">
           {email ? (
             <>
+              <NotificationsBell />
               {admin && (
                 <Link
                   href="/admin"
