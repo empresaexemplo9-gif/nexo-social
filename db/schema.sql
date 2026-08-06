@@ -145,9 +145,17 @@ AS $$
 $$;
 
 -- Tenant do usuário autenticado.
+--
+-- SECURITY DEFINER é OBRIGATÓRIO aqui: esta função lê `profiles`, e as políticas
+-- de RLS de `profiles`/`tenants` chamam esta função. Sem SECURITY DEFINER, a
+-- leitura interna reaplica a política, que chama a função de novo →
+-- "infinite recursion detected in policy" (Postgres 42P17), cujo erro chega ao
+-- cliente com corpo vazio. Como DEFINER, a função roda como dona da tabela e
+-- ignora o RLS, encerrando o ciclo.
 CREATE OR REPLACE FUNCTION current_tenant_id()
 RETURNS UUID
-LANGUAGE sql STABLE
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public
 AS $$
   SELECT tenant_id FROM profiles WHERE id = auth.uid();
 $$;
@@ -233,7 +241,8 @@ CREATE POLICY tenants_update ON tenants FOR UPDATE
 -- Profiles: cada um vê/edita o próprio; admin vê todos.
 DROP POLICY IF EXISTS profiles_select ON profiles;
 CREATE POLICY profiles_select ON profiles FOR SELECT
-  USING (is_platform_admin() OR id = auth.uid() OR tenant_id = current_tenant_id());
+  -- `id = auth.uid()` primeiro: resolve o caso comum sem tocar em função alguma.
+  USING (id = auth.uid() OR is_platform_admin() OR tenant_id = current_tenant_id());
 DROP POLICY IF EXISTS profiles_update ON profiles;
 CREATE POLICY profiles_update ON profiles FOR UPDATE
   USING (is_platform_admin() OR id = auth.uid());
