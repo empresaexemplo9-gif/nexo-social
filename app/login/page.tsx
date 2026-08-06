@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { ADMIN_EMAIL, isPlatformAdmin, tenantSlug, type AccountType } from '@/lib/auth';
+import { ADMIN_EMAIL, isPlatformAdmin, type AccountType } from '@/lib/auth';
 import { describeAuthError } from '@/lib/auth-errors';
 
 export default function LoginPage() {
@@ -31,22 +31,21 @@ export default function LoginPage() {
     try {
       if (isRegistering) {
         const tenantName = accountType === 'organizacao' ? organizationName : fullName;
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              account_type: accountType,
-              tenant_name: tenantName,
-              tenant_slug: tenantSlug(tenantName || email),
-              is_platform_admin: isPlatformAdmin(email),
-            },
-          },
+        // A conta é criada pelo servidor (já confirmada) — não depende do envio
+        // de e-mail, que é limitado no plano gratuito do Supabase.
+        const res = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, fullName, accountType, tenantName }),
         });
-        if (error) throw error;
-        setMessage('✓ Conta criada! Verifique seu e-mail para confirmar o cadastro e faça login.');
-        setIsRegistering(false);
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(json.error || 'Falha ao criar a conta.');
+
+        // Já entra com a conta recém-criada.
+        setMessage('✓ Conta criada! Entrando…');
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) throw signInError;
+        window.location.href = isPlatformAdmin(email) ? '/admin' : '/conta';
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

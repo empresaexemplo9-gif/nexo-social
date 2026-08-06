@@ -51,7 +51,15 @@ async function checkTables() {
     tables.map(async (t) => {
       const { error, count } = await sb.from(t).select('*', { count: 'exact', head: true });
       if (error) {
-        out[t] = /does not exist|schema cache/i.test(error.message) ? 'AUSENTE — rode o db/schema.sql' : `erro: ${error.message}`;
+        const msg = error.message || error.details || error.hint || '(sem mensagem)';
+        const code = error.code ? ` [${error.code}]` : '';
+        if (/does not exist|schema cache/i.test(msg) || error.code === '42P01') {
+          out[t] = 'AUSENTE — rode o db/schema.sql';
+        } else if (error.code === '42P17' || /infinite recursion/i.test(msg)) {
+          out[t] = 'RECURSÃO no RLS — rode o db/schema.sql atualizado (current_tenant_id como SECURITY DEFINER)';
+        } else {
+          out[t] = `erro${code}: ${msg}`;
+        }
       } else {
         out[t] = `ok (${count ?? 0} linhas)`;
       }
