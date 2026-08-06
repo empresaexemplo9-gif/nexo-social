@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin, tenantSlug, type AccountType } from '@/lib/auth';
+import { describeAuthError } from '@/lib/auth-errors';
 
 export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -53,7 +54,9 @@ export default function LoginPage() {
         window.location.href = isPlatformAdmin(email) ? '/admin' : '/conta';
       }
     } catch (err: any) {
-      setMessage(`❌ ${err.message || 'Falha na autenticação'}`);
+      // Loga o objeto completo no console do navegador para depuração fina.
+      console.error('[auth] falha:', err);
+      setMessage(`❌ ${describeAuthError(err)}`);
     } finally {
       setLoading(false);
     }

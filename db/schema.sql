@@ -159,31 +159,48 @@ $$;
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_tenant_id UUID;
   v_slug TEXT;
 BEGIN
-  v_slug := COALESCE(NULLIF(NEW.raw_user_meta_data ->> 'tenant_slug', ''), 'tenant-' || substr(NEW.id::text, 1, 8));
+  -- IMPORTANTE: este gatilho roda dentro da transação que cria o usuário em
+  -- auth.users. Qualquer exceção aqui aborta o cadastro inteiro e o Supabase
+  -- responde "Database error saving new user". Por isso todo o provisionamento
+  -- fica dentro de um bloco com tratamento de exceção: se algo falhar, o
+  -- usuário AINDA É CRIADO (o perfil pode ser provisionado depois pelo app).
+  BEGIN
+    -- Slug único: usa o enviado no cadastro e, em caso de colisão, sufixa com
+    -- parte do id do usuário.
+    v_slug := COALESCE(NULLIF(NEW.raw_user_meta_data ->> 'tenant_slug', ''), 'tenant');
+    IF EXISTS (SELECT 1 FROM tenants WHERE slug = v_slug) THEN
+      v_slug := v_slug || '-' || substr(NEW.id::text, 1, 8);
+    END IF;
 
-  INSERT INTO tenants (name, slug, account_type, owner_id)
-  VALUES (
-    COALESCE(NEW.raw_user_meta_data ->> 'tenant_name', NEW.email),
-    v_slug,
-    COALESCE(NEW.raw_user_meta_data ->> 'account_type', 'pessoal'),
-    NEW.id
-  )
-  RETURNING id INTO v_tenant_id;
+    INSERT INTO tenants (name, slug, account_type, owner_id)
+    VALUES (
+      COALESCE(NULLIF(NEW.raw_user_meta_data ->> 'tenant_name', ''), NEW.email),
+      v_slug,
+      COALESCE(NULLIF(NEW.raw_user_meta_data ->> 'account_type', ''), 'pessoal'),
+      NEW.id
+    )
+    RETURNING id INTO v_tenant_id;
 
-  INSERT INTO profiles (id, tenant_id, full_name, email, role, is_platform_admin)
-  VALUES (
-    NEW.id,
-    v_tenant_id,
-    NEW.raw_user_meta_data ->> 'full_name',
-    NEW.email,
-    'owner',
-    NEW.email = 'thiagohccarvalho00@gmail.com'
-  );
+    INSERT INTO profiles (id, tenant_id, full_name, email, role, is_platform_admin)
+    VALUES (
+      NEW.id,
+      v_tenant_id,
+      NEW.raw_user_meta_data ->> 'full_name',
+      NEW.email,
+      'owner',
+      NEW.email = 'thiagohccarvalho00@gmail.com'
+    )
+    ON CONFLICT (id) DO NOTHING;
+  EXCEPTION WHEN OTHERS THEN
+    -- Não derruba o cadastro: apenas registra o motivo nos logs do Postgres.
+    RAISE WARNING 'handle_new_user falhou para % (%): %', NEW.email, NEW.id, SQLERRM;
+  END;
 
   RETURN NEW;
 END;
