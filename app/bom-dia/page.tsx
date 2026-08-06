@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import Icon from '@/components/icons';
 import { fetchBomDia } from '@/lib/repo';
 
 export const revalidate = 300;
@@ -32,7 +33,7 @@ export default async function BomDiaPage() {
   const bomDia = await fetchBomDia();
 
   return (
-    <div className="min-h-screen bg-grain font-sans text-zinc-100 antialiased">
+    <div className="min-h-screen font-sans text-zinc-100 antialiased">
       <Navbar />
       <main className="mx-auto max-w-5xl space-y-14 px-4 py-10 sm:px-6 lg:px-8">
         {/* Hero */}
@@ -42,7 +43,7 @@ export default async function BomDiaPage() {
             <span className="mx-2">/</span>
             <span className="text-clay-300">Bom Dia</span>
           </nav>
-          <div className="text-5xl">☀️</div>
+          <div className="text-clay-300"><Icon name="sunrise" size={44} /></div>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">
             Módulo <span className="italic text-clay-300">Bom Dia</span>
           </h1>
@@ -50,21 +51,21 @@ export default async function BomDiaPage() {
             Comece o dia com intenção: uma trilha sonora para focar, uma receita rápida e um hábito para clarear a mente.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
-            <a href="#trilha" className="rounded-full border border-emerald-800/50 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium text-emerald-400">🎵 Trilha</a>
-            <a href="#receita" className="rounded-full border border-clay-800/50 bg-clay-950/40 px-4 py-1.5 text-xs font-medium text-clay-300">🥑 Nutrição</a>
-            <a href="#habito" className="rounded-full border border-emerald-800/50 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium text-emerald-400">💡 Hábitos</a>
+            <a href="#trilha" className="rounded-full border border-emerald-800/50 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium text-emerald-400"><span className="inline-flex items-center gap-1.5"><Icon name="headphones" size={14} /> Trilha</span></a>
+            <a href="#receita" className="rounded-full border border-clay-800/50 bg-clay-950/40 px-4 py-1.5 text-xs font-medium text-clay-300"><span className="inline-flex items-center gap-1.5"><Icon name="leaf" size={14} /> Nutrição</span></a>
+            <a href="#habito" className="rounded-full border border-emerald-800/50 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium text-emerald-400"><span className="inline-flex items-center gap-1.5"><Icon name="bulb" size={14} /> Hábitos</span></a>
           </div>
         </section>
 
         {/* Trilha */}
         <section id="trilha" className="scroll-mt-24 space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold text-zinc-50">🎵 Trilha Matinal</h2>
+            <h2 className="text-2xl font-semibold text-zinc-50"><span className="inline-flex items-center gap-2"><Icon name="headphones" size={20} className="text-emerald-400" /> Trilha Matinal</span></h2>
             <p className="text-sm text-zinc-300">{bomDia.soundtrackTitle} — {bomDia.soundtrackArtist} • 45 min</p>
           </div>
           <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
             <div className="flex items-center gap-4 border-b border-zinc-800 bg-gradient-to-r from-emerald-950/40 to-zinc-900 p-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-2xl text-zinc-950">▶</div>
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-zinc-950"><Icon name="play" size={26} /></div>
               <div>
                 <p className="text-lg font-semibold text-zinc-50">{bomDia.soundtrackTitle}</p>
                 <p className="text-xs text-zinc-400">Playlist do dia • {tracks.length} faixas</p>
@@ -90,7 +91,7 @@ export default async function BomDiaPage() {
         {/* Receitas */}
         <section id="receita" className="scroll-mt-24 space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold text-zinc-50">🥑 Nutrição Rápida</h2>
+            <h2 className="text-2xl font-semibold text-zinc-50"><span className="inline-flex items-center gap-2"><Icon name="leaf" size={20} className="text-clay-300" /> Nutrição Rápida</span></h2>
             <p className="text-sm text-zinc-300">Receitas de até 10 minutos para um café da manhã equilibrado.</p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -112,7 +113,7 @@ export default async function BomDiaPage() {
         {/* Hábitos */}
         <section id="habito" className="scroll-mt-24 space-y-6">
           <div>
-            <h2 className="text-2xl font-semibold text-zinc-50">💡 Hábitos &amp; Foco</h2>
+            <h2 className="text-2xl font-semibold text-zinc-50"><span className="inline-flex items-center gap-2"><Icon name="bulb" size={20} className="text-emerald-400" /> Hábitos &amp; Foco</span></h2>
             <p className="text-sm text-zinc-300">Pequenos rituais para uma manhã mais clara e produtiva.</p>
           </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">

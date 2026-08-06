@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTopic, type EventItem } from '@/lib/data';
 import { formatDistance } from '@/lib/geo';
 import { relativeLabel } from '@/lib/datetime';
+import Icon from './icons';
 
 interface Props {
   event: EventItem;
@@ -35,7 +36,7 @@ export default function EventCard({ event, distanceKm }: Props) {
             {event.title}
           </h3>
           <p className="mt-1 text-xs text-zinc-400">
-            📍 {event.venue} — {event.city}
+            <Icon name="mapPin" size={13} className="inline -mt-0.5 mr-0.5" />{event.venue} — {event.city}
             {typeof distanceKm === 'number' && (
               <span className="ml-1 font-medium text-emerald-400">• a {formatDistance(distanceKm)}</span>
             )}

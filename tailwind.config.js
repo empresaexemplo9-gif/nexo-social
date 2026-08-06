@@ -1,9 +1,7 @@
 /** @type {import('tailwindcss').Config} */
-// Paleta "vintage-futurista" acolhedora do nexo-social.
-// Sobrescrevemos as escalas base do Tailwind para reaproveitar as classes já
-// usadas no app (zinc = neutros quentes de areia/café; emerald = teal retrô da
-// marca). Os acentos por tema (fuchsia/rose/amber/sky) permanecem como pops
-// vibrantes sobre o fundo quente.
+// Paleta derivada da logo: monograma teal sobre quase-preto.
+// Sobrescrevemos as escalas base para reaproveitar as classes já usadas
+// (zinc = neutros quentes e macios; emerald = teal da marca).
 module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
@@ -17,55 +15,57 @@ module.exports = {
         display: ['var(--font-display)', 'ui-serif', 'Georgia', 'serif'],
       },
       colors: {
-        // Neutros quentes (areia → café torrado)
+        // Neutros: carvão levemente quente — acolhedor sem virar marrom.
         zinc: {
-          50: '#faf7f2',
-          100: '#f3ece0',
-          200: '#e5d8c4',
-          300: '#d1bda0',
-          400: '#b39b7b',
-          500: '#94795b',
-          600: '#755e45',
-          700: '#574636',
-          800: '#3a2f24',
-          900: '#241d15',
-          950: '#17120c',
+          50: '#faf8f6',
+          100: '#f0ece8',
+          200: '#ded7d1',
+          300: '#c3b9b1',
+          400: '#9e938b',
+          500: '#7c716a',
+          600: '#5f5651',
+          700: '#463f3b',
+          800: '#2f2a27',
+          900: '#1c1a18',
+          950: '#121110',
         },
-        // Marca — teal-menta retrô (futurista, legível sobre o fundo quente)
+        // Marca — teal do monograma da logo.
         emerald: {
-          50: '#eafaf5',
-          100: '#cdf3e7',
-          200: '#9fe8d4',
-          300: '#66d7bd',
-          400: '#34c3a4',
-          500: '#14a88a',
-          600: '#0b8a72',
-          700: '#0b6d5b',
-          800: '#0d564a',
-          900: '#0e463d',
-          950: '#042b25',
+          50: '#e9faf8',
+          100: '#c8f2ef',
+          200: '#94e5e0',
+          300: '#5bd2cd',
+          400: '#2bb8b2',
+          500: '#159c99',
+          600: '#0f7f7d',
+          700: '#0d6664',
+          800: '#0c5150',
+          900: '#0b4241',
+          950: '#052624',
         },
-        // Acento quente extra (terracota/argila) para brilhos e detalhes
+        // Acento quente (argila suave) — só para toques de calor.
         clay: {
-          50: '#fdf3ee',
-          100: '#fadfd2',
-          200: '#f4bda5',
-          300: '#ee9a78',
-          400: '#e8845a',
-          500: '#db6a3f',
-          600: '#c1542c',
-          700: '#a04324',
-          800: '#7d3520',
-          900: '#5f2a1b',
-          950: '#33140c',
+          50: '#fdf4f0',
+          100: '#fae3d9',
+          200: '#f3c4b1',
+          300: '#e9a184',
+          400: '#e2825f',
+          500: '#d16843',
+          600: '#b45333',
+          700: '#91422a',
+          800: '#6f3524',
+          900: '#552a1e',
+          950: '#2e140d',
         },
+      },
+      borderRadius: {
+        '4xl': '2rem',
       },
       boxShadow: {
-        glow: '0 0 0 1px rgba(52,195,164,0.15), 0 8px 40px -12px rgba(52,195,164,0.35)',
-        warm: '0 20px 60px -20px rgba(219,106,63,0.35)',
-      },
-      backgroundImage: {
-        'grain': "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E\")",
+        // Sombras suaves = sensação de aconchego (nada de contorno duro).
+        soft: '0 2px 8px -2px rgba(0,0,0,0.4), 0 12px 32px -12px rgba(0,0,0,0.6)',
+        glow: '0 0 0 1px rgba(43,184,178,0.16), 0 10px 40px -14px rgba(21,156,153,0.45)',
+        warm: '0 18px 50px -22px rgba(226,130,95,0.35)',
       },
     },
   },

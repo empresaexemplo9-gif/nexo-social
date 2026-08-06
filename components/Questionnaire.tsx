@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { usePreferences, type Frequency } from '@/lib/preferences';
 import { CITIES, TOPICS, type CategorySlug } from '@/lib/data';
 import { haversineKm } from '@/lib/geo';
+import Icon from './icons';
 
 const FREQUENCIES: { value: Frequency; label: string; hint: string }[] = [
   { value: 'diaria', label: 'Diária', hint: 'Curadoria fresca todo dia' },
@@ -109,7 +110,7 @@ export default function Questionnaire() {
                       active ? `${t.accent.border} ${t.accent.bg}` : 'border-zinc-800 bg-zinc-950 hover:border-zinc-700'
                     }`}
                   >
-                    <span className="text-2xl">{t.icon}</span>
+                    <span className={`mt-0.5 ${t.accent.text}`}><Icon name={t.icon} size={22} /></span>
                     <span>
                       <span className="block text-sm font-semibold text-white">{t.label}</span>
                       <span className="mt-0.5 block text-xs text-zinc-400">{t.tagline}</span>
@@ -138,7 +139,7 @@ export default function Questionnaire() {
               disabled={detecting}
               className="w-full rounded-2xl border border-emerald-800/60 bg-emerald-950/40 px-4 py-3 text-sm font-medium text-emerald-400 transition hover:bg-emerald-950/70 disabled:opacity-60"
             >
-              {detecting ? 'Detectando…' : '📍 Detectar minha cidade automaticamente'}
+              {detecting ? 'Detectando…' : 'Detectar minha cidade automaticamente'}
             </button>
             {detectMsg && <p className="text-xs text-zinc-400">{detectMsg}</p>}
             <div>

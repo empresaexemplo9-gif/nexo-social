@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import EventList from '@/components/EventList';
 import { usePreferences } from '@/lib/preferences';
 import { getTopic, type CategorySlug, type ContentItem, type EventItem } from '@/lib/data';
+import Icon from './icons';
 
 interface Props {
   slug: CategorySlug;
@@ -26,7 +27,7 @@ export default function TopicView({ slug, contents, events }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-grain font-sans text-zinc-100 antialiased">
+    <div className="min-h-screen font-sans text-zinc-100 antialiased">
       <Navbar />
       <main className="mx-auto max-w-7xl space-y-14 px-4 py-10 sm:px-6 lg:px-8">
         {/* Hero do tema */}
@@ -40,7 +41,7 @@ export default function TopicView({ slug, contents, events }: Props) {
           </nav>
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <div className="text-5xl">{topic.icon}</div>
+              <div className={topic.accent.text}><Icon name={topic.icon} size={44} /></div>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight text-zinc-50 md:text-5xl">{topic.label}</h1>
               <p className={`mt-1 text-sm font-medium ${topic.accent.text}`}>{topic.tagline}</p>
               <p className="mt-3 text-base leading-relaxed text-zinc-200">{topic.description}</p>

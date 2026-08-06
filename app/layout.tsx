@@ -2,6 +2,7 @@ import React from 'react';
 import './globals.css';
 import { Fraunces, Space_Grotesk } from 'next/font/google';
 import { PreferencesProvider } from '@/lib/preferences';
+import { AgendaProvider } from '@/lib/agenda';
 
 // Fraunces: serif "old style" com calor vintage — usada nos títulos.
 const display = Fraunces({
@@ -21,15 +22,18 @@ const sans = Space_Grotesk({
 });
 
 export const metadata = {
-  title: 'Nexo Social / Agendrap',
-  description: 'Plataforma de curadoria personalizada de conteúdo e eventos por proximidade',
+  title: 'nexo.social — sua agenda pessoal',
+  description: 'Sua agenda pessoal de eventos e conteúdos, perto de você.',
+  icons: { icon: '/logo.png', apple: '/logo.png' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR" className={`${display.variable} ${sans.variable}`}>
       <body className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
-        <PreferencesProvider>{children}</PreferencesProvider>
+        <PreferencesProvider>
+          <AgendaProvider>{children}</AgendaProvider>
+        </PreferencesProvider>
       </body>
     </html>
   );

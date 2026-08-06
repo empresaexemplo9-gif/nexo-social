@@ -16,7 +16,8 @@ export type CategorySlug =
 export interface Topic {
   slug: CategorySlug;
   label: string;
-  icon: string;
+  /** Chave do ícone SVG (components/icons.tsx) — sem emoji. */
+  icon: 'cpu' | 'music' | 'shirt' | 'masks' | 'activity';
   tagline: string;
   description: string;
   subtopics: string[];
@@ -129,7 +130,7 @@ export const TOPICS: Topic[] = [
   {
     slug: 'tecnologia',
     label: 'Tecnologia',
-    icon: '💻',
+    icon: 'cpu',
     tagline: 'Inovação, IA e o futuro do software',
     description:
       'Cobertura profunda sobre engenharia de software, inteligência artificial, hardware, segurança e o ecossistema de startups.',
@@ -145,7 +146,7 @@ export const TOPICS: Topic[] = [
   {
     slug: 'musica',
     label: 'Música',
-    icon: '🎵',
+    icon: 'music',
     tagline: 'Do analógico ao generativo',
     description:
       'Produção musical, cena independente, tecnologia de áudio e a cultura sonora que move festivais e estúdios.',
@@ -161,7 +162,7 @@ export const TOPICS: Topic[] = [
   {
     slug: 'moda',
     label: 'Moda',
-    icon: '🧥',
+    icon: 'shirt',
     tagline: 'Estética, materiais e cultura urbana',
     description:
       'Design de vestuário, moda sustentável, streetwear e a interseção entre tecnologia têxtil e comportamento.',
@@ -177,7 +178,7 @@ export const TOPICS: Topic[] = [
   {
     slug: 'cultura',
     label: 'Cultura',
-    icon: '🎭',
+    icon: 'masks',
     tagline: 'Arte, cidades e ideias',
     description:
       'Artes visuais, literatura, cinema, arquitetura e as manifestações culturais que redesenham as cidades.',
@@ -193,7 +194,7 @@ export const TOPICS: Topic[] = [
   {
     slug: 'esporte',
     label: 'Esporte',
-    icon: '🏅',
+    icon: 'activity',
     tagline: 'Performance, dados e movimento',
     description:
       'Alta performance, esportes urbanos, ciência do treino e a cultura que envolve corrida, ciclismo e coletivos.',
