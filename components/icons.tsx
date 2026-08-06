@@ -44,7 +44,11 @@ export type IconName =
   | 'palette'
   | 'plane'
   | 'utensils'
-  | 'heart';
+  | 'heart'
+  | 'star'
+  | 'starFilled'
+  | 'trash'
+  | 'library';
 
 interface Props extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -231,9 +235,23 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   heart: <path d="M12 20s-7-4.4-7-9.3A4.2 4.2 0 0 1 12 7.6a4.2 4.2 0 0 1 7 3.1C19 15.6 12 20 12 20Z" />,
+  star: <path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4L4.2 9.7l5.4-.8L12 4Z" />,
+  starFilled: <path d="m12 4 2.4 4.9 5.4.8-3.9 3.8.9 5.4-4.8-2.6-4.8 2.6.9-5.4L4.2 9.7l5.4-.8L12 4Z" />,
+  trash: (
+    <>
+      <path d="M4 7h16M10 7V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v2" />
+      <path d="M6 7v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7M10 11v6M14 11v6" />
+    </>
+  ),
+  library: (
+    <>
+      <path d="M4 4h4v16H4zM10 4h4v16h-4z" />
+      <path d="m16.5 5 3.4.9-3.1 14.2-3.4-.9" />
+    </>
+  ),
 };
 
-const FILLED: IconName[] = ['play', 'bookmarkFilled', 'sparkles'];
+const FILLED: IconName[] = ['play', 'bookmarkFilled', 'sparkles', 'starFilled'];
 
 export function Icon({ name, size = 20, className = '', ...rest }: Props) {
   const filled = FILLED.includes(name);

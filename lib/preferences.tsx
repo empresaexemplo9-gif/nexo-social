@@ -22,6 +22,8 @@ export interface UserPreferences {
   bookGenres: string[];
   /** Hobbies praticados. */
   hobbies: string[];
+  /** Meta de obras concluídas no ano ("livros que li esse ano"). */
+  readingGoal: number;
   city: string | null;
   radiusKm: number;
   frequency: Frequency;
@@ -35,6 +37,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   filmGenres: [],
   bookGenres: [],
   hobbies: [],
+  readingGoal: 12,
   city: null,
   radiusKm: 50,
   frequency: 'semanal',

@@ -130,6 +130,27 @@ export default function InterestsView({ events }: { events: EventItem[] }) {
           <PickList title="Livros" icon="book" picks={books} />
         </div>
       </section>
+
+      {/* Biblioteca */}
+      <section className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 sm:flex-row sm:items-center">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-950/60 text-emerald-400">
+            <Icon name="library" size={20} />
+          </span>
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-50">Livros que li esse ano</h2>
+            <p className="mt-0.5 text-sm text-zinc-300">
+              Seu registro de leitura, a estante liberada de graça toda semana e os audiolivros.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/livros"
+          className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+        >
+          Abrir <Icon name="arrowRight" size={16} />
+        </Link>
+      </section>
     </div>
   );
 }

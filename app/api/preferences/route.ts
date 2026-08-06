@@ -27,20 +27,28 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'Corpo inválido.' }, { status: 400 });
   }
 
+  // Atualização parcial: só grava o que veio no corpo, para que salvar um
+  // campo isolado (a meta de leitura, por exemplo) não zere os interesses.
   const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
-  const row = {
-    user_id: user.id,
-    interests: arr(body.interests),
-    subtopics: arr((body as any).subtopics),
-    music_genres: arr((body as any).musicGenres),
-    film_genres: arr((body as any).filmGenres),
-    book_genres: arr((body as any).bookGenres),
-    hobbies: arr((body as any).hobbies),
-    city: body.city ?? null,
-    radius_km: Number.isFinite(body.radiusKm) ? body.radiusKm : 50,
-    frequency: body.frequency ?? 'semanal',
-    updated_at: new Date().toISOString(),
-  };
+  const row: Record<string, unknown> = { user_id: user.id, updated_at: new Date().toISOString() };
+  const b = body as Record<string, unknown>;
+
+  const arrayFields: [string, string][] = [
+    ['interests', 'interests'],
+    ['subtopics', 'subtopics'],
+    ['musicGenres', 'music_genres'],
+    ['filmGenres', 'film_genres'],
+    ['bookGenres', 'book_genres'],
+    ['hobbies', 'hobbies'],
+  ];
+  for (const [from, to] of arrayFields) {
+    if (from in b) row[to] = arr(b[from]);
+  }
+
+  if ('city' in b) row.city = b.city ?? null;
+  if (Number.isFinite(b.radiusKm)) row.radius_km = b.radiusKm;
+  if (typeof b.frequency === 'string') row.frequency = b.frequency;
+  if (Number.isFinite(b.readingGoal)) row.reading_goal = Math.min(365, Math.max(1, Number(b.readingGoal)));
 
   const { error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
