@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getTopic, type EventItem } from '@/lib/data';
 import { formatDistance } from '@/lib/geo';
+import { relativeLabel } from '@/lib/datetime';
 
 interface Props {
   event: EventItem;
@@ -26,7 +27,9 @@ export default function EventCard({ event, distanceKm }: Props) {
             >
               {event.date}
             </span>
-            <span className="text-xs text-zinc-500">{topic?.label ?? event.topic}</span>
+            <span className="text-xs text-zinc-500">
+              {event.startsAt ? relativeLabel(event.startsAt, event.endsAt) : (topic?.label ?? event.topic)}
+            </span>
           </div>
           <h3 className="text-base font-semibold leading-snug text-white transition group-hover:text-emerald-400">
             {event.title}

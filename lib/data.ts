@@ -3,7 +3,8 @@
 // geolocalização. É consumida tanto por componentes de servidor quanto de
 // cliente, portanto contém apenas dados e funções puras.
 
-import type { LatLng } from './geo';
+import { haversineKm, type LatLng } from './geo';
+import { formatEventDate } from './datetime';
 
 export type CategorySlug =
   | 'tecnologia'
@@ -45,13 +46,21 @@ export interface EventItem {
   id: string;
   topic: CategorySlug;
   title: string;
+  /** Texto de exibição (derivado de startsAt quando disponível). */
   date: string;
+  /** Início em ISO. Opcional: linhas antigas do banco podem não ter. */
+  startsAt?: string;
+  endsAt?: string;
   city: string;
   venue: string;
   coords: LatLng;
   imageUrl: string;
   description: string;
   price: string;
+  /** Palavras-chave usadas pelo algoritmo de indicação e pelas buscas externas. */
+  tags?: string[];
+  /** Artista/atração principal — usado para links de música e vídeo. */
+  artist?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,17 +73,48 @@ export interface City {
 }
 
 export const CITIES: City[] = [
+  // Grande São Paulo e interior
   { name: 'São Paulo', coords: { lat: -23.5505, lng: -46.6333 } },
+  { name: 'Guarulhos', coords: { lat: -23.4543, lng: -46.5337 } },
+  { name: 'Santo André', coords: { lat: -23.6639, lng: -46.5383 } },
+  { name: 'Osasco', coords: { lat: -23.5329, lng: -46.7918 } },
+  { name: 'Campinas', coords: { lat: -22.9099, lng: -47.0626 } },
+  { name: 'Santos', coords: { lat: -23.9608, lng: -46.3336 } },
+  { name: 'São José dos Campos', coords: { lat: -23.1896, lng: -45.8841 } },
+  { name: 'Sorocaba', coords: { lat: -23.5015, lng: -47.4526 } },
+  // Rio e região
   { name: 'Rio de Janeiro', coords: { lat: -22.9068, lng: -43.1729 } },
+  { name: 'Niterói', coords: { lat: -22.8832, lng: -43.1034 } },
+  { name: 'Petrópolis', coords: { lat: -22.505, lng: -43.1786 } },
+  // Sudeste / Sul
   { name: 'Belo Horizonte', coords: { lat: -19.9167, lng: -43.9345 } },
+  { name: 'Juiz de Fora', coords: { lat: -21.7642, lng: -43.3496 } },
+  { name: 'Vitória', coords: { lat: -20.3155, lng: -40.3128 } },
   { name: 'Curitiba', coords: { lat: -25.4284, lng: -49.2733 } },
-  { name: 'Porto Alegre', coords: { lat: -30.0346, lng: -51.2177 } },
+  { name: 'Joinville', coords: { lat: -26.3044, lng: -48.8487 } },
   { name: 'Florianópolis', coords: { lat: -27.5949, lng: -48.5482 } },
-  { name: 'Recife', coords: { lat: -8.0476, lng: -34.877 } },
-  { name: 'Salvador', coords: { lat: -12.9777, lng: -38.5016 } },
+  { name: 'Porto Alegre', coords: { lat: -30.0346, lng: -51.2177 } },
+  { name: 'Caxias do Sul', coords: { lat: -29.1685, lng: -51.1796 } },
+  // Centro-Oeste / Norte / Nordeste
   { name: 'Brasília', coords: { lat: -15.7939, lng: -47.8828 } },
+  { name: 'Goiânia', coords: { lat: -16.6869, lng: -49.2648 } },
+  { name: 'Salvador', coords: { lat: -12.9777, lng: -38.5016 } },
+  { name: 'Recife', coords: { lat: -8.0476, lng: -34.877 } },
+  { name: 'João Pessoa', coords: { lat: -7.1195, lng: -34.845 } },
+  { name: 'Maceió', coords: { lat: -9.6498, lng: -35.7089 } },
+  { name: 'Natal', coords: { lat: -5.7945, lng: -35.211 } },
   { name: 'Fortaleza', coords: { lat: -3.7319, lng: -38.5267 } },
+  { name: 'Belém', coords: { lat: -1.4558, lng: -48.5039 } },
+  { name: 'Manaus', coords: { lat: -3.119, lng: -60.0217 } },
 ];
+
+/** Cidades dentro de um raio (km) da origem, ordenadas da mais próxima. */
+export function citiesWithin(origin: LatLng | null, radiusKm: number): (City & { distanceKm: number })[] {
+  if (!origin) return [];
+  return CITIES.map((c) => ({ ...c, distanceKm: haversineKm(origin, c.coords) }))
+    .filter((c) => c.distanceKm <= radiusKm)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+}
 
 export function cityCoords(name: string | null | undefined): LatLng | null {
   if (!name) return null;
@@ -368,106 +408,115 @@ export function getContent(id: string): ContentItem | undefined {
 // Eventos (com geolocalização para ordenação por proximidade)
 // ---------------------------------------------------------------------------
 
-export const EVENTS: EventItem[] = [
-  // Tecnologia
-  {
-    id: 'ev-tec-1', topic: 'tecnologia',
-    title: 'Encontro de Desenvolvimento Web & Inteligência Artificial',
-    date: '15 de Agosto • 19:00', city: 'São Paulo', venue: 'Hub de Inovação Paulista',
-    coords: { lat: -23.5613, lng: -46.6565 }, imageUrl: img('photo-1540575467063-178a50c2df87'),
-    description: 'Painel com especialistas em engenharia de software, modelos de linguagem e o ecossistema web.',
-    price: 'Gratuito',
-  },
-  {
-    id: 'ev-tec-2', topic: 'tecnologia',
-    title: 'Meetup RISC-V & Computação Aberta',
-    date: '20 de Agosto • 18:30', city: 'Belo Horizonte', venue: 'San Pedro Valley Space',
-    coords: { lat: -19.9327, lng: -43.9386 }, imageUrl: img('photo-1591405351990-4726e331f141'),
-    description: 'Discussões técnicas sobre arquitetura aberta de processadores e computação de borda.',
-    price: 'R$ 30',
-  },
-  {
-    id: 'ev-tec-3', topic: 'tecnologia',
-    title: 'Hackathon de Segurança Zero Trust',
-    date: '28 de Agosto • 09:00', city: 'Curitiba', venue: 'Vila Tech',
-    coords: { lat: -25.4372, lng: -49.2699 }, imageUrl: img('photo-1550751827-4bd374c3f58b'),
-    description: 'Maratona de 24h para construir arquiteturas de segurança baseadas em identidade.',
-    price: 'R$ 50',
-  },
+// ---------------------------------------------------------------------------
+// Eventos
+//
+// As datas são geradas a partir da meia-noite UTC de hoje + um deslocamento em
+// dias, de modo que a agenda esteja SEMPRE atual (nada de eventos vencidos) e
+// que servidor e cliente calculem exatamente o mesmo valor.
+// ---------------------------------------------------------------------------
 
-  // Música
-  {
-    id: 'ev-mus-1', topic: 'musica',
-    title: 'Noite de Sintetizadores Analógicos',
-    date: '16 de Agosto • 21:00', city: 'Rio de Janeiro', venue: 'Estúdio Lapa Sonora',
-    coords: { lat: -22.9133, lng: -43.1794 }, imageUrl: img('photo-1511671782779-c97d3d27a1d4'),
-    description: 'Sets ao vivo com módulos eurorack e conversa aberta com produtores de música eletrônica.',
-    price: 'R$ 40',
-  },
-  {
-    id: 'ev-mus-2', topic: 'musica',
-    title: 'Festival de Cenas Regionais',
-    date: '30 de Agosto • 15:00', city: 'Recife', venue: 'Cais do Sertão',
-    coords: { lat: -8.0631, lng: -34.8711 }, imageUrl: img('photo-1459749411175-04bf5292ceea'),
-    description: 'Um dia inteiro dedicado à diversidade sonora do Nordeste, com curadoria independente.',
-    price: 'R$ 60',
-  },
+/** ISO de "hoje (UTC) + days" às `hourUtc` (22h UTC ≈ 19h de Brasília). */
+function inDays(days: number, hourUtc = 22, durationH = 3): { startsAt: string; endsAt: string } {
+  const now = new Date();
+  const start = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hourUtc, 0, 0),
+  );
+  start.setUTCDate(start.getUTCDate() + days);
+  const end = new Date(start.getTime() + durationH * 3600000);
+  return { startsAt: start.toISOString(), endsAt: end.toISOString() };
+}
 
-  // Moda
-  {
-    id: 'ev-mod-1', topic: 'moda',
-    title: 'Feira de Moda Circular & Upcycling',
-    date: '17 de Agosto • 12:00', city: 'São Paulo', venue: 'Galpão Vila Madalena',
-    coords: { lat: -23.5546, lng: -46.6899 }, imageUrl: img('photo-1523381210434-271e8be1f52b'),
-    description: 'Marcas independentes, brechós selecionados e oficinas de reforma criativa de peças.',
-    price: 'Gratuito',
-  },
-  {
-    id: 'ev-mod-2', topic: 'moda',
-    title: 'Workshop de Tecidos Tecnológicos',
-    date: '24 de Agosto • 14:00', city: 'Porto Alegre', venue: 'Instituto Têxtil Sul',
-    coords: { lat: -30.0277, lng: -51.2287 }, imageUrl: img('photo-1441986300917-64674bd600d8'),
-    description: 'Experiência prática com materiais inteligentes e prototipagem de vestuário funcional.',
-    price: 'R$ 80',
-  },
+/**
+ * Coordenada do local do evento: centro da cidade + um deslocamento pequeno e
+ * DETERMINÍSTICO (derivado do id). Sem isso, todos os locais da mesma cidade
+ * cairiam no mesmo ponto e a distância apareceria como "0 m" para todos.
+ * Determinístico = servidor e cliente calculam igual.
+ */
+function venueCoords(cityName: string, seedId: string): LatLng {
+  const base = CITIES.find((c) => c.name === cityName)?.coords ?? CITIES[0].coords;
+  let h = 0;
+  for (let i = 0; i < seedId.length; i++) h = (h * 31 + seedId.charCodeAt(i)) >>> 0;
+  // Até ~±0.055° (~6 km) — escala urbana plausível.
+  const dLat = (((h % 1000) / 1000) - 0.5) * 0.11;
+  const dLng = (((Math.floor(h / 1000) % 1000) / 1000) - 0.5) * 0.11;
+  return { lat: +(base.lat + dLat).toFixed(5), lng: +(base.lng + dLng).toFixed(5) };
+}
 
-  // Cultura
-  {
-    id: 'ev-cul-1', topic: 'cultura',
-    title: 'Mostra Cultural: Arte, Som & Design Digital',
-    date: '22 de Agosto • 16:00', city: 'São Paulo', venue: 'Galeria de Arte do Centro',
-    coords: { lat: -23.5479, lng: -46.6388 }, imageUrl: img('photo-1508997449629-303059a039c0'),
-    description: 'Exposição interativa reunindo artistas gerativos, instalações audiovisuais e design de experiência.',
-    price: 'Gratuito',
-  },
-  {
-    id: 'ev-cul-2', topic: 'cultura',
-    title: 'Feira Literária Independente',
-    date: '25 de Agosto • 10:00', city: 'Salvador', venue: 'Casa do Benin',
-    coords: { lat: -12.9718, lng: -38.5083 }, imageUrl: img('photo-1524995997946-a1c2e315a42f'),
-    description: 'Encontro de editoras independentes, sessões de autógrafos e mesas sobre novas vozes.',
-    price: 'Gratuito',
-  },
+type EventSeed = {
+  id: string;
+  topic: CategorySlug;
+  title: string;
+  city: string;
+  venue: string;
+  /** dias a partir de hoje (0 = hoje) */
+  inDays: number;
+  hourUtc?: number;
+  durationH?: number;
+  price: string;
+  image: string;
+  description: string;
+  tags?: string[];
+  artist?: string;
+};
 
-  // Esporte
-  {
-    id: 'ev-esp-1', topic: 'esporte',
-    title: 'Corrida Noturna & Ciência do Treino',
-    date: '18 de Agosto • 19:30', city: 'Florianópolis', venue: 'Beira-Mar Norte',
-    coords: { lat: -27.5817, lng: -48.5495 }, imageUrl: img('photo-1461896836934-ffe607ba8211'),
-    description: 'Circuito de 5 km com aferição de dados e palestra sobre periodização para amadores.',
-    price: 'R$ 25',
-  },
-  {
-    id: 'ev-esp-2', topic: 'esporte',
-    title: 'Encontro de Esportes Urbanos',
-    date: '31 de Agosto • 14:00', city: 'Rio de Janeiro', venue: 'Praça XV',
-    coords: { lat: -22.9026, lng: -43.1737 }, imageUrl: img('photo-1520045892732-304bc3ac5d8e'),
-    description: 'Skate, escalada de boulder e mobilidade ativa ocupando o centro da cidade.',
-    price: 'Gratuito',
-  },
+const EVENT_SEEDS: EventSeed[] = [
+  // ---------------- Tecnologia ----------------
+  { id: 'ev-tec-1', topic: 'tecnologia', title: 'Encontro de Desenvolvimento Web & Inteligência Artificial', city: 'São Paulo', venue: 'Hub de Inovação Paulista', inDays: 2, price: 'Gratuito', image: 'photo-1540575467063-178a50c2df87', description: 'Painel com especialistas em engenharia de software, modelos de linguagem e o ecossistema web.', tags: ['IA', 'web', 'devs'] },
+  { id: 'ev-tec-2', topic: 'tecnologia', title: 'Meetup RISC-V & Computação Aberta', city: 'Belo Horizonte', venue: 'San Pedro Valley Space', inDays: 6, price: 'R$ 30', image: 'photo-1591405351990-4726e331f141', description: 'Discussões técnicas sobre arquitetura aberta de processadores e computação de borda.', tags: ['hardware', 'open source'] },
+  { id: 'ev-tec-3', topic: 'tecnologia', title: 'Hackathon de Segurança Zero Trust', city: 'Curitiba', venue: 'Vila Tech', inDays: 12, hourUtc: 12, durationH: 24, price: 'R$ 50', image: 'photo-1550751827-4bd374c3f58b', description: 'Maratona de 24h para construir arquiteturas de segurança baseadas em identidade.', tags: ['segurança', 'hackathon'] },
+  { id: 'ev-tec-4', topic: 'tecnologia', title: 'Summit de Dados & Engenharia de Plataforma', city: 'Campinas', venue: 'Centro de Convenções Unicamp', inDays: 0, hourUtc: 13, durationH: 9, price: 'R$ 120', image: 'photo-1551288049-bebda4e38f71', description: 'Trilhas sobre pipelines de dados, observabilidade e plataformas internas.', tags: ['dados', 'devops'] },
+  { id: 'ev-tec-5', topic: 'tecnologia', title: 'Noite de Robótica & Maker', city: 'São José dos Campos', venue: 'Parque Tecnológico', inDays: 4, price: 'Gratuito', image: 'photo-1518770660439-4636190af475', description: 'Demonstrações de robótica, impressão 3D e eletrônica embarcada.', tags: ['maker', 'robótica'] },
+  { id: 'ev-tec-6', topic: 'tecnologia', title: 'Startup Pitch Night', city: 'Florianópolis', venue: 'ACATE', inDays: 9, price: 'R$ 25', image: 'photo-1559136555-9303baea8ebd', description: 'Rodada de pitches de startups locais com investidores e mentores.', tags: ['startups', 'negócios'] },
+
+  // ---------------- Música ----------------
+  { id: 'ev-mus-1', topic: 'musica', title: 'Noite de Sintetizadores Analógicos', city: 'Rio de Janeiro', venue: 'Estúdio Lapa Sonora', inDays: 1, price: 'R$ 40', image: 'photo-1511671782779-c97d3d27a1d4', description: 'Sets ao vivo com módulos eurorack e conversa aberta com produtores de música eletrônica.', tags: ['eletrônica', 'synth'], artist: 'Coletivo Modular' },
+  { id: 'ev-mus-2', topic: 'musica', title: 'Festival de Cenas Regionais', city: 'Recife', venue: 'Cais do Sertão', inDays: 15, hourUtc: 18, durationH: 8, price: 'R$ 60', image: 'photo-1459749411175-04bf5292ceea', description: 'Um dia inteiro dedicado à diversidade sonora do Nordeste, com curadoria independente.', tags: ['festival', 'regional'], artist: 'Vários artistas' },
+  { id: 'ev-mus-3', topic: 'musica', title: 'Jazz & Improviso no Porão', city: 'São Paulo', venue: 'Casa de Jazz Vila Buarque', inDays: 0, hourUtc: 23, price: 'R$ 35', image: 'photo-1493225457124-a3eb161ffa5f', description: 'Quarteto de jazz contemporâneo com jam session aberta ao final.', tags: ['jazz', 'ao vivo'], artist: 'Quarteto Noturno' },
+  { id: 'ev-mus-4', topic: 'musica', title: 'Show de MPB Contemporânea', city: 'Niterói', venue: 'Teatro Popular', inDays: 3, price: 'R$ 50', image: 'photo-1470225620780-dba8ba36b745', description: 'Novas vozes da MPB apresentam repertório autoral em formato intimista.', tags: ['MPB', 'autoral'], artist: 'Nova MPB' },
+  { id: 'ev-mus-5', topic: 'musica', title: 'Festa de Música Eletrônica Underground', city: 'Porto Alegre', venue: 'Galpão 4º Distrito', inDays: 7, hourUtc: 1, durationH: 7, price: 'R$ 70', image: 'photo-1598488035139-bdbb2231ce04', description: 'Line-up de DJs locais com sistema de som analógico e visuais generativos.', tags: ['techno', 'DJ'], artist: 'DJs residentes' },
+  { id: 'ev-mus-6', topic: 'musica', title: 'Roda de Samba de Raiz', city: 'Salvador', venue: 'Largo do Pelourinho', inDays: 5, hourUtc: 20, price: 'Gratuito', image: 'photo-1516450360452-9312f5e86fc7', description: 'Roda de samba tradicional ao ar livre com participação do público.', tags: ['samba', 'ao ar livre'], artist: 'Grupo Raiz' },
+
+  // ---------------- Moda ----------------
+  { id: 'ev-mod-1', topic: 'moda', title: 'Feira de Moda Circular & Upcycling', city: 'São Paulo', venue: 'Galpão Vila Madalena', inDays: 2, hourUtc: 15, durationH: 8, price: 'Gratuito', image: 'photo-1523381210434-271e8be1f52b', description: 'Marcas independentes, brechós selecionados e oficinas de reforma criativa de peças.', tags: ['sustentável', 'brechó'] },
+  { id: 'ev-mod-2', topic: 'moda', title: 'Workshop de Tecidos Tecnológicos', city: 'Porto Alegre', venue: 'Instituto Têxtil Sul', inDays: 10, hourUtc: 17, price: 'R$ 80', image: 'photo-1441986300917-64674bd600d8', description: 'Experiência prática com materiais inteligentes e prototipagem de vestuário funcional.', tags: ['têxtil', 'workshop'] },
+  { id: 'ev-mod-3', topic: 'moda', title: 'Desfile de Novos Estilistas', city: 'Rio de Janeiro', venue: 'Museu de Arte Moderna', inDays: 8, price: 'R$ 45', image: 'photo-1490481651871-ab68de25d43d', description: 'Coleções de formandos e marcas emergentes com foco em alfaiataria contemporânea.', tags: ['desfile', 'autoral'] },
+  { id: 'ev-mod-4', topic: 'moda', title: 'Bazar Streetwear & Sneakers', city: 'Belo Horizonte', venue: 'Mercado Central Anexo', inDays: 1, hourUtc: 14, durationH: 9, price: 'Gratuito', image: 'photo-1507003211169-0a1dd7228f2d', description: 'Troca e venda de peças de streetwear, sneakers raros e customização ao vivo.', tags: ['streetwear', 'sneakers'] },
+
+  // ---------------- Cultura ----------------
+  { id: 'ev-cul-1', topic: 'cultura', title: 'Mostra Cultural: Arte, Som & Design Digital', city: 'São Paulo', venue: 'Galeria de Arte do Centro', inDays: 0, hourUtc: 19, durationH: 6, price: 'Gratuito', image: 'photo-1508997449629-303059a039c0', description: 'Exposição interativa reunindo artistas gerativos, instalações audiovisuais e design de experiência.', tags: ['arte digital', 'exposição'] },
+  { id: 'ev-cul-2', topic: 'cultura', title: 'Feira Literária Independente', city: 'Salvador', venue: 'Casa do Benin', inDays: 11, hourUtc: 13, durationH: 8, price: 'Gratuito', image: 'photo-1524995997946-a1c2e315a42f', description: 'Encontro de editoras independentes, sessões de autógrafos e mesas sobre novas vozes.', tags: ['literatura', 'feira'] },
+  { id: 'ev-cul-3', topic: 'cultura', title: 'Mostra de Cinema Autoral', city: 'Curitiba', venue: 'Cine Passeio', inDays: 3, hourUtc: 22, price: 'R$ 20', image: 'photo-1489599849927-2ee91cede3ba', description: 'Sessões de curtas e longas independentes com debate mediado após as exibições.', tags: ['cinema', 'mostra'] },
+  { id: 'ev-cul-4', topic: 'cultura', title: 'Circuito de Arquitetura Bioclimática', city: 'Brasília', venue: 'Museu Nacional', inDays: 6, hourUtc: 14, durationH: 5, price: 'Gratuito', image: 'photo-1513694203232-719a280e022f', description: 'Visitas guiadas e palestras sobre arquitetura adaptada ao clima local.', tags: ['arquitetura', 'sustentável'] },
+  { id: 'ev-cul-5', topic: 'cultura', title: 'Noite de Teatro Experimental', city: 'Santos', venue: 'Teatro Coliseu', inDays: 4, price: 'R$ 30', image: 'photo-1503095396549-807759245b35', description: 'Montagens curtas de grupos experimentais com linguagem física e multimídia.', tags: ['teatro', 'experimental'] },
+
+  // ---------------- Esporte ----------------
+  { id: 'ev-esp-1', topic: 'esporte', title: 'Corrida Noturna & Ciência do Treino', city: 'Florianópolis', venue: 'Beira-Mar Norte', inDays: 2, hourUtc: 22, price: 'R$ 25', image: 'photo-1461896836934-ffe607ba8211', description: 'Circuito de 5 km com aferição de dados e palestra sobre periodização para amadores.', tags: ['corrida', '5k'] },
+  { id: 'ev-esp-2', topic: 'esporte', title: 'Encontro de Esportes Urbanos', city: 'Rio de Janeiro', venue: 'Praça XV', inDays: 5, hourUtc: 17, durationH: 6, price: 'Gratuito', image: 'photo-1520045892732-304bc3ac5d8e', description: 'Skate, escalada de boulder e mobilidade ativa ocupando o centro da cidade.', tags: ['skate', 'urbano'] },
+  { id: 'ev-esp-3', topic: 'esporte', title: 'Pedal Coletivo pela Cidade', city: 'São Paulo', venue: 'Ciclovia Paulista', inDays: 1, hourUtc: 12, durationH: 4, price: 'Gratuito', image: 'photo-1517649763962-0c623066013b', description: 'Passeio de bicicleta guiado com foco em mobilidade urbana e segurança viária.', tags: ['ciclismo', 'mobilidade'] },
+  { id: 'ev-esp-4', topic: 'esporte', title: 'Clínica de Recuperação Ativa & Mobilidade', city: 'Campinas', venue: 'Centro Esportivo Taquaral', inDays: 9, hourUtc: 13, price: 'R$ 40', image: 'photo-1544367567-0f2fcb009e0b', description: 'Workshop prático sobre sono, mobilidade articular e prevenção de lesões.', tags: ['wellness', 'treino'] },
+  { id: 'ev-esp-5', topic: 'esporte', title: 'Torneio de Vôlei de Praia', city: 'Niterói', venue: 'Praia de Icaraí', inDays: 13, hourUtc: 12, durationH: 8, price: 'Gratuito', image: 'photo-1612872087720-bb876e2e67d1', description: 'Torneio amador aberto a duplas, com categorias iniciante e avançada.', tags: ['vôlei', 'praia'] },
 ];
 
+export const EVENTS: EventItem[] = EVENT_SEEDS.map((s) => {
+  const { startsAt, endsAt } = inDays(s.inDays, s.hourUtc ?? 22, s.durationH ?? 3);
+  return {
+    id: s.id,
+    topic: s.topic,
+    title: s.title,
+    date: formatEventDate(startsAt),
+    startsAt,
+    endsAt,
+    city: s.city,
+    venue: s.venue,
+    coords: venueCoords(s.city, s.id),
+    imageUrl: img(s.image),
+    description: s.description,
+    price: s.price,
+    tags: s.tags,
+    artist: s.artist,
+  };
+});
 export function eventsByTopic(topic: CategorySlug): EventItem[] {
   return EVENTS.filter((e) => e.topic === topic);
 }

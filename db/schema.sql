@@ -126,6 +126,13 @@ ALTER TABLE events      ADD COLUMN IF NOT EXISTS city TEXT;
 ALTER TABLE events      ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;
 ALTER TABLE events      ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
 ALTER TABLE events      ADD COLUMN IF NOT EXISTS price TEXT DEFAULT 'Gratuito';
+-- Datas reais: alimentam o algoritmo de indicação (acontecendo agora / futuro).
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS starts_at TIMESTAMPTZ;
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ;
+-- Palavras-chave e atração principal: afinidade e links de música/vídeo.
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS tags TEXT[];
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS artist TEXT;
+CREATE INDEX IF NOT EXISTS events_starts_at_idx ON events (starts_at);
 
 ALTER TABLE bom_dia     ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
 

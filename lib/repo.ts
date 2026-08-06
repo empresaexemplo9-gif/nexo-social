@@ -1,5 +1,6 @@
 import 'server-only';
 import { createAnonServerClient } from './supabase-server';
+import { formatEventDate } from './datetime';
 import {
   CONTENTS,
   EVENTS,
@@ -53,17 +54,26 @@ function mapContent(row: any): ContentItem {
 }
 
 function mapEvent(row: any): EventItem {
+  // `starts_at`/`ends_at` são opcionais: linhas antigas só têm o texto em
+  // event_date. Sem data ISO, o evento não entra nos filtros temporais, mas
+  // continua aparecendo na agenda.
+  const startsAt = row.starts_at ? new Date(row.starts_at).toISOString() : undefined;
+  const endsAt = row.ends_at ? new Date(row.ends_at).toISOString() : undefined;
   return {
     id: row.id,
     topic: row.category as CategorySlug,
     title: row.title,
-    date: row.event_date,
+    date: startsAt ? formatEventDate(startsAt) : row.event_date,
+    startsAt,
+    endsAt,
     city: row.city ?? '',
     venue: row.location,
     coords: { lat: Number(row.lat) || 0, lng: Number(row.lng) || 0 },
     imageUrl: row.image_url,
     description: row.description,
     price: row.price ?? 'Gratuito',
+    tags: Array.isArray(row.tags) ? row.tags : undefined,
+    artist: row.artist ?? undefined,
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
