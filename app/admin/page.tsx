@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
 import { CITIES, TOPICS, cityCoords } from '@/lib/data';
+import AdminIntegrations from '@/components/AdminIntegrations';
 
-type Tab = 'content' | 'event' | 'bom-dia';
+type Tab = 'content' | 'event' | 'bom-dia' | 'integrations';
 
 export default function AdminPage() {
   const [authState, setAuthState] = useState<'loading' | 'allowed' | 'denied' | 'demo'>('loading');
@@ -163,7 +164,7 @@ export default function AdminPage() {
         )}
 
         <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
-          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', '☀️ Editar Bom Dia']] as [Tab, string][]).map(
+          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', '☀️ Editar Bom Dia'], ['integrations', '🔌 Integrações']] as [Tab, string][]).map(
             ([tab, label]) => (
               <button
                 key={tab}
@@ -280,6 +281,9 @@ export default function AdminPage() {
             <button type="submit" className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">Salvar Evento</button>
           </form>
         )}
+
+        {/* Integrações de APIs */}
+        {activeTab === 'integrations' && <AdminIntegrations demo={authState === 'demo'} />}
 
         {/* Bom Dia */}
         {activeTab === 'bom-dia' && (

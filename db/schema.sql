@@ -133,6 +133,12 @@ ALTER TABLE events      ADD COLUMN IF NOT EXISTS ends_at TIMESTAMPTZ;
 ALTER TABLE events      ADD COLUMN IF NOT EXISTS tags TEXT[];
 ALTER TABLE events      ADD COLUMN IF NOT EXISTS artist TEXT;
 CREATE INDEX IF NOT EXISTS events_starts_at_idx ON events (starts_at);
+-- Origem do evento: 'manual' (painel) ou o provedor externo ('ticketmaster'...).
+-- O par (source, external_id) evita duplicar na reimportação.
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS external_id TEXT;
+CREATE UNIQUE INDEX IF NOT EXISTS events_source_external_idx
+  ON events (source, external_id) WHERE external_id IS NOT NULL;
 
 ALTER TABLE bom_dia     ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
 
