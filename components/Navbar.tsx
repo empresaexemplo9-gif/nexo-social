@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import Icon from './icons';
 import LogoMark from './Logo';
 import NotificationsBell from './NotificationsBell';
+import InstallApp from './InstallApp';
 import { supabase } from '@/lib/supabase';
 import { isPlatformAdmin } from '@/lib/auth';
 import { TOPICS } from '@/lib/data';
@@ -131,6 +132,7 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <InstallApp compacto />
           {email ? (
             <>
               <NotificationsBell />
