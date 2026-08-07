@@ -38,11 +38,13 @@ export default function InlinePlayer({ req, onClose }: { req: PlayRequest; onClo
   const [titulo, setTitulo] = useState(req.titulo);
   const [estado, setEstado] = useState<'carregando' | 'ok' | 'sem-embed'>('carregando');
   const [motivo, setMotivo] = useState('');
+  const [detalhe, setDetalhe] = useState('');
   const [externo, setExterno] = useState(req.externo);
 
   const resolver = useCallback(async () => {
     setEstado('carregando');
     setMotivo('');
+    setDetalhe('');
 
     // Caminho direto: já temos o vídeo.
     if (req.url) {
@@ -71,6 +73,10 @@ export default function InlinePlayer({ req, onClose }: { req: PlayRequest; onClo
         json.hint ||
           (res.status === 404 ? 'Nenhum vídeo que possa ser embutido foi encontrado.' : json.error || 'Falha ao resolver o vídeo.'),
       );
+      // A mensagem original do Google é o que realmente resolve o problema —
+      // ela traz o número do projeto e o link de ativação. Antes eu mostrava
+      // só a minha dica genérica e escondia justamente isso.
+      setDetalhe(json.hint && json.error ? String(json.error) : '');
       setEstado('sem-embed');
     } catch {
       setMotivo('Não foi possível falar com o resolvedor de vídeo.');
@@ -106,6 +112,11 @@ export default function InlinePlayer({ req, onClose }: { req: PlayRequest; onClo
         <div className="space-y-3 p-6 text-center">
           <p className="text-sm font-semibold text-zinc-100">Não dá para tocar aqui dentro ainda</p>
           <p className="mx-auto max-w-lg text-xs leading-relaxed text-zinc-400">{motivo}</p>
+          {detalhe && (
+            <p className="mx-auto max-w-lg break-words rounded-xl border border-zinc-800 bg-zinc-950/70 p-3 text-left font-mono text-[10px] leading-relaxed text-zinc-500">
+              {detalhe}
+            </p>
+          )}
           <div className="flex flex-wrap justify-center gap-2">
             <button onClick={resolver} className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200">
               Tentar de novo
