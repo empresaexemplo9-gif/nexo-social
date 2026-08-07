@@ -45,7 +45,9 @@ export default function LoginPage() {
         if (!res.ok) throw new Error(json.error || 'Falha ao criar a conta.');
 
         if (json.confirmacaoPendente) {
+          // A conta existe; só não pôde ser autoconfirmada pelo servidor.
           setMessage('✓ Conta criada! Confirme o e-mail que enviamos e depois faça login.');
+          if (json.aviso) console.warn('[signup]', json.aviso);
           setIsRegistering(false);
           return;
         }

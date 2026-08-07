@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseEnv, isSecretKey, resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config';
-import { createAnonServerClient } from '@/lib/supabase-server';
+import { createAnonServerClient, serviceRoleStatus } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +38,40 @@ async function checkAuth(url: string, key: string) {
     };
   } catch (e: any) {
     return { ok: false, error: `falha de rede: ${e?.message || e}` };
+  }
+}
+
+/**
+ * Testa a service role de verdade: chama um endpoint que SÓ ela pode usar.
+ * Ter a variável preenchida não significa que o Supabase aceita o Bearer —
+ * era exatamente isso que derrubava a criação de conta.
+ */
+async function checkServiceRole(url: string) {
+  const bruta = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  const status = serviceRoleStatus();
+  if (!status.ok) {
+    return { presente: Boolean(bruta), formatoValido: false, aceita: false, detalhe: status.motivo };
+  }
+  try {
+    // Lista 1 usuário — exige privilégio de admin.
+    const res = await fetch(`${url}/auth/v1/admin/users?page=1&per_page=1`, {
+      headers: { apikey: bruta, Authorization: `Bearer ${bruta}` },
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      const corpo = (await res.text()).replace(/\s+/g, ' ').slice(0, 160);
+      return {
+        presente: true,
+        formatoValido: true,
+        aceita: false,
+        detalhe:
+          `O Supabase recusou a chave (HTTP ${res.status}): ${corpo || '(sem corpo)'}. ` +
+          'Provavelmente é a secret key de OUTRO projeto, ou foi revogada. Copie de novo em Project Settings → API Keys.',
+      };
+    }
+    return { presente: true, formatoValido: true, aceita: true, detalhe: 'Chave aceita — cadastro sai já confirmado.' };
+  } catch (e: any) {
+    return { presente: true, formatoValido: true, aceita: false, detalhe: `falha de rede: ${e?.message || e}` };
   }
 }
 
@@ -80,9 +114,18 @@ export async function GET() {
     urlHost = null;
   }
 
-  const [auth, db] = await Promise.all([checkAuth(resolveSupabaseUrl(), PUBLISHABLE_ANON_KEY), checkTables()]);
+  const [auth, db, serviceRole] = await Promise.all([
+    checkAuth(resolveSupabaseUrl(), PUBLISHABLE_ANON_KEY),
+    checkTables(),
+    checkServiceRole(resolveSupabaseUrl()),
+  ]);
 
   const problemas: string[] = [];
+  if (!serviceRole.aceita) {
+    problemas.push(
+      `Service role: ${serviceRole.detalhe} Sem ela, o cadastro ainda funciona, mas exige confirmação por e-mail.`,
+    );
+  }
   if (anonKeyType !== 'publishable') problemas.push('A chave usada no navegador não é a publishable.');
   if (!auth.ok) problemas.push(`O endpoint de autenticação respondeu com erro (${auth.status ?? 'rede'}). Confira a URL e a publishable key do projeto.`);
   if (auth.ok && auth.signupDisabled) problemas.push('O cadastro está DESABILITADO no projeto (Authentication → Providers → Email).');
@@ -96,7 +139,7 @@ export async function GET() {
     configured: isConfigured,
     urlHost,
     anonKeyType, // deve ser "publishable"
-    serviceRolePresent: Boolean((process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim()),
+    serviceRole,
     auth,
     db,
     problemas: problemas.length ? problemas : ['Nenhum problema detectado.'],
