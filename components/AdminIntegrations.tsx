@@ -6,7 +6,7 @@ import { CITIES } from '@/lib/data';
 interface Provider {
   id: string;
   label: string;
-  kind: 'local' | 'eventos' | 'musica' | 'video';
+  kind: 'local' | 'eventos' | 'musica' | 'video' | 'esporte';
   purpose: string;
   docsUrl: string;
   caveat?: string;
@@ -38,6 +38,7 @@ interface ImportResult {
 const KIND_BADGE: Record<Provider['kind'], { label: string; className: string }> = {
   local: { label: 'Localização', className: 'text-sky-400 border-sky-800/50 bg-sky-950/30' },
   eventos: { label: 'Eventos', className: 'text-emerald-400 border-emerald-800/50 bg-emerald-950/30' },
+  esporte: { label: 'Esporte', className: 'text-lime-400 border-lime-800/50 bg-lime-950/30' },
   musica: { label: 'Música', className: 'text-fuchsia-400 border-fuchsia-800/50 bg-fuchsia-950/30' },
   video: { label: 'Vídeo', className: 'text-clay-300 border-clay-800/50 bg-clay-950/30' },
 };

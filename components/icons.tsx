@@ -48,7 +48,14 @@ export type IconName =
   | 'star'
   | 'starFilled'
   | 'trash'
-  | 'library';
+  | 'library'
+  | 'trophy'
+  | 'basketball'
+  | 'tennis'
+  | 'volleyball'
+  | 'flag'
+  | 'motorcycle'
+  | 'broadcast';
 
 interface Props extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -247,6 +254,54 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M4 4h4v16H4zM10 4h4v16h-4z" />
       <path d="m16.5 5 3.4.9-3.1 14.2-3.4-.9" />
+    </>
+  ),
+  trophy: (
+    <>
+      <path d="M7 4h10v5a5 5 0 0 1-10 0V4Z" />
+      <path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3" />
+      <path d="M12 14v4M9 21h6M10 18h4" />
+    </>
+  ),
+  basketball: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 3.5v17M3.5 12h17" />
+      <path d="M6 5.7c2.4 1.8 3.6 3.9 3.6 6.3S8.4 16.5 6 18.3M18 5.7c-2.4 1.8-3.6 3.9-3.6 6.3s1.2 4.5 3.6 6.3" />
+    </>
+  ),
+  tennis: (
+    <>
+      <ellipse cx="9" cy="9" rx="5.2" ry="6.4" transform="rotate(-45 9 9)" />
+      <path d="M6.6 6.6 11.4 11.4" />
+      <path d="M6.6 11.4 11.4 6.6" />
+      <path d="m13.4 13.4 5.4 5.4a1.7 1.7 0 0 1-2.4 2.4l-5.4-5.4" />
+    </>
+  ),
+  volleyball: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 3.5c-2 3-2.6 6.2-1.8 9.6M20.1 9.6c-3.4-.8-6.6-.2-9.6 1.8M6.4 19c1.4-3.2 3.7-5.5 6.9-6.9" />
+    </>
+  ),
+  flag: (
+    <>
+      <path d="M5 21V4" />
+      <path d="M5 4h13l-2.5 4L18 12H5z" />
+    </>
+  ),
+  motorcycle: (
+    <>
+      <circle cx="5.5" cy="16.5" r="3.2" />
+      <circle cx="18.5" cy="16.5" r="3.2" />
+      <path d="M5.5 16.5h5l4-6h-3M14 6h3l1.5 4.5-4 6" />
+    </>
+  ),
+  broadcast: (
+    <>
+      <circle cx="12" cy="12" r="2.4" />
+      <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 15.8a5.4 5.4 0 0 0 0-7.6" />
+      <path d="M5.4 5.4a9.3 9.3 0 0 0 0 13.2M18.6 18.6a9.3 9.3 0 0 0 0-13.2" />
     </>
   ),
 };

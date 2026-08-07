@@ -17,9 +17,11 @@ export type ProviderId =
   | 'lastfm'
   | 'youtube'
   | 'ticketmaster'
-  | 'bandsintown';
+  | 'bandsintown'
+  | 'espn'
+  | 'thesportsdb';
 
-export type ProviderKind = 'local' | 'eventos' | 'musica' | 'video';
+export type ProviderKind = 'local' | 'eventos' | 'musica' | 'video' | 'esporte';
 
 export interface ProviderDef {
   id: ProviderId;
@@ -107,6 +109,24 @@ export const PROVIDERS: ProviderDef[] = [
     docsUrl: 'https://rest.bandsintown.com/',
     purpose: 'Shows por artista.',
     caveat: 'Uso comercial exige autorização da plataforma.',
+  },
+  {
+    id: 'espn',
+    label: 'ESPN — Placar público',
+    kind: 'esporte',
+    envVars: [],
+    docsUrl: 'https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard',
+    purpose: 'Placar ao vivo, agenda e resultados de futebol, NBA, tênis e Fórmula 1.',
+    caveat: 'Endpoint público e sem cadastro, porém não documentado oficialmente — pode mudar sem aviso. O quadro degrada com aviso se cair.',
+  },
+  {
+    id: 'thesportsdb',
+    label: 'TheSportsDB',
+    kind: 'esporte',
+    envVars: [],
+    docsUrl: 'https://www.thesportsdb.com/free_sports_api',
+    purpose: 'Vôlei, MotoGP e o link de melhores momentos de cada partida.',
+    caveat: 'A chave pública de teste ("3") tem limite de requisições. Para uso intenso, o plano Patreon libera chave própria.',
   },
 ];
 
@@ -299,6 +319,33 @@ export async function testProvider(id: ProviderId): Promise<TestResult> {
         }
         const j = JSON.parse(body || '{}');
         return done({ ok: true, status: res.status, message: 'Conexão OK', sample: `${j?.items?.length ?? 0} regiões retornadas (custo: 1 unidade)` });
+      }
+      case 'espn': {
+        const res = await safeFetch('https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard');
+        if (!res.ok) return done({ ok: false, status: res.status, ...explainHttp(res.status, await res.text(), def) });
+        const j = await res.json();
+        const n = Array.isArray(j?.events) ? j.events.length : 0;
+        return done({
+          ok: true,
+          status: res.status,
+          message: 'Conexão OK',
+          sample: `Brasileirão: ${n} partida(s) no quadro atual${n ? ` — ex.: ${j.events[0]?.name}` : ''}`,
+        });
+      }
+      case 'thesportsdb': {
+        const res = await safeFetch('https://www.thesportsdb.com/api/v1/json/3/all_leagues.php');
+        if (!res.ok) return done({ ok: false, status: res.status, ...explainHttp(res.status, await res.text(), def) });
+        const j = await res.json();
+        const n = Array.isArray(j?.leagues) ? j.leagues.length : 0;
+        if (!n) {
+          return done({
+            ok: false,
+            status: res.status,
+            message: 'Respondeu sem ligas',
+            hint: 'A chave pública de teste pode ter sido limitada. Cadastre uma chave própria em thesportsdb.com/free_sports_api.',
+          });
+        }
+        return done({ ok: true, status: res.status, message: 'Conexão OK', sample: `${n} ligas no catálogo` });
       }
       case 'ticketmaster': {
         const res = await safeFetch(
