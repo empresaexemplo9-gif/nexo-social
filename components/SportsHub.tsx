@@ -5,6 +5,7 @@ import Icon from './icons';
 import { formatEventDateLong, relativeLabel } from '@/lib/datetime';
 import InlinePlayer, { type PlayRequest } from './InlinePlayer';
 import { youtubeEmbed, youtubeSearch, type Broadcaster, type Legend } from '@/lib/sports-media';
+import { ticketSearchForMatch } from '@/lib/tickets-links';
 import type { Competition, Match, SportDef, SportId, SportsBoard } from '@/lib/sports';
 
 interface Board extends SportsBoard {
@@ -82,6 +83,18 @@ function MatchCard({ match, onPlay }: { match: Match; onPlay: (req: PlayRequest)
           {match.detail || formatEventDateLong(match.startsAt)}
           {match.venue && ` · ${match.venue}`}
         </span>
+        {/* Jogo futuro: onde procurar ingresso. A agenda esportiva não vende,
+            então é busca direcionada, não link de compra. */}
+        {!encerrado && match.home && (
+          <a
+            href={ticketSearchForMatch(match.home, match.competition)[0].url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
+          >
+            <Icon name="ticket" size={11} /> Ingressos
+          </a>
+        )}
         {match.highlightUrl && youtubeEmbed(match.highlightUrl) && (
           <button
             onClick={() => onPlay({ titulo: `${match.home} x ${match.away}`, url: match.highlightUrl!, externo: match.highlightUrl! })}

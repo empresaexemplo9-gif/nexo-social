@@ -48,6 +48,21 @@ export default function EventView({ event, related }: Props) {
 
               <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">{event.title}</h1>
 
+              {/* Link direto de compra, quando o evento veio de uma bilheteria.
+                  Só aparece quando é compra de verdade — os links de busca
+                  ficam mais abaixo, sem se disfarçar de botão de comprar. */}
+              {event.ticketUrl && (
+                <a
+                  href={event.ticketUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+                >
+                  <Icon name="ticket" size={17} /> Comprar ingresso
+                  <Icon name="external" size={14} />
+                </a>
+              )}
+
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                   <p className="text-xs uppercase tracking-wide text-zinc-500">Local</p>

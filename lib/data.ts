@@ -71,6 +71,8 @@ export interface EventItem {
   tags?: string[];
   /** Artista/atração principal — usado para links de música e vídeo. */
   artist?: string;
+  /** Link direto de compra, quando o evento veio de uma plataforma de venda. */
+  ticketUrl?: string;
 }
 
 // ---------------------------------------------------------------------------

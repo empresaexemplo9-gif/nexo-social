@@ -74,6 +74,7 @@ function mapEvent(row: any): EventItem {
     price: row.price ?? 'Gratuito',
     tags: Array.isArray(row.tags) ? row.tags : undefined,
     artist: row.artist ?? undefined,
+    ticketUrl: row.ticket_url ?? undefined,
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
