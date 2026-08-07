@@ -7,6 +7,7 @@ import Icon from '@/components/icons';
 import InterestsView from '@/components/InterestsView';
 import LiveAlerts from '@/components/LiveAlerts';
 import HeritageShelf from '@/components/HeritageShelf';
+import InstallApp from '@/components/InstallApp';
 import AgendaTimeline from '@/components/AgendaTimeline';
 import { usePreferences } from '@/lib/preferences';
 import type { ContentItem, EventItem } from '@/lib/data';
@@ -44,6 +45,9 @@ export default function HomeView({ events }: Props) {
       <Navbar />
 
       <main className="mx-auto max-w-5xl space-y-14 px-4 py-8 sm:px-6 lg:px-8">
+        {/* Convite a instalar — some sozinho quando já está instalado */}
+        <InstallApp />
+
         {/* INTERESSES E HOBBIES — o coração da home:
             perfil, trilha do Spotify, nichos e indicações. */}
         <InterestsView events={events} />
