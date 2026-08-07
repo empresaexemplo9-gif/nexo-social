@@ -138,6 +138,14 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <Link
+            href="/busca"
+            className="rounded-xl p-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-50"
+            title="Buscar"
+            aria-label="Buscar"
+          >
+            <Icon name="search" size={18} />
+          </Link>
           <InstallApp compacto />
           {email ? (
             <>
@@ -167,6 +175,9 @@ export default function Navbar() {
           )}
         </div>
 
+        <Link href="/busca" className="ml-auto rounded-lg p-2 text-zinc-300 md:hidden" aria-label="Buscar">
+          <Icon name="search" size={20} />
+        </Link>
         <button onClick={() => setOpen((v) => !v)} className="rounded-lg p-2 text-zinc-300 md:hidden" aria-label="Menu">
           <Icon name={open ? 'close' : 'menu'} size={20} />
         </button>
