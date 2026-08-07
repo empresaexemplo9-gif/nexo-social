@@ -120,7 +120,7 @@ export const PROVIDERS: ProviderDef[] = [
     docsUrl: 'https://developers.sympla.com.br/api-doc/index.html',
     purpose: 'Importa os eventos da SUA conta Sympla, com link direto de compra.',
     canImport: true,
-    caveat: 'A API da Sympla devolve apenas os eventos do dono do token — não é busca no catálogo dela. Serve para quem organiza; para descobrir evento de terceiro, use o Ticketmaster.',
+    caveat: 'A API da Sympla devolve apenas os eventos do dono do token — não é busca no catálogo dela. Serve para quem organiza; para descobrir evento de terceiro, use o Ticketmaster. Eventos cancelados e privados são descartados na importação.',
   },
   {
     id: 'eventbrite',
@@ -343,9 +343,11 @@ export async function testProvider(id: ProviderId): Promise<TestResult> {
         return done({ ok: true, status: res.status, message: 'Conexão OK', sample: `${j?.items?.length ?? 0} regiões retornadas (custo: 1 unidade)` });
       }
       case 'sympla': {
-        const res = await safeFetch('https://api.sympla.com.br/public/v1.5.1/events?page_size=1', {
-          headers: { s_token: envValue('SYMPLA_API_TOKEN') },
-        });
+        // v1.6.0 exige published, timezone e sort; sort é minúsculo.
+        const res = await safeFetch(
+          'https://api.sympla.com.br/public/v1.6.0/events?published=all&timezone=America/Sao_Paulo&sort=asc&page_size=1',
+          { headers: { s_token: envValue('SYMPLA_API_TOKEN') } },
+        );
         const body = await res.text();
         if (!res.ok) {
           const base = explainHttp(res.status, body, def);
@@ -360,7 +362,9 @@ export async function testProvider(id: ProviderId): Promise<TestResult> {
           ok: true,
           status: res.status,
           message: 'Conexão OK',
-          sample: n ? `Primeiro evento: ${j.data[0]?.name}` : 'Token válido, mas esta conta não tem eventos publicados.',
+          sample: n
+            ? `Primeiro evento: ${j.data[0]?.name} (total: ${j?.pagination?.quantity ?? '?'})`
+            : 'Token válido, mas esta conta não tem eventos.',
         });
       }
       case 'eventbrite': {
