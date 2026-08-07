@@ -1,3 +1,21 @@
+-- ############################################################################
+-- ATENÇÃO: NÃO RODE ESTE ARQUIVO NO SUPABASE.
+--
+-- Ele cria usuários falsos em auth.users e apaga/reescreve linhas para poder
+-- testar as regras. Num projeto real isso sujaria a base de contas.
+-- Para configurar seu banco, use apenas db/schema.sql.
+-- ############################################################################
+
+-- Trava: aborta se detectar que o banco é um Supabase de verdade.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname IN ('supabase_auth_admin', 'supabase_admin'))
+     OR EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'supabase_vault') THEN
+    RAISE EXCEPTION
+      'Este arquivo é só para um Postgres local de teste — ele cria contas falsas. Para configurar o banco, use db/schema.sql.';
+  END IF;
+END $$;
+
 -- Verificação do multi-tenant.
 --
 -- Roda contra um Postgres limpo (não contra o banco de produção). Prepara três
