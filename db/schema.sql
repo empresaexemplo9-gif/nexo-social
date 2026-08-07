@@ -507,3 +507,187 @@ CREATE POLICY reading_log_delete ON reading_log FOR DELETE USING (user_id = auth
 
 -- Meta anual de leitura (ex.: 12 livros em 2026).
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS reading_goal SMALLINT DEFAULT 12;
+
+-- =============================================================================
+-- MULTI-TENANT — correções
+--
+-- 1. Um usuário podia trocar o próprio tenant_id e passar a escrever no tenant
+--    de outra pessoa (contents/events/bom_dia liberam por tenant_id).
+-- 2. Contas ficavam órfãs: handle_new_user() engole exceções de propósito (para
+--    não derrubar o cadastro), e não havia como criar o perfil depois — não
+--    existia policy de INSERT em profiles/tenants.
+-- 3. Como cada conta é o próprio tenant, ninguém enxergava o perfil de
+--    ninguém: contatos e participantes de compromisso vinham sem nome e sem
+--    e-mail, quebrando a agenda social entre contas diferentes.
+-- =============================================================================
+
+-- E-mail do super admin em um único lugar do schema.
+CREATE OR REPLACE FUNCTION platform_admin_email()
+RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
+  SELECT 'thiagohccarvalho00@gmail.com';
+$$;
+
+CREATE OR REPLACE FUNCTION is_platform_admin()
+RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
+  SELECT lower(COALESCE(auth.jwt() ->> 'email', '')) = platform_admin_email();
+$$;
+
+-- --- 1) Colunas sensíveis do perfil ------------------------------------------
+-- tenant_id, role, is_platform_admin e email deixam de ser editáveis pelo
+-- próprio usuário. O super admin e o service role (auth.uid() nulo) seguem
+-- podendo ajustar.
+CREATE OR REPLACE FUNCTION protect_profile_columns()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  -- Liberado para o service role (sem auth.uid()), para o super admin e para o
+  -- provisionamento — ensure_my_profile precisa gravar tenant_id e e-mail, e
+  -- sem esta saída ela seria bloqueada justamente no caso que veio consertar.
+  -- A flag é local à transação e só ensure_my_profile a define; o cliente não
+  -- tem como ligá-la pelo PostgREST.
+  IF auth.uid() IS NULL
+     OR is_platform_admin()
+     OR COALESCE(current_setting('nexo.provisioning', TRUE), '') = 'on' THEN
+    RETURN NEW;
+  END IF;
+  NEW.id := OLD.id;
+  NEW.tenant_id := OLD.tenant_id;
+  NEW.role := OLD.role;
+  NEW.is_platform_admin := OLD.is_platform_admin;
+  NEW.email := OLD.email;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS profiles_protect_columns ON profiles;
+CREATE TRIGGER profiles_protect_columns
+  BEFORE UPDATE ON profiles
+  FOR EACH ROW EXECUTE FUNCTION protect_profile_columns();
+
+-- Nenhum perfil deve carregar a marca de admin além da conta oficial.
+UPDATE profiles SET is_platform_admin = (lower(email) = platform_admin_email())
+WHERE is_platform_admin IS DISTINCT FROM (lower(email) = platform_admin_email());
+
+-- --- 2) Auto-provisionamento --------------------------------------------------
+CREATE OR REPLACE FUNCTION slugify(p_text TEXT)
+RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
+  SELECT COALESCE(
+    NULLIF(
+      trim(BOTH '-' FROM regexp_replace(lower(COALESCE(p_text, '')), '[^a-z0-9]+', '-', 'g')),
+      ''
+    ),
+    'tenant'
+  );
+$$;
+
+-- Owner do tenant, sem passar pelo RLS de tenants (evita recursão de política).
+CREATE OR REPLACE FUNCTION owns_tenant(p_tenant UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM tenants WHERE id = p_tenant AND owner_id = auth.uid());
+$$;
+
+-- Garante tenant + perfil para quem está logado. Idempotente: pode ser chamada
+-- em todo login. É o conserto para contas criadas antes desta migração e para
+-- qualquer falha silenciosa do gatilho de cadastro.
+CREATE OR REPLACE FUNCTION ensure_my_profile(
+  p_full_name TEXT DEFAULT NULL,
+  p_account_type TEXT DEFAULT 'pessoal',
+  p_tenant_name TEXT DEFAULT NULL
+)
+RETURNS UUID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid    UUID := auth.uid();
+  v_email  TEXT := auth.jwt() ->> 'email';
+  v_tenant UUID;
+  v_slug   TEXT;
+  v_name   TEXT;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'ensure_my_profile exige uma sessão autenticada';
+  END IF;
+
+  -- Destrava protect_profile_columns apenas nesta transação.
+  PERFORM set_config('nexo.provisioning', 'on', TRUE);
+
+  SELECT tenant_id INTO v_tenant FROM profiles WHERE id = v_uid;
+  IF v_tenant IS NOT NULL THEN
+    RETURN v_tenant;
+  END IF;
+
+  -- Reaproveita um tenant que já seja dele antes de criar outro.
+  SELECT id INTO v_tenant FROM tenants WHERE owner_id = v_uid ORDER BY created_at LIMIT 1;
+
+  IF v_tenant IS NULL THEN
+    v_name := COALESCE(NULLIF(trim(p_tenant_name), ''), NULLIF(trim(p_full_name), ''), v_email);
+    v_slug := slugify(v_name);
+    IF EXISTS (SELECT 1 FROM tenants WHERE slug = v_slug) THEN
+      v_slug := v_slug || '-' || substr(v_uid::text, 1, 8);
+    END IF;
+
+    INSERT INTO tenants (name, slug, account_type, owner_id)
+    VALUES (v_name, v_slug, COALESCE(NULLIF(p_account_type, ''), 'pessoal'), v_uid)
+    RETURNING id INTO v_tenant;
+  END IF;
+
+  INSERT INTO profiles (id, tenant_id, full_name, email, role, is_platform_admin)
+  VALUES (v_uid, v_tenant, NULLIF(trim(p_full_name), ''), v_email, 'owner',
+          lower(COALESCE(v_email, '')) = platform_admin_email())
+  ON CONFLICT (id) DO UPDATE
+    SET tenant_id = COALESCE(profiles.tenant_id, EXCLUDED.tenant_id),
+        email     = COALESCE(profiles.email, EXCLUDED.email),
+        full_name = COALESCE(profiles.full_name, EXCLUDED.full_name);
+
+  RETURN v_tenant;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION ensure_my_profile(TEXT, TEXT, TEXT) TO authenticated;
+
+-- Políticas de INSERT: o usuário cria o próprio tenant e o próprio perfil,
+-- e o perfil só pode apontar para um tenant do qual ele é dono.
+DROP POLICY IF EXISTS tenants_insert ON tenants;
+CREATE POLICY tenants_insert ON tenants FOR INSERT
+  WITH CHECK (owner_id = auth.uid());
+
+DROP POLICY IF EXISTS profiles_insert ON profiles;
+CREATE POLICY profiles_insert ON profiles FOR INSERT
+  WITH CHECK (id = auth.uid() AND (tenant_id IS NULL OR owns_tenant(tenant_id)));
+
+-- --- 3) Enxergar quem está na sua agenda -------------------------------------
+-- Cada conta é o próprio tenant, então a regra por tenant nunca casava entre
+-- pessoas diferentes. SECURITY DEFINER para não reentrar no RLS de profiles.
+CREATE OR REPLACE FUNCTION shares_agenda_with(p_user UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM connections c
+    WHERE (c.user_id = auth.uid() AND c.contact_id = p_user)
+       OR (c.contact_id = auth.uid() AND c.user_id = p_user)
+  )
+  OR EXISTS (
+    SELECT 1
+    FROM appointment_participants eu
+    JOIN appointment_participants outro ON outro.appointment_id = eu.appointment_id
+    WHERE eu.user_id = auth.uid() AND outro.user_id = p_user
+  )
+  OR EXISTS (
+    SELECT 1 FROM appointments a
+    JOIN appointment_participants p ON p.appointment_id = a.id
+    WHERE (a.owner_id = auth.uid() AND p.user_id = p_user)
+       OR (a.owner_id = p_user      AND p.user_id = auth.uid())
+  )
+  OR EXISTS (
+    SELECT 1 FROM messages m
+    WHERE (m.from_user = auth.uid() AND m.to_user = p_user)
+       OR (m.to_user   = auth.uid() AND m.from_user = p_user)
+  );
+$$;
+
+DROP POLICY IF EXISTS profiles_select ON profiles;
+CREATE POLICY profiles_select ON profiles FOR SELECT
+  -- `id = auth.uid()` primeiro: resolve o caso comum sem tocar em função alguma.
+  USING (
+    id = auth.uid()
+    OR is_platform_admin()
+    OR tenant_id = current_tenant_id()
+    OR shares_agenda_with(id)
+  );
