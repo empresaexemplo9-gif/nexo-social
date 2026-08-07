@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import EventCard from '@/components/EventCard';
+import Checkout from '@/components/Checkout';
+import { supabase } from '@/lib/supabase';
 import { getTopic, type EventItem } from '@/lib/data';
 import { eventPlatformLinks, KIND_LABEL } from '@/lib/platforms';
 import { relativeLabel } from '@/lib/datetime';
@@ -16,9 +18,25 @@ interface Props {
 
 export default function EventView({ event, related }: Props) {
   const [confirmed, setConfirmed] = useState(false);
+  const [eu, setEu] = useState<{ nome: string; email: string }>({ nome: '', email: '' });
+  const [vendeAqui, setVendeAqui] = useState(false);
   const topic = getTopic(event.topic);
   const platformLinks = eventPlatformLinks(event);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${event.coords.lat},${event.coords.lng}`;
+
+  // Preenche o checkout com quem está logado — ninguém deveria digitar o
+  // próprio e-mail de novo para comprar.
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getUser().then(({ data }) => {
+      const u = data?.user;
+      if (!u) return;
+      setEu({
+        nome: (u.user_metadata?.full_name as string) || (u.user_metadata?.name as string) || '',
+        email: u.email ?? '',
+      });
+    });
+  }, []);
 
   return (
     <div className="min-h-screen font-sans text-zinc-100 antialiased">
@@ -48,17 +66,28 @@ export default function EventView({ event, related }: Props) {
 
               <h1 className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">{event.title}</h1>
 
-              {/* Link direto de compra, quando o evento veio de uma bilheteria.
-                  Só aparece quando é compra de verdade — os links de busca
-                  ficam mais abaixo, sem se disfarçar de botão de comprar. */}
-              {event.ticketUrl && (
+              {/* Compra aqui dentro, quando o evento é da plataforma. */}
+              <Checkout
+                eventId={event.id}
+                eventTitle={event.title}
+                nomePadrao={eu.nome}
+                emailPadrao={eu.email}
+                onVenda={setVendeAqui}
+              />
+
+              {/* Bilheteria de origem. Só aparece quando NÃO vendemos o
+                  ingresso aqui: se aparecesse junto, o mesmo evento teria dois
+                  botões de comprar levando a estoques diferentes. Evento
+                  importado da Sympla ou do Ticketmaster continua sendo vendido
+                  por eles — o estoque é deles, não nosso. */}
+              {event.ticketUrl && !vendeAqui && (
                 <a
                   href={event.ticketUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
                 >
-                  <Icon name="ticket" size={17} /> Comprar ingresso
+                  <Icon name="ticket" size={17} /> Comprar na bilheteria oficial
                   <Icon name="external" size={14} />
                 </a>
               )}

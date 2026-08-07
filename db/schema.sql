@@ -695,3 +695,399 @@ CREATE POLICY profiles_select ON profiles FOR SELECT
 -- Link direto de compra do ingresso, vindo da plataforma de venda.
 -- Sem ele, a importação traz o evento mas o usuário não tem para onde ir.
 ALTER TABLE events ADD COLUMN IF NOT EXISTS ticket_url TEXT;
+
+-- =============================================================================
+-- BILHETERIA PRÓPRIA — comprar ingresso dentro da plataforma
+--
+-- Vale apenas para eventos DA plataforma (criados por um tenant daqui).
+-- Evento importado de Sympla/Ticketmaster continua com ticket_url apontando
+-- para a bilheteria de origem: vender ingresso de terceiro exigiria contrato
+-- comercial e repasse, que nenhuma dessas APIs oferece.
+-- =============================================================================
+
+-- Tipos de ingresso (lotes, inteira, meia...).
+CREATE TABLE IF NOT EXISTS ticket_types (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  -- Em centavos: dinheiro nunca deve ser ponto flutuante.
+  price_cents INTEGER NOT NULL DEFAULT 0 CHECK (price_cents >= 0),
+  quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+  sold INTEGER NOT NULL DEFAULT 0 CHECK (sold >= 0),
+  max_per_order SMALLINT NOT NULL DEFAULT 5 CHECK (max_per_order BETWEEN 1 AND 20),
+  sales_start TIMESTAMPTZ,
+  sales_end TIMESTAMPTZ,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CHECK (sold <= quantity)
+);
+CREATE INDEX IF NOT EXISTS ticket_types_event_idx ON ticket_types (event_id);
+
+-- Pedidos.
+CREATE TABLE IF NOT EXISTS ticket_orders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pendente'
+    CHECK (status IN ('pendente', 'pago', 'cancelado', 'expirado')),
+  total_cents INTEGER NOT NULL DEFAULT 0 CHECK (total_cents >= 0),
+  buyer_name TEXT,
+  buyer_email TEXT,
+  payment_provider TEXT,   -- 'gratuito' | 'mercadopago'
+  payment_ref TEXT,        -- id da preferência/pagamento no provedor
+  expires_at TIMESTAMPTZ,  -- reserva de estoque expira
+  paid_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS ticket_orders_user_idx ON ticket_orders (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS ticket_orders_ref_idx ON ticket_orders (payment_ref);
+
+-- Itens do pedido: quantas unidades de cada tipo.
+CREATE TABLE IF NOT EXISTS ticket_order_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES ticket_orders(id) ON DELETE CASCADE,
+  ticket_type_id UUID NOT NULL REFERENCES ticket_types(id) ON DELETE RESTRICT,
+  quantity SMALLINT NOT NULL CHECK (quantity > 0),
+  unit_price_cents INTEGER NOT NULL CHECK (unit_price_cents >= 0)
+);
+CREATE INDEX IF NOT EXISTS ticket_order_items_order_idx ON ticket_order_items (order_id);
+
+-- Ingressos emitidos: um por unidade, com código para o QR.
+CREATE TABLE IF NOT EXISTS tickets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id UUID NOT NULL REFERENCES ticket_orders(id) ON DELETE CASCADE,
+  ticket_type_id UUID NOT NULL REFERENCES ticket_types(id) ON DELETE RESTRICT,
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  code TEXT UNIQUE NOT NULL,
+  holder_name TEXT,
+  status TEXT NOT NULL DEFAULT 'valido' CHECK (status IN ('valido', 'usado', 'cancelado')),
+  checked_in_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS tickets_user_idx ON tickets (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS tickets_event_idx ON tickets (event_id);
+
+-- --- Quem é dono do evento ---------------------------------------------------
+CREATE OR REPLACE FUNCTION owns_event(p_event UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM events e
+    JOIN profiles p ON p.tenant_id = e.tenant_id
+    WHERE e.id = p_event AND p.id = auth.uid()
+  );
+$$;
+
+-- --- Compra: reserva de estoque atômica --------------------------------------
+--
+-- SECURITY DEFINER e com SELECT ... FOR UPDATE no tipo de ingresso: sem a trava,
+-- duas compras simultâneas do último ingresso passariam as duas.
+CREATE OR REPLACE FUNCTION criar_pedido_ingresso(
+  p_event UUID,
+  p_itens JSONB,          -- [{"ticket_type_id":"...","quantity":2}]
+  p_nome TEXT,
+  p_email TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid    UUID := auth.uid();
+  v_order  UUID;
+  v_total  INTEGER := 0;
+  v_item   JSONB;
+  v_tipo   ticket_types%ROWTYPE;
+  v_qtd    INTEGER;
+  v_pago   BOOLEAN;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'É preciso estar logado para comprar.';
+  END IF;
+  IF p_itens IS NULL OR jsonb_array_length(p_itens) = 0 THEN
+    RAISE EXCEPTION 'Nenhum ingresso selecionado.';
+  END IF;
+
+  INSERT INTO ticket_orders (user_id, event_id, status, total_cents, buyer_name, buyer_email, expires_at)
+  VALUES (v_uid, p_event, 'pendente', 0, p_nome, p_email, NOW() + INTERVAL '15 minutes')
+  RETURNING id INTO v_order;
+
+  FOR v_item IN SELECT * FROM jsonb_array_elements(p_itens) LOOP
+    v_qtd := GREATEST(1, COALESCE((v_item ->> 'quantity')::INTEGER, 1));
+
+    -- Trava a linha: é isto que impede vender o mesmo ingresso duas vezes.
+    SELECT * INTO v_tipo FROM ticket_types
+    WHERE id = (v_item ->> 'ticket_type_id')::UUID AND event_id = p_event
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Tipo de ingresso inválido para este evento.';
+    END IF;
+    IF NOT v_tipo.active THEN
+      RAISE EXCEPTION 'O ingresso "%" não está à venda.', v_tipo.name;
+    END IF;
+    IF v_tipo.sales_start IS NOT NULL AND NOW() < v_tipo.sales_start THEN
+      RAISE EXCEPTION 'As vendas de "%" ainda não começaram.', v_tipo.name;
+    END IF;
+    IF v_tipo.sales_end IS NOT NULL AND NOW() > v_tipo.sales_end THEN
+      RAISE EXCEPTION 'As vendas de "%" já encerraram.', v_tipo.name;
+    END IF;
+    IF v_qtd > v_tipo.max_per_order THEN
+      RAISE EXCEPTION 'Máximo de % ingresso(s) de "%" por pedido.', v_tipo.max_per_order, v_tipo.name;
+    END IF;
+    IF v_tipo.sold + v_qtd > v_tipo.quantity THEN
+      RAISE EXCEPTION 'Restam apenas % ingresso(s) de "%".', v_tipo.quantity - v_tipo.sold, v_tipo.name;
+    END IF;
+
+    UPDATE ticket_types SET sold = sold + v_qtd WHERE id = v_tipo.id;
+
+    INSERT INTO ticket_order_items (order_id, ticket_type_id, quantity, unit_price_cents)
+    VALUES (v_order, v_tipo.id, v_qtd, v_tipo.price_cents);
+
+    v_total := v_total + v_qtd * v_tipo.price_cents;
+  END LOOP;
+
+  v_pago := (v_total = 0);
+
+  UPDATE ticket_orders
+  SET total_cents = v_total,
+      payment_provider = CASE WHEN v_pago THEN 'gratuito' ELSE NULL END,
+      -- Pedido gratuito não tem o que pagar: confirma na hora.
+      status = CASE WHEN v_pago THEN 'pago' ELSE 'pendente' END,
+      paid_at = CASE WHEN v_pago THEN NOW() ELSE NULL END,
+      expires_at = CASE WHEN v_pago THEN NULL ELSE expires_at END
+  WHERE id = v_order;
+
+  IF v_pago THEN
+    PERFORM emitir_ingressos(v_order);
+  END IF;
+
+  RETURN jsonb_build_object('order_id', v_order, 'total_cents', v_total, 'gratuito', v_pago);
+END;
+$$;
+
+-- --- Emissão dos ingressos ---------------------------------------------------
+CREATE OR REPLACE FUNCTION emitir_ingressos(p_order UUID)
+RETURNS INTEGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_pedido ticket_orders%ROWTYPE;
+  v_item   RECORD;
+  v_i      INTEGER;
+  v_total  INTEGER := 0;
+BEGIN
+  SELECT * INTO v_pedido FROM ticket_orders WHERE id = p_order;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Pedido não encontrado.'; END IF;
+
+  -- Idempotente: reprocessar o webhook não pode duplicar ingresso.
+  IF EXISTS (SELECT 1 FROM tickets WHERE order_id = p_order) THEN
+    RETURN 0;
+  END IF;
+
+  FOR v_item IN SELECT * FROM ticket_order_items WHERE order_id = p_order LOOP
+    FOR v_i IN 1..v_item.quantity LOOP
+      INSERT INTO tickets (order_id, ticket_type_id, event_id, user_id, code, holder_name)
+      VALUES (
+        p_order, v_item.ticket_type_id, v_pedido.event_id, v_pedido.user_id,
+        -- Código longo e aleatório: é o que o QR carrega.
+        upper(encode(gen_random_bytes(9), 'hex')),
+        v_pedido.buyer_name
+      );
+      v_total := v_total + 1;
+    END LOOP;
+  END LOOP;
+
+  RETURN v_total;
+END;
+$$;
+
+-- --- Confirmação de pagamento ------------------------------------------------
+CREATE OR REPLACE FUNCTION confirmar_pedido_ingresso(p_order UUID, p_ref TEXT DEFAULT NULL)
+RETURNS INTEGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_status TEXT;
+BEGIN
+  SELECT status INTO v_status FROM ticket_orders WHERE id = p_order FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Pedido não encontrado.'; END IF;
+  IF v_status = 'pago' THEN RETURN 0; END IF;   -- já confirmado
+  IF v_status <> 'pendente' THEN
+    RAISE EXCEPTION 'Pedido % não pode ser confirmado.', v_status;
+  END IF;
+
+  UPDATE ticket_orders
+  SET status = 'pago', paid_at = NOW(), expires_at = NULL,
+      payment_ref = COALESCE(p_ref, payment_ref)
+  WHERE id = p_order;
+
+  RETURN emitir_ingressos(p_order);
+END;
+$$;
+
+-- --- Cancelamento: devolve o estoque -----------------------------------------
+CREATE OR REPLACE FUNCTION cancelar_pedido_ingresso(p_order UUID, p_motivo TEXT DEFAULT 'cancelado')
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_item RECORD;
+  v_status TEXT;
+BEGIN
+  SELECT status INTO v_status FROM ticket_orders WHERE id = p_order FOR UPDATE;
+  IF NOT FOUND OR v_status IN ('cancelado', 'expirado') THEN RETURN; END IF;
+
+  FOR v_item IN SELECT * FROM ticket_order_items WHERE order_id = p_order LOOP
+    UPDATE ticket_types SET sold = GREATEST(0, sold - v_item.quantity) WHERE id = v_item.ticket_type_id;
+  END LOOP;
+
+  UPDATE tickets SET status = 'cancelado' WHERE order_id = p_order;
+  UPDATE ticket_orders
+  SET status = CASE WHEN p_motivo = 'expirado' THEN 'expirado' ELSE 'cancelado' END
+  WHERE id = p_order;
+END;
+$$;
+
+-- Libera reservas vencidas. Pode ser chamada por rotina agendada.
+CREATE OR REPLACE FUNCTION expirar_pedidos_vencidos()
+RETURNS INTEGER
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_id UUID;
+  v_n INTEGER := 0;
+BEGIN
+  FOR v_id IN
+    SELECT id FROM ticket_orders WHERE status = 'pendente' AND expires_at IS NOT NULL AND expires_at < NOW()
+  LOOP
+    PERFORM cancelar_pedido_ingresso(v_id, 'expirado');
+    v_n := v_n + 1;
+  END LOOP;
+  RETURN v_n;
+END;
+$$;
+
+-- --- Check-in ----------------------------------------------------------------
+CREATE OR REPLACE FUNCTION validar_ingresso(p_code TEXT)
+RETURNS JSONB
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_t tickets%ROWTYPE;
+BEGIN
+  SELECT * INTO v_t FROM tickets WHERE code = upper(trim(p_code)) FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'motivo', 'Ingresso não encontrado.');
+  END IF;
+  -- Só quem organiza o evento (ou o admin) pode validar.
+  IF NOT (owns_event(v_t.event_id) OR is_platform_admin()) THEN
+    RETURN jsonb_build_object('ok', false, 'motivo', 'Sem permissão para validar ingressos deste evento.');
+  END IF;
+  IF v_t.status = 'cancelado' THEN
+    RETURN jsonb_build_object('ok', false, 'motivo', 'Ingresso cancelado.');
+  END IF;
+  IF v_t.status = 'usado' THEN
+    RETURN jsonb_build_object('ok', false, 'motivo', 'Ingresso já utilizado em ' || to_char(v_t.checked_in_at, 'DD/MM HH24:MI') || '.');
+  END IF;
+
+  UPDATE tickets SET status = 'usado', checked_in_at = NOW() WHERE id = v_t.id;
+  RETURN jsonb_build_object('ok', true, 'holder', v_t.holder_name, 'ticket_id', v_t.id);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION criar_pedido_ingresso(UUID, JSONB, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION validar_ingresso(TEXT) TO authenticated;
+
+-- --- RLS ---------------------------------------------------------------------
+ALTER TABLE ticket_types       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ticket_orders      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ticket_order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tickets            ENABLE ROW LEVEL SECURITY;
+
+-- Tipos de ingresso: qualquer um vê o que está à venda; só o dono do evento edita.
+DROP POLICY IF EXISTS ticket_types_select ON ticket_types;
+CREATE POLICY ticket_types_select ON ticket_types FOR SELECT USING (TRUE);
+DROP POLICY IF EXISTS ticket_types_write ON ticket_types;
+CREATE POLICY ticket_types_write ON ticket_types FOR ALL
+  USING (is_platform_admin() OR owns_event(event_id))
+  WITH CHECK (is_platform_admin() OR owns_event(event_id));
+
+-- Pedidos e ingressos: cada um vê os seus; o dono do evento vê os do evento.
+DROP POLICY IF EXISTS ticket_orders_select ON ticket_orders;
+CREATE POLICY ticket_orders_select ON ticket_orders FOR SELECT
+  USING (user_id = auth.uid() OR is_platform_admin() OR owns_event(event_id));
+
+DROP POLICY IF EXISTS ticket_order_items_select ON ticket_order_items;
+CREATE POLICY ticket_order_items_select ON ticket_order_items FOR SELECT
+  USING (EXISTS (SELECT 1 FROM ticket_orders o WHERE o.id = order_id AND (o.user_id = auth.uid() OR is_platform_admin() OR owns_event(o.event_id))));
+
+DROP POLICY IF EXISTS tickets_select ON tickets;
+CREATE POLICY tickets_select ON tickets FOR SELECT
+  USING (user_id = auth.uid() OR is_platform_admin() OR owns_event(event_id));
+
+-- Escrita em pedidos e ingressos passa SOMENTE pelas funções acima, que são
+-- SECURITY DEFINER. Não há policy de INSERT/UPDATE de propósito: assim ninguém
+-- cria pedido pago nem emite ingresso direto pelo PostgREST.
+
+-- ============================================================================
+-- Permissão de execução das funções
+-- ============================================================================
+-- ISTO NÃO É DETALHE: o PostgreSQL concede EXECUTE a PUBLIC em toda função
+-- nova. Como o PostgREST publica `/rest/v1/rpc/<função>`, uma função
+-- SECURITY DEFINER sem REVOKE fica ao alcance de qualquer pessoa logada — e
+-- SECURITY DEFINER ignora RLS. Sem o bloco abaixo, um comprador chamava
+-- `confirmar_pedido_ingresso` no próprio pedido e saía com o ingresso pago sem
+-- pagar. Um GRANT sozinho não resolve: ele soma ao que PUBLIC já tem.
+--
+-- Regra: tudo que mexe em dinheiro ou emite ingresso é INTERNO, só o
+-- service_role alcança. O usuário só chama o que valida quem ele é.
+
+REVOKE ALL ON FUNCTION emitir_ingressos(UUID)                     FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION confirmar_pedido_ingresso(UUID, TEXT)      FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION cancelar_pedido_ingresso(UUID, TEXT)       FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION expirar_pedidos_vencidos()                 FROM PUBLIC, anon, authenticated;
+
+-- Funções de gatilho não são para chamada direta.
+REVOKE ALL ON FUNCTION handle_new_user()          FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION protect_profile_columns()  FROM PUBLIC, anon, authenticated;
+
+-- Buscar perfil por e-mail serve para convidar alguém para um compromisso.
+-- Quem não está logado não tem esse motivo — e com acesso anônimo a função
+-- vira um confirmador de contas: informe um e-mail, receba o nome de quem o usa.
+REVOKE ALL ON FUNCTION find_profile_by_email(TEXT) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION find_profile_by_email(TEXT) TO authenticated;
+
+-- O que o usuário logado pode chamar. Cada uma confere por dentro quem é o
+-- chamador: `criar_pedido_ingresso` exige auth.uid() e respeita estoque;
+-- `validar_ingresso` exige ser o organizador; `cancelar_meu_pedido` só desfaz
+-- pedido pendente do próprio usuário.
+REVOKE ALL ON FUNCTION criar_pedido_ingresso(UUID, JSONB, TEXT, TEXT) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION validar_ingresso(TEXT)                          FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION criar_pedido_ingresso(UUID, JSONB, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION validar_ingresso(TEXT)                          TO authenticated;
+
+-- Desistir da compra. Existe separada de `cancelar_pedido_ingresso` porque
+-- aquela aceita QUALQUER pedido: exposta ao público, viraria um botão de
+-- cancelar a venda alheia. Esta só alcança pedido pendente de quem chama.
+CREATE OR REPLACE FUNCTION cancelar_meu_pedido(p_order UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_dono   UUID;
+  v_status TEXT;
+BEGIN
+  SELECT user_id, status INTO v_dono, v_status FROM ticket_orders WHERE id = p_order;
+  IF NOT FOUND OR v_dono IS DISTINCT FROM auth.uid() THEN
+    RAISE EXCEPTION 'Pedido não encontrado.';
+  END IF;
+  IF v_status <> 'pendente' THEN
+    RETURN FALSE;   -- pago ou já cancelado: nada a fazer
+  END IF;
+  PERFORM cancelar_pedido_ingresso(p_order, 'cancelado');
+  RETURN TRUE;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cancelar_meu_pedido(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION cancelar_meu_pedido(UUID) TO authenticated;
+
+-- As funções de predicado (owns_event, is_platform_admin, current_tenant_id…)
+-- continuam abertas de propósito: as policies de RLS as chamam com os direitos
+-- de quem consulta, então revogar quebraria o acesso legítimo. Todas são
+-- somente leitura e só respondem sobre o próprio chamador.
