@@ -13,9 +13,10 @@ import { TOPICS } from '@/lib/data';
 // `dropdown: true` sai da barra do desktop (que ficaria apertada) e aparece
 // dentro do menu de Interesses; no mobile a lista completa é mostrada.
 const links = [
-  { href: '/', label: 'Início', icon: 'calendar' as const },
+  // A home é a área de interesses e hobbies — por isso "Início" abre o menu
+  // com os nichos e as áreas derivadas.
+  { href: '/', label: 'Início', icon: 'sparkles' as const },
   { href: '/agenda', label: 'Compromissos', icon: 'calendarCheck' as const },
-  { href: '/interesses', label: 'Interesses', icon: 'sparkles' as const },
   { href: '/esporte', label: 'Esporte ao vivo', icon: 'trophy' as const, dropdown: true },
   { href: '/livros', label: 'Livros que li esse ano', icon: 'library' as const, dropdown: true },
   { href: '/bom-dia', label: 'Bom Dia', icon: 'sunrise' as const },
@@ -62,14 +63,14 @@ export default function Navbar() {
         {/* Desktop */}
         <nav className="hidden items-center gap-1 text-sm md:flex">
           {links.filter((l) => !l.dropdown).map((l) =>
-            l.href === '/interesses' ? (
-              // "Interesses e hobbies" abre a área completa e lista os nichos ao passar o mouse.
+            l.href === '/' ? (
+              // A home é a área de interesses: o item abre os nichos ao passar o mouse.
               <div key={l.href} className="relative" onMouseLeave={() => setTopicsOpen(false)}>
                 <Link
-                  href="/interesses"
+                  href="/"
                   onMouseEnter={() => setTopicsOpen(true)}
                   className={`flex items-center gap-1.5 rounded-xl px-3 py-2 transition hover:bg-zinc-900 hover:text-emerald-300 ${
-                    pathname.startsWith('/interesses') || pathname.startsWith('/tema') ? 'text-emerald-400' : 'text-zinc-300'
+                    pathname === '/' || pathname.startsWith('/tema') ? 'text-emerald-400' : 'text-zinc-300'
                   }`}
                 >
                   <Icon name={l.icon} size={16} /> {l.label}
@@ -78,7 +79,7 @@ export default function Navbar() {
                 {topicsOpen && (
                   <div className="absolute left-0 top-full w-60 rounded-2xl border border-zinc-800 bg-zinc-900 p-2 shadow-soft">
                     <Link
-                      href="/interesses"
+                      href="/"
                       onClick={() => setTopicsOpen(false)}
                       className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-300 transition hover:bg-zinc-800"
                     >

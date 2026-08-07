@@ -115,7 +115,7 @@ export default function Questionnaire() {
     } catch {
       /* segue com o armazenamento local */
     }
-    router.push('/interesses');
+    router.push('/');
   };
 
   const canAdvance = step === 0 ? interests.length > 0 : true;
