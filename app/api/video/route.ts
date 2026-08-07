@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isYoutubeConfigured, liveEmbedUrl, resolveChannelId, searchVideo } from '@/lib/youtube';
+import { explicarErroYoutube, isYoutubeConfigured, liveEmbedUrl, resolveChannelId, searchVideo } from '@/lib/youtube';
 
 export const revalidate = 3600;
 
@@ -41,17 +41,8 @@ export async function GET(request: Request) {
     if (!video) return NextResponse.json({ configurado: true, encontrado: false }, { status: 404 });
     return NextResponse.json({ configurado: true, encontrado: true, ...video });
   } catch (e: any) {
-    const motivo = String(e?.message || e);
-    const cota = /quota/i.test(motivo);
-    return NextResponse.json(
-      {
-        configurado: true,
-        error: motivo,
-        hint: cota
-          ? 'A cota diária do YouTube (10.000 unidades) acabou. Ela reabre à meia-noite no fuso do Pacífico.'
-          : 'Confira se a YouTube Data API v3 está ativada no projeto do Google Cloud e se a chave não tem restrição de origem.',
-      },
-      { status: 502 },
-    );
+    const reason = String(e?.reason || '');
+    const detalhe = String(e?.detalhe || e?.message || e);
+    return NextResponse.json({ configurado: true, error: detalhe, reason, hint: explicarErroYoutube(reason, detalhe) }, { status: 502 });
   }
 }

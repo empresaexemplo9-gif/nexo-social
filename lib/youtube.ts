@@ -28,6 +28,20 @@ export function isYoutubeConfigured(): boolean {
   return Boolean(key());
 }
 
+/** Erro do YouTube com o motivo estruturado, para diagnóstico preciso. */
+export class YoutubeError extends Error {
+  constructor(
+    /** Código do Google: accessNotConfigured, API_KEY_HTTP_REFERRER_BLOCKED… */
+    readonly reason: string,
+    /** Mensagem original — costuma trazer o link de ativação e o nº do projeto. */
+    readonly detalhe: string,
+    readonly status: number,
+  ) {
+    super(detalhe || reason);
+    this.name = 'YoutubeError';
+  }
+}
+
 async function call(path: string, params: Record<string, string>, revalidate: number) {
   const qs = new URLSearchParams({ ...params, key: key() }).toString();
   const res = await fetch(`${API}/${path}?${qs}`, {
@@ -36,8 +50,13 @@ async function call(path: string, params: Record<string, string>, revalidate: nu
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const motivo = body?.error?.errors?.[0]?.reason || body?.error?.message || `HTTP ${res.status}`;
-    throw new Error(String(motivo));
+    // Guarda motivo E mensagem: só o motivo perde o link de ativação que o
+    // Google manda junto, que é justamente o que resolve o caso mais comum.
+    throw new YoutubeError(
+      String(body?.error?.errors?.[0]?.reason || body?.error?.status || ''),
+      String(body?.error?.message || `HTTP ${res.status}`),
+      res.status,
+    );
   }
   return body;
 }
@@ -95,4 +114,35 @@ export async function resolveChannelId(handle: string): Promise<string | null> {
 /** URL de embed da transmissão ao vivo corrente de um canal. */
 export function liveEmbedUrl(channelId: string): string {
   return `https://www.youtube.com/embed/live_stream?channel=${channelId}`;
+}
+
+/**
+ * Traduz o motivo do Google na correção exata. Sem isso o usuário recebe um
+ * conselho genérico e fica adivinhando qual das cinco causas possíveis é a sua.
+ */
+export function explicarErroYoutube(reason: string, detalhe: string): string {
+  const r = `${reason} ${detalhe}`.toLowerCase();
+
+  if (/accessnotconfigured|has not been used in project|is disabled/.test(r)) {
+    return 'A YouTube Data API v3 não está ativada NO MESMO projeto a que a chave pertence — é comum ativar num projeto e criar a chave em outro. A mensagem do Google acima traz o número do projeto e o link direto de ativação. Depois de ativar, espere alguns minutos.';
+  }
+  if (/referer|referrer/.test(r)) {
+    return 'A chave está restrita por referenciador HTTP. As chamadas saem do servidor da Vercel, sem referenciador — nenhuma restrição desse tipo funciona aqui. Em Credenciais → sua chave → Restrições de aplicativo, escolha "Nenhuma".';
+  }
+  if (/ip_address_blocked|ip address/.test(r)) {
+    return 'A chave está restrita por endereço IP, e os IPs da Vercel mudam a cada requisição. Em Restrições de aplicativo, escolha "Nenhuma".';
+  }
+  if (/service_blocked|api_key_service_blocked/.test(r)) {
+    return 'A chave existe, mas não tem permissão para a YouTube Data API v3. Em Credenciais → sua chave → Restrições de API, marque "Restringir chave" e selecione YouTube Data API v3 (ou deixe "Não restringir chave"). Leva alguns minutos para valer.';
+  }
+  if (/keyinvalid|api key not valid|api_key_invalid/.test(r)) {
+    return 'A chave é inválida — provavelmente foi copiada incompleta ou apagada no Console. Gere outra em Credenciais → Criar credenciais → Chave de API.';
+  }
+  if (/quota|ratelimit|dailylimit/.test(r)) {
+    return 'A cota diária (10.000 unidades) acabou. Cada busca custa 100. Ela reabre à meia-noite no fuso do Pacífico.';
+  }
+  if (/forbidden|permission_denied|does not have permission|insufficient/.test(r)) {
+    return 'O Google recusou a chamada. Verifique, no mesmo projeto da chave, se a YouTube Data API v3 está ativada e se as Restrições de API incluem essa API.';
+  }
+  return 'Veja a mensagem do Google acima — ela costuma dizer exatamente o que falta.';
 }
