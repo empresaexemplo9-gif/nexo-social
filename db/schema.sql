@@ -691,3 +691,7 @@ CREATE POLICY profiles_select ON profiles FOR SELECT
     OR tenant_id = current_tenant_id()
     OR shares_agenda_with(id)
   );
+
+-- Link direto de compra do ingresso, vindo da plataforma de venda.
+-- Sem ele, a importação traz o evento mas o usuário não tem para onde ir.
+ALTER TABLE events ADD COLUMN IF NOT EXISTS ticket_url TEXT;

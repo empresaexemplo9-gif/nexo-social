@@ -7,6 +7,7 @@ import {
   missingEnv,
   testProvider,
   importTicketmaster,
+  importTicketPlatform,
   type ProviderId,
 } from '@/lib/integrations';
 import { cityCoords } from '@/lib/data';
@@ -65,6 +66,11 @@ export async function POST(request: Request) {
     const sb = createAdminClient() ?? auth.sb;
     const city = typeof body?.city === 'string' && body.city ? body.city : undefined;
     const coords = city ? cityCoords(city) : null;
+
+    if (def.id === 'sympla' || def.id === 'eventbrite') {
+      const r = await importTicketPlatform(sb, def.id);
+      return NextResponse.json({ provider: def.id, action, result: r }, { status: r.ok ? 200 : 502 });
+    }
 
     const result = await importTicketmaster(sb, {
       city,
