@@ -1,0 +1,57 @@
+import { NextResponse } from 'next/server';
+import { isYoutubeConfigured, liveEmbedUrl, resolveChannelId, searchVideo } from '@/lib/youtube';
+
+export const revalidate = 3600;
+
+/**
+ * GET /api/video?q=<termo>      → vídeo para tocar embutido
+ * GET /api/video?canal=@handle  → transmissão ao vivo do canal, embutida
+ *
+ * Sem YOUTUBE_API_KEY responde 503 com `configurado: false`; a interface então
+ * mostra o link externo em vez do player.
+ */
+export async function GET(request: Request) {
+  const params = new URL(request.url).searchParams;
+  const q = (params.get('q') || '').trim();
+  const canal = (params.get('canal') || '').trim();
+
+  if (!q && !canal) {
+    return NextResponse.json({ error: 'Informe q ou canal.' }, { status: 400 });
+  }
+
+  if (!isYoutubeConfigured()) {
+    return NextResponse.json(
+      {
+        configurado: false,
+        error: 'YouTube não configurado.',
+        hint: 'Crie uma chave gratuita no Google Cloud (YouTube Data API v3) e adicione YOUTUBE_API_KEY na Vercel. Sem ela, os vídeos abrem no YouTube em vez de tocar aqui.',
+      },
+      { status: 503 },
+    );
+  }
+
+  try {
+    if (canal) {
+      const channelId = await resolveChannelId(canal);
+      if (!channelId) return NextResponse.json({ configurado: true, encontrado: false }, { status: 404 });
+      return NextResponse.json({ configurado: true, encontrado: true, channelId, embedUrl: liveEmbedUrl(channelId) });
+    }
+
+    const video = await searchVideo(q);
+    if (!video) return NextResponse.json({ configurado: true, encontrado: false }, { status: 404 });
+    return NextResponse.json({ configurado: true, encontrado: true, ...video });
+  } catch (e: any) {
+    const motivo = String(e?.message || e);
+    const cota = /quota/i.test(motivo);
+    return NextResponse.json(
+      {
+        configurado: true,
+        error: motivo,
+        hint: cota
+          ? 'A cota diária do YouTube (10.000 unidades) acabou. Ela reabre à meia-noite no fuso do Pacífico.'
+          : 'Confira se a YouTube Data API v3 está ativada no projeto do Google Cloud e se a chave não tem restrição de origem.',
+      },
+      { status: 502 },
+    );
+  }
+}

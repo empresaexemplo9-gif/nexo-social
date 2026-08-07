@@ -102,9 +102,42 @@ function BookCard({ book }: { book: FreeBook }) {
   );
 }
 
+interface Capitulo {
+  titulo: string;
+  mp3: string;
+  duracao: string | null;
+}
+
 function AudioCard({ book }: { book: AudioBook }) {
   const { find, add } = useReading();
   const registrado = find(book.source, book.id);
+
+  // Capítulos do LibriVox: MP3 em domínio público, tocado pelo player da
+  // própria plataforma — não depende de chave de API nenhuma.
+  const [capitulos, setCapitulos] = useState<Capitulo[] | null>(null);
+  const [faixa, setFaixa] = useState(0);
+  const [estado, setEstado] = useState<'fechado' | 'carregando' | 'ok' | 'erro'>('fechado');
+  const [erro, setErro] = useState('');
+
+  const ouvir = async () => {
+    if (capitulos) {
+      setEstado('ok');
+      return;
+    }
+    if (!book.feedUrl) return;
+    setEstado('carregando');
+    try {
+      const res = await fetch(`/api/audiolivro?feed=${encodeURIComponent(book.feedUrl)}`);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      setCapitulos(json.capitulos);
+      setFaixa(0);
+      setEstado('ok');
+    } catch (e: any) {
+      setErro(e?.message || 'Não foi possível carregar os capítulos.');
+      setEstado('erro');
+    }
+  };
 
   return (
     <article className="rounded-3xl border border-zinc-800/80 bg-zinc-900/50 p-4 transition hover:border-zinc-700">
@@ -124,22 +157,21 @@ function AudioCard({ book }: { book: AudioBook }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
-        <a
-          href={book.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
-        >
-          <Icon name="play" size={11} /> Ouvir
-        </a>
-        {book.feedUrl && (
+        {book.feedUrl ? (
+          <button
+            onClick={ouvir}
+            className="inline-flex items-center gap-1 rounded-xl bg-zinc-800 px-2.5 py-1 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
+          >
+            <Icon name="play" size={11} /> {estado === 'carregando' ? 'Abrindo…' : 'Ouvir aqui'}
+          </button>
+        ) : (
           <a
-            href={book.feedUrl}
+            href={book.url}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
           >
-            <Icon name="external" size={11} /> Feed MP3
+            <Icon name="external" size={11} /> Ouvir no LibriVox
           </a>
         )}
         <button
@@ -166,6 +198,58 @@ function AudioCard({ book }: { book: AudioBook }) {
           {registrado ? 'Na estante' : 'Quero ouvir'}
         </button>
       </div>
+
+      {/* Player da plataforma — o áudio toca aqui, não em outro site. */}
+      {estado === 'erro' && (
+        <p className="mt-3 rounded-xl border border-clay-800/50 bg-clay-950/20 p-3 text-[11px] text-clay-200">
+          {erro}{' '}
+          <a href={book.url} target="_blank" rel="noopener noreferrer" className="underline">
+            Ouvir no LibriVox
+          </a>
+        </p>
+      )}
+
+      {estado === 'ok' && capitulos && capitulos.length > 0 && (
+        <div className="mt-3 space-y-2 border-t border-zinc-800 pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="truncate text-[11px] font-medium text-zinc-200">{capitulos[faixa]?.titulo}</p>
+            <span className="shrink-0 text-[10px] text-zinc-500">
+              {faixa + 1}/{capitulos.length}
+            </span>
+          </div>
+
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <audio
+            key={capitulos[faixa]?.mp3}
+            src={capitulos[faixa]?.mp3}
+            controls
+            autoPlay
+            preload="none"
+            onEnded={() => setFaixa((i) => Math.min(i + 1, capitulos.length - 1))}
+            className="w-full"
+          />
+
+          {capitulos.length > 1 && (
+            <div className="flex flex-wrap gap-1">
+              {capitulos.slice(0, 12).map((c, i) => (
+                <button
+                  key={c.mp3}
+                  onClick={() => setFaixa(i)}
+                  title={c.titulo}
+                  className={`rounded-lg px-2 py-0.5 text-[10px] transition ${
+                    i === faixa ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-100'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              {capitulos.length > 12 && (
+                <span className="px-1 text-[10px] text-zinc-600">+{capitulos.length - 12}</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </article>
   );
 }
