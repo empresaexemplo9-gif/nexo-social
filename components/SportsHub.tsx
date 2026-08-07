@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Icon from './icons';
 import { formatEventDateLong, relativeLabel } from '@/lib/datetime';
+import InlinePlayer, { type PlayRequest } from './InlinePlayer';
 import { youtubeEmbed, youtubeSearch, type Broadcaster, type Legend } from '@/lib/sports-media';
 import type { Competition, Match, SportDef, SportId, SportsBoard } from '@/lib/sports';
 
@@ -17,34 +18,6 @@ const KIND_LABEL: Record<string, string> = {
   'melhores-momentos': 'Melhores momentos',
   acervo: 'Acervo',
 };
-
-// ---------------------------------------------------------------------------
-// Player embutido — toca o vídeo oficial dentro do nexo.social
-// ---------------------------------------------------------------------------
-
-function Player({ url, title, onClose }: { url: string; title: string; onClose: () => void }) {
-  const embed = youtubeEmbed(url);
-  if (!embed) return null;
-  return (
-    <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/70">
-      <div className="aspect-video w-full bg-black">
-        <iframe
-          src={embed}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-          allowFullScreen
-          className="h-full w-full"
-        />
-      </div>
-      <div className="flex items-center justify-between gap-3 border-t border-zinc-800 px-4 py-3">
-        <p className="truncate text-xs text-zinc-300">{title}</p>
-        <button onClick={onClose} className="shrink-0 text-xs text-zinc-500 transition hover:text-zinc-200">
-          Fechar
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Cartão de partida
@@ -73,7 +46,7 @@ function Side({ name, logo, score, winner }: { name: string; logo: string | null
   );
 }
 
-function MatchCard({ match, onPlay }: { match: Match; onPlay: (url: string, title: string) => void }) {
+function MatchCard({ match, onPlay }: { match: Match; onPlay: (req: PlayRequest) => void }) {
   const aoVivo = match.state === 'ao-vivo';
   const encerrado = match.state === 'encerrado';
   const casaVenceu = encerrado && (match.homeScore ?? 0) > (match.awayScore ?? 0);
@@ -111,7 +84,7 @@ function MatchCard({ match, onPlay }: { match: Match; onPlay: (url: string, titl
         </span>
         {match.highlightUrl && youtubeEmbed(match.highlightUrl) && (
           <button
-            onClick={() => onPlay(match.highlightUrl!, `${match.home} x ${match.away}`)}
+            onClick={() => onPlay({ titulo: `${match.home} x ${match.away}`, url: match.highlightUrl!, externo: match.highlightUrl! })}
             className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-zinc-800 px-2.5 py-1 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
           >
             <Icon name="play" size={11} /> Melhores momentos
@@ -122,7 +95,7 @@ function MatchCard({ match, onPlay }: { match: Match; onPlay: (url: string, titl
   );
 }
 
-function MatchGrid({ matches, onPlay, vazio }: { matches: Match[]; onPlay: (u: string, t: string) => void; vazio: string }) {
+function MatchGrid({ matches, onPlay, vazio }: { matches: Match[]; onPlay: (req: PlayRequest) => void; vazio: string }) {
   if (matches.length === 0) {
     return <p className="rounded-2xl border border-dashed border-zinc-800 p-6 text-center text-sm text-zinc-500">{vazio}</p>;
   }
@@ -144,7 +117,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
   const [board, setBoard] = useState<Board | null>(null);
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading');
   const [erro, setErro] = useState('');
-  const [tocando, setTocando] = useState<{ url: string; title: string } | null>(null);
+  const [tocando, setTocando] = useState<PlayRequest | null>(null);
   const [aba, setAba] = useState<'agora' | 'proximos' | 'resultados'>('agora');
 
   const load = useCallback(async (s: SportId) => {
@@ -168,8 +141,8 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
     load(sport);
   }, [sport, load]);
 
-  const play = (url: string, title: string) => {
-    setTocando({ url, title });
+  const play = (req: PlayRequest) => {
+    setTocando(req);
     if (typeof window !== 'undefined') {
       document.getElementById('player-esporte')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -214,7 +187,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
         <>
           {/* Player */}
           <div id="player-esporte" className="scroll-mt-24">
-            {tocando && <Player url={tocando.url} title={tocando.title} onClose={() => setTocando(null)} />}
+            {tocando && <InlinePlayer req={tocando} onClose={() => setTocando(null)} />}
           </div>
 
           {/* Partidas */}
@@ -305,7 +278,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                 {board.replays.map((m) => (
                   <button
                     key={m.id}
-                    onClick={() => play(m.highlightUrl!, `${m.home} x ${m.away}`)}
+                    onClick={() => play({ titulo: `${m.home} x ${m.away}`, url: m.highlightUrl!, externo: m.highlightUrl! })}
                     className="group overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/50 text-left transition hover:border-emerald-800/60"
                   >
                     <span className="relative flex aspect-video items-center justify-center bg-zinc-950/70">
@@ -341,15 +314,12 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {board.transmissoes.map((b) => (
-                <a
+                <div
                   key={b.id}
-                  href={b.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 transition hover:border-emerald-800/60"
+                  className="rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 transition hover:border-emerald-800/60"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <h4 className="truncate text-sm font-semibold text-zinc-50 group-hover:text-emerald-300">{b.label}</h4>
+                    <h4 className="truncate text-sm font-semibold text-zinc-50">{b.label}</h4>
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                         b.kind === 'ao-vivo' ? 'bg-red-500/15 text-red-300' : 'bg-zinc-800 text-zinc-400'
@@ -359,10 +329,26 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                     </span>
                   </div>
                   <p className="mt-1.5 text-xs leading-relaxed text-zinc-400">{b.note}</p>
-                  <span className="mt-2 inline-flex items-center gap-1 text-[11px] text-emerald-400">
-                    {b.youtube ?? 'Abrir'} <Icon name="external" size={11} />
-                  </span>
-                </a>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    {/* Canal com handle pode ter a transmissão embutida aqui. */}
+                    {b.youtube && (
+                      <button
+                        onClick={() => play({ titulo: `${b.label} — ao vivo`, canal: b.youtube, externo: b.url })}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-800 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
+                      >
+                        <Icon name="play" size={11} /> Assistir aqui
+                      </button>
+                    )}
+                    <a
+                      href={b.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[11px] text-emerald-400 hover:text-emerald-300"
+                    >
+                      {b.youtube ?? 'Abrir no site'} <Icon name="external" size={11} />
+                    </a>
+                  </div>
+                </div>
               ))}
             </div>
           </section>
@@ -373,16 +359,18 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
               <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-50">
                 <Icon name="trophy" size={17} className="text-clay-300" /> Craques históricos
               </h3>
-              <p className="mt-0.5 text-sm text-zinc-400">A seleção muda todo dia — hoje a plataforma indicou estes.</p>
+              <p className="mt-0.5 text-sm text-zinc-400">
+                A seleção muda todo dia. Toque para assistir aqui mesmo.
+              </p>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {board.lendas.map((l) => (
-                <a
+                <button
                   key={l.id}
-                  href={youtubeSearch(l.query)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 transition hover:border-clay-700/60"
+                  onClick={() =>
+                    play({ titulo: `${l.name} — melhores momentos`, busca: l.query, externo: youtubeSearch(l.query) })
+                  }
+                  className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 text-left transition hover:border-clay-700/60"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -393,7 +381,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-zinc-400">{l.note}</p>
                   <p className="mt-2 truncate text-[11px] text-zinc-600">{l.teams}</p>
-                </a>
+                </button>
               ))}
             </div>
           </section>
