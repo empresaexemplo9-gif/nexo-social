@@ -132,8 +132,12 @@ export function explicarErroYoutube(reason: string, detalhe: string): string {
   if (/ip_address_blocked|ip address/.test(r)) {
     return 'A chave está restrita por endereço IP, e os IPs da Vercel mudam a cada requisição. Em Restrições de aplicativo, escolha "Nenhuma".';
   }
-  if (/service_blocked|api_key_service_blocked/.test(r)) {
-    return 'A chave existe, mas não tem permissão para a YouTube Data API v3. Em Credenciais → sua chave → Restrições de API, marque "Restringir chave" e selecione YouTube Data API v3 (ou deixe "Não restringir chave"). Leva alguns minutos para valer.';
+  // "Requests to this API <serviço> method <método> are blocked." é o texto
+  // canônico do API_KEY_SERVICE_BLOCKED — a chave é válida, mas a lista de
+  // "Restrições de API" dela não inclui esta API. Não confundir com a API
+  // desativada no projeto, que dá accessNotConfigured e tem outra correção.
+  if (/service_blocked|api_key_service_blocked|requests to this api .*are blocked/.test(r)) {
+    return 'A chave é válida, mas as Restrições de API dela não incluem a YouTube Data API v3 — é a lista da própria chave, não a ativação no projeto. Vá em Credenciais → clique no lápis da sua chave → Restrições de API → escolha "Não restringir chave", ou mantenha "Restringir chave" e MARQUE "YouTube Data API v3" na lista. Salve e espere até 5 minutos. Se a YouTube Data API v3 não aparecer nessa lista, é porque ela ainda não está ativada neste projeto: ative em console.cloud.google.com/apis/library/youtube.googleapis.com e volte aqui.';
   }
   if (/keyinvalid|api key not valid|api_key_invalid/.test(r)) {
     return 'A chave é inválida — provavelmente foi copiada incompleta ou apagada no Console. Gere outra em Credenciais → Criar credenciais → Chave de API.';
