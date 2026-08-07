@@ -91,6 +91,49 @@ function categoriaSympla(nome?: string): CategorySlug {
   return 'cultura';
 }
 
+const SYMPLA_BASE = 'https://api.sympla.com.br/public/v1.6.0';
+const TZ = 'America/Sao_Paulo';
+/** Teto de páginas por importação — a paginação é por cursor e não tem fim. */
+const MAX_PAGINAS = 5;
+
+/** Converte um evento da Sympla no formato da plataforma. */
+function mapearSympla(e: any): ImportedEvent {
+  const end = e?.address ?? {};
+  return {
+    source: 'sympla',
+    external_id: String(e.id),
+    title: e.name ?? 'Evento',
+    category: categoriaSympla(e?.category_prim?.name ?? e?.category_sec?.name ?? e?.name),
+    event_date: dataBr(e.start_date),
+    starts_at: e.start_date ? new Date(e.start_date).toISOString() : null,
+    ends_at: e.end_date ? new Date(e.end_date).toISOString() : null,
+    city: end.city ?? '',
+    location: end.name || end.address || 'Local a confirmar',
+    lat: end.lat != null ? Number(end.lat) : null,
+    lng: end.lon != null ? Number(end.lon) : null,
+    image_url: e.image ?? '',
+    description:
+      (e.detail ?? '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 600) ||
+      `${e.name} — ingressos pela Sympla.`,
+    price: 'Consultar na Sympla',
+    // O produtor do evento é o equivalente mais próximo de "atração".
+    artist: e?.host?.name ?? null,
+    ticket_url: e.url ?? null,
+  };
+}
+
+/**
+ * Eventos da conta Sympla do token.
+ *
+ * Segue o contrato da v1.6.0:
+ *  - `published`, `timezone` e `sort` são OBRIGATÓRIOS;
+ *  - `sort` é minúsculo (`asc`/`desc`) — `DESC` é recusado;
+ *  - a paginação é por CURSOR (`pagination.next_cursor`), não por número de
+ *    página, então uma chamada só devolve no máximo `page_size` eventos.
+ *
+ * Ordenamos por data crescente a partir de hoje: uma agenda quer o que vem
+ * pela frente, não o que já passou.
+ */
 export async function buscarSympla(): Promise<{ eventos: ImportedEvent[]; erro?: string; dica?: string }> {
   const token = env('SYMPLA_API_TOKEN');
   if (!token) {
@@ -101,52 +144,73 @@ export async function buscarSympla(): Promise<{ eventos: ImportedEvent[]; erro?:
     };
   }
 
-  const res = await pedir(
-    'https://api.sympla.com.br/public/v1.5.1/events?published=true&page_size=100&sort=DESC&field_sort=start_date',
-    { s_token: token },
-  );
-  const texto = await res.text();
+  // `from` é data local na timezone informada, sem sufixo Z.
+  const agora = new Date();
+  const hojeSP = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' })
+    .format(agora);
 
-  if (!res.ok) {
+  const eventos: ImportedEvent[] = [];
+  let cursor: string | undefined;
+  let descartados = 0;
+
+  for (let pagina = 0; pagina < MAX_PAGINAS; pagina++) {
+    const params = new URLSearchParams({
+      published: 'published',
+      timezone: TZ,
+      sort: 'asc',
+      field_sort: 'start_date',
+      from: `${hojeSP}T00:00:00`,
+      page_size: '100',
+    });
+    if (cursor) params.set('cursor', cursor);
+
+    const res = await pedir(`${SYMPLA_BASE}/events?${params}`, { s_token: token });
+    const texto = await res.text();
+
+    if (!res.ok) {
+      // Se já trouxemos algo, entrega o que deu — melhor que perder tudo.
+      if (eventos.length) break;
+      return {
+        eventos: [],
+        erro: `Sympla respondeu ${res.status}: ${texto.replace(/\s+/g, ' ').slice(0, 160)}`,
+        dica:
+          res.status === 401 || res.status === 403
+            ? 'Token inválido ou sem permissão. Gere outro em Sympla → Minha conta → Integrações.'
+            : 'Confira os parâmetros em developers.sympla.com.br/api-doc.',
+      };
+    }
+
+    let json: any;
+    try {
+      json = JSON.parse(texto || '{}');
+    } catch {
+      return { eventos: [], erro: 'A Sympla respondeu algo que não é JSON.' };
+    }
+
+    const itens: any[] = json?.data ?? [];
+    for (const e of itens) {
+      // Cancelado e privado não podem virar evento público na agenda —
+      // a API devolve os dois, sinalizados por 0/1.
+      if (e?.cancelled === 1 || e?.private_event === 1) {
+        descartados++;
+        continue;
+      }
+      eventos.push(mapearSympla(e));
+    }
+
+    cursor = json?.pagination?.next_cursor || undefined;
+    if (!cursor || itens.length === 0) break;
+  }
+
+  if (!eventos.length) {
     return {
       eventos: [],
-      erro: `Sympla respondeu ${res.status}: ${texto.replace(/\s+/g, ' ').slice(0, 160)}`,
-      dica:
-        res.status === 401 || res.status === 403
-          ? 'Token inválido ou sem permissão. Gere outro em Sympla → Integrações → Tokens de API.'
-          : 'Confira a documentação da API da Sympla.',
+      erro: undefined,
+      dica: descartados
+        ? `Todos os ${descartados} evento(s) encontrados estão cancelados ou são privados.`
+        : undefined,
     };
   }
-
-  let json: any;
-  try {
-    json = JSON.parse(texto || '{}');
-  } catch {
-    return { eventos: [], erro: 'A Sympla respondeu algo que não é JSON.' };
-  }
-
-  const itens: any[] = json?.data ?? [];
-  const eventos = itens.map((e: any): ImportedEvent => {
-    const end = e?.address ?? {};
-    return {
-      source: 'sympla',
-      external_id: String(e.id),
-      title: e.name ?? 'Evento',
-      category: categoriaSympla(e?.category_prim?.name ?? e?.name),
-      event_date: dataBr(e.start_date),
-      starts_at: e.start_date ? new Date(e.start_date).toISOString() : null,
-      ends_at: e.end_date ? new Date(e.end_date).toISOString() : null,
-      city: end.city ?? '',
-      location: end.name || end.address || 'Local a confirmar',
-      lat: end.lat != null ? Number(end.lat) : null,
-      lng: end.lon != null ? Number(end.lon) : null,
-      image_url: e.image ?? '',
-      description: (e.detail ?? '').replace(/<[^>]+>/g, ' ').trim().slice(0, 600) || `${e.name} — ingressos pela Sympla.`,
-      price: 'Consultar na Sympla',
-      artist: null,
-      ticket_url: e.url ?? null,
-    };
-  });
 
   return { eventos };
 }
