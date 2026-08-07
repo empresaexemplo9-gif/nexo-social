@@ -2,13 +2,37 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { getSupabaseEnv } from './supabase-config';
+import { getSupabaseEnv, isSecretKey } from './supabase-config';
 
 const { url, anonKey, isConfigured } = getSupabaseEnv();
-const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+const serviceKeyRaw = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+
+// Só vale como service role uma chave REALMENTE secreta (sb_secret_… ou JWT com
+// role service_role). Colar a publishable aqui criaria um cliente cujo header
+// `Authorization: Bearer …` o Supabase recusa — e aí toda operação privilegiada,
+// inclusive a criação de conta, quebra com 401. Tratando como ausente, os
+// caminhos alternativos assumem em vez de o fluxo morrer.
+const serviceKey = isSecretKey(serviceKeyRaw) ? serviceKeyRaw : '';
 
 export const isSupabaseConfigured = isConfigured;
 export const hasServiceRole = Boolean(url && serviceKey);
+
+/** Diagnóstico da SUPABASE_SERVICE_ROLE_KEY, para /api/health e o cadastro. */
+export function serviceRoleStatus(): { ok: boolean; motivo: string } {
+  if (!serviceKeyRaw) {
+    return { ok: false, motivo: 'SUPABASE_SERVICE_ROLE_KEY não está definida no servidor.' };
+  }
+  if (!serviceKey) {
+    const parece = serviceKeyRaw.startsWith('sb_publishable_')
+      ? 'Parece ser a chave publishable (pública), não a secreta.'
+      : 'O valor não tem formato de chave secreta (sb_secret_… ou JWT com role service_role).';
+    return {
+      ok: false,
+      motivo: `SUPABASE_SERVICE_ROLE_KEY tem valor inválido. ${parece} Copie a "secret key" em Supabase → Project Settings → API Keys e faça Redeploy.`,
+    };
+  }
+  return { ok: true, motivo: 'Chave secreta presente e com formato válido.' };
+}
 
 /**
  * Cliente de servidor vinculado aos cookies da requisição — enxerga a sessão
