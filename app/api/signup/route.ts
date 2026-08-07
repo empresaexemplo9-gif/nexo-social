@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase-server';
+import { createAdminClient, createAnonServerClient } from '@/lib/supabase-server';
 import { isPlatformAdmin, tenantSlug, type AccountType } from '@/lib/auth';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 
@@ -64,11 +64,36 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
+
+  // Sem service role o cadastro NÃO pode simplesmente falhar: cai para o fluxo
+  // padrão do Supabase (signUp), que pede confirmação por e-mail. O tenant e o
+  // perfil ficam por conta do gatilho do banco e, se ele falhar, de
+  // `ensure_my_profile` no primeiro login.
   if (!admin) {
-    return NextResponse.json(
-      { error: 'Servidor sem SUPABASE_SERVICE_ROLE_KEY configurada.' },
-      { status: 503 },
-    );
+    const anon = createAnonServerClient();
+    if (!anon) {
+      return NextResponse.json({ error: 'Supabase não configurado neste servidor.' }, { status: 503 });
+    }
+    const { error } = await anon.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          account_type: accountType,
+          tenant_name: tenantName,
+          tenant_slug: tenantSlug(tenantName || email),
+        },
+      },
+    });
+    if (error) {
+      const already = /already|registered|exists/i.test(error.message || '');
+      return NextResponse.json(
+        { error: already ? 'Este e-mail já possui conta. Use "Fazer login".' : error.message },
+        { status: already ? 409 : error.status || 500 },
+      );
+    }
+    return NextResponse.json({ ok: true, confirmacaoPendente: true, admin: isPlatformAdmin(email) });
   }
 
   const { data, error } = await admin.auth.admin.createUser({

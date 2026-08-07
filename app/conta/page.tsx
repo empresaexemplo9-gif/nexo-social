@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { isPlatformAdmin } from '@/lib/auth';
+import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
+import { ensureProfile } from '@/lib/provisioning';
 import { usePreferences } from '@/lib/preferences';
 import { topicLabel } from '@/lib/data';
 
@@ -13,30 +14,59 @@ interface Account {
   fullName: string | null;
   tenantName: string | null;
   accountType: string | null;
+  role: string | null;
+  /** false = conta sem tenant; a página tenta consertar sozinha. */
+  provisionado: boolean;
 }
 
 export default function ContaPage() {
   const { prefs, ready, hasCompleted, reset } = usePreferences();
   const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
+  const [aviso, setAviso] = useState('');
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
       setLoading(false);
       return;
     }
-    supabase.auth.getUser().then(({ data }) => {
-      const u = data.user;
-      if (u) {
-        setAccount({
-          email: u.email ?? null,
-          fullName: (u.user_metadata?.full_name as string) ?? null,
-          tenantName: (u.user_metadata?.tenant_name as string) ?? null,
-          accountType: (u.user_metadata?.account_type as string) ?? null,
-        });
+
+    // A identidade vem do servidor (perfil + tenant reais), não do metadata do
+    // token — que pode estar defasado ou vazio.
+    const carregar = async (): Promise<boolean> => {
+      const res = await fetch('/api/me');
+      if (!res.ok) {
+        setAccount(null);
+        return true;
       }
-      setLoading(false);
-    });
+      const j = await res.json();
+      setAccount({
+        email: j.user?.email ?? null,
+        fullName: j.profile?.full_name ?? null,
+        tenantName: j.tenant?.name ?? null,
+        accountType: j.tenant?.account_type ?? null,
+        role: j.profile?.role ?? null,
+        provisionado: Boolean(j.provisionado),
+      });
+      return Boolean(j.provisionado);
+    };
+
+    (async () => {
+      try {
+        const ok = await carregar();
+        if (!ok) {
+          // Conta sem tenant (gatilho falhou ou conta anterior à migração):
+          // provisiona e recarrega.
+          const prov = await ensureProfile();
+          if (prov.ok) await carregar();
+          else setAviso(`Não foi possível preparar sua conta: ${prov.error}`);
+        }
+      } catch {
+        setAccount(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const admin = isPlatformAdmin(account?.email);
@@ -70,9 +100,23 @@ export default function ContaPage() {
               <Row label="E-mail" value={account.email ?? '—'} />
               <Row label="Tipo de conta" value={account.accountType === 'organizacao' ? 'Organização' : 'Pessoal'} />
               <Row label="Tenant" value={account.tenantName ?? '—'} />
-              <Row label="Perfil" value={admin ? 'Administrador da plataforma' : 'Membro'} />
+              <Row
+                label="Perfil"
+                value={admin ? 'Administrador da plataforma' : `Membro${account.role ? ` (${account.role})` : ''}`}
+              />
             </dl>
           )}
+
+          {aviso && <p className="mt-3 text-sm text-amber-300/80">{aviso}</p>}
+
+          {account && !admin && (
+            <p className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-xs leading-relaxed text-zinc-400">
+              Sua conta tem acesso completo à plataforma: nichos, agenda e compromissos, biblioteca, esporte e
+              recomendações. Apenas as ferramentas administrativas são exclusivas da conta oficial{' '}
+              <span className="text-zinc-300">{ADMIN_EMAIL}</span>.
+            </p>
+          )}
+
           {admin && (
             <Link href="/admin" className="mt-4 inline-block rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">
               Abrir Painel Admin →

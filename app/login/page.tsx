@@ -6,6 +6,7 @@ import LogoMark from '@/components/Logo';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin, type AccountType } from '@/lib/auth';
 import { describeAuthError } from '@/lib/auth-errors';
+import { ensureProfile } from '@/lib/provisioning';
 
 export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -30,8 +31,9 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
+      const tenantName = accountType === 'organizacao' ? organizationName : fullName;
+
       if (isRegistering) {
-        const tenantName = accountType === 'organizacao' ? organizationName : fullName;
         // A conta é criada pelo servidor (já confirmada) — não depende do envio
         // de e-mail, que é limitado no plano gratuito do Supabase.
         const res = await fetch('/api/signup', {
@@ -42,17 +44,28 @@ export default function LoginPage() {
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'Falha ao criar a conta.');
 
+        if (json.confirmacaoPendente) {
+          setMessage('✓ Conta criada! Confirme o e-mail que enviamos e depois faça login.');
+          setIsRegistering(false);
+          return;
+        }
+
         // Já entra com a conta recém-criada.
         setMessage('✓ Conta criada! Entrando…');
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError) throw signInError;
-        window.location.href = isPlatformAdmin(email) ? '/admin' : '/conta';
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        setMessage('✓ Autenticação realizada! Redirecionando…');
-        window.location.href = isPlatformAdmin(email) ? '/admin' : '/conta';
+        setMessage('✓ Autenticação realizada! Preparando sua conta…');
       }
+
+      // Idempotente: cria tenant + perfil se estiverem faltando. Conserta tanto
+      // contas antigas quanto qualquer falha silenciosa do gatilho de cadastro.
+      const prov = await ensureProfile(fullName, tenantName);
+      if (!prov.ok) console.warn('[auth] provisionamento:', prov.error);
+
+      window.location.href = isPlatformAdmin(email) ? '/admin' : '/';
     } catch (err: any) {
       // Loga o objeto completo no console do navegador para depuração fina.
       console.error('[auth] falha:', err);
