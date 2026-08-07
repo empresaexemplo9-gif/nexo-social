@@ -43,7 +43,16 @@ function PickList({ title, icon, picks }: { title: string; icon: 'film' | 'book'
 export default function InterestsView({ events }: { events: EventItem[] }) {
   const { prefs, ready, hasCompleted } = usePreferences();
 
-  if (!ready) return null;
+  // A view é a home: em vez de sumir enquanto lê o perfil do aparelho,
+  // mantém o espaço reservado para a página não "pular".
+  if (!ready) {
+    return (
+      <div className="space-y-12" aria-busy="true">
+        <div className="h-52 animate-pulse rounded-3xl border border-zinc-800 bg-zinc-900/40" />
+        <div className="h-40 animate-pulse rounded-3xl border border-zinc-800 bg-zinc-900/30" />
+      </div>
+    );
+  }
 
   const films = filmPicks(prefs.filmGenres ?? []);
   const books = bookPicks(prefs.bookGenres ?? []);
@@ -131,25 +140,38 @@ export default function InterestsView({ events }: { events: EventItem[] }) {
         </div>
       </section>
 
-      {/* Biblioteca */}
-      <section className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 sm:flex-row sm:items-center">
-        <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-950/60 text-emerald-400">
-            <Icon name="library" size={20} />
-          </span>
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-50">Livros que li esse ano</h2>
-            <p className="mt-0.5 text-sm text-zinc-300">
-              Seu registro de leitura, a estante liberada de graça toda semana e os audiolivros.
-            </p>
-          </div>
-        </div>
-        <Link
-          href="/livros"
-          className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
-        >
-          Abrir <Icon name="arrowRight" size={16} />
-        </Link>
+      {/* Áreas próprias */}
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {[
+          {
+            href: '/livros',
+            icon: 'library' as const,
+            title: 'Livros que li esse ano',
+            text: 'Seu registro de leitura, a estante liberada de graça toda semana e os audiolivros.',
+          },
+          {
+            href: '/esporte',
+            icon: 'trophy' as const,
+            title: 'Esporte ao vivo',
+            text: 'Placar, agenda e melhores momentos de futebol, NBA, tênis, vôlei, F1, MotoGP e esports.',
+          },
+        ].map((card) => (
+          <Link
+            key={card.href}
+            href={card.href}
+            className="group flex items-start gap-3 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 transition hover:border-emerald-800/60 hover:bg-zinc-900"
+          >
+            <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-950/60 text-emerald-400">
+              <Icon name={card.icon} size={20} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-1.5 text-lg font-semibold text-zinc-50 group-hover:text-emerald-300">
+                {card.title} <Icon name="arrowRight" size={15} className="opacity-0 transition group-hover:opacity-100" />
+              </span>
+              <span className="mt-0.5 block text-sm leading-relaxed text-zinc-300">{card.text}</span>
+            </span>
+          </Link>
+        ))}
       </section>
     </div>
   );

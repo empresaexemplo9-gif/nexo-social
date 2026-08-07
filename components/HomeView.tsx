@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Icon from '@/components/icons';
+import InterestsView from '@/components/InterestsView';
 import AgendaTimeline from '@/components/AgendaTimeline';
 import { usePreferences } from '@/lib/preferences';
 import type { ContentItem, EventItem } from '@/lib/data';
@@ -14,7 +15,7 @@ interface Props {
 }
 
 export default function HomeView({ events }: Props) {
-  const { prefs, ready, hasCompleted } = usePreferences();
+  const { prefs } = usePreferences();
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
 
@@ -41,58 +42,18 @@ export default function HomeView({ events }: Props) {
       <Navbar />
 
       <main className="mx-auto max-w-5xl space-y-14 px-4 py-8 sm:px-6 lg:px-8">
-        {/* Convite ao questionário (só enquanto não respondido) */}
-        {ready && !hasCompleted && (
-          <section className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-emerald-900/50 bg-emerald-950/20 p-5 sm:flex-row sm:items-center">
-            <div className="flex items-start gap-3">
-              <span className="mt-0.5 text-emerald-400">
-                <Icon name="sparkles" size={20} />
-              </span>
-              <div>
-                <h2 className="text-base font-semibold text-zinc-50">Deixe a agenda com a sua cara</h2>
-                <p className="mt-0.5 text-sm text-zinc-300">
-                  Escolha seus temas e a sua região — leva menos de um minuto.
-                </p>
-              </div>
-            </div>
-            <Link
-              href="/questionario"
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 shadow-glow transition hover:bg-emerald-400"
-            >
-              Começar <Icon name="arrowRight" size={16} />
-            </Link>
-          </section>
-        )}
+        {/* INTERESSES E HOBBIES — o coração da home:
+            perfil, trilha do Spotify, nichos e indicações. */}
+        <InterestsView events={events} />
 
-        {/* AGENDA PESSOAL — o coração da home */}
+        {/* Agenda pessoal, logo abaixo — o timeline já traz o próprio cabeçalho. */}
         <AgendaTimeline events={events} />
-
-        {/* Interesses e hobbies — área própria */}
-        <section className="flex flex-col items-start justify-between gap-4 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-6 sm:flex-row sm:items-center">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-zinc-700 bg-zinc-950/60 text-emerald-400">
-              <Icon name="sparkles" size={20} />
-            </span>
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-50">Interesses e hobbies</h2>
-              <p className="mt-0.5 text-sm text-zinc-300">
-                Sua trilha no Spotify, seus nichos e indicações de filmes e livros.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/interesses"
-            className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
-          >
-            Abrir <Icon name="arrowRight" size={16} />
-          </Link>
-        </section>
 
         {/* Bom Dia */}
         <section className="space-y-5">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <h2 className="flex items-center gap-2 text-2xl font-semibold text-zinc-50">
+              <h2 className="flex items-center gap-2 font-display text-2xl font-semibold text-zinc-50">
                 <span className="text-clay-300">
                   <Icon name="sunrise" size={22} />
                 </span>
@@ -127,7 +88,7 @@ export default function HomeView({ events }: Props) {
 
         {/* Newsletter */}
         <section className="card-soft texture-grain relative overflow-hidden p-7 text-center md:p-10">
-          <h2 className="text-2xl font-semibold text-zinc-50">Receba a agenda por e-mail</h2>
+          <h2 className="text-2xl font-semibold text-zinc-50">Receba a curadoria por e-mail</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-zinc-300">
             Um resumo do que vem por aí nos seus temas — na frequência que você escolher.
           </p>
@@ -160,10 +121,10 @@ export default function HomeView({ events }: Props) {
 
       <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
-          <span>nexo.social — sua agenda pessoal</span>
+          <span>nexo.social — interesses e hobbies</span>
           <div className="flex gap-5">
+            <Link href="/agenda" className="hover:text-zinc-300">Compromissos</Link>
             <Link href="/questionario" className="hover:text-zinc-300">Questionário</Link>
-            <Link href="/bom-dia" className="hover:text-zinc-300">Bom Dia</Link>
             <Link href="/conta" className="hover:text-zinc-300">Minha conta</Link>
           </div>
         </div>
