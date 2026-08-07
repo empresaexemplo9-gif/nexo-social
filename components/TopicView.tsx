@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import EventList from '@/components/EventList';
+import SportsHub from '@/components/SportsHub';
 import { usePreferences } from '@/lib/preferences';
 import { getTopic, type CategorySlug, type ContentItem, type EventItem } from '@/lib/data';
 import Icon from './icons';
@@ -63,6 +64,19 @@ export default function TopicView({ slug, contents, events }: Props) {
             ))}
           </div>
         </section>
+
+        {/* Esporte tem quadro próprio: placar ao vivo, transmissões e replays. */}
+        {slug === 'esporte' && (
+          <section id="ao-vivo" className="scroll-mt-20 space-y-6">
+            <div>
+              <h2 className="text-2xl font-semibold text-zinc-50">Ao vivo, resultados e melhores momentos</h2>
+              <p className="text-sm text-zinc-300">
+                Futebol, NBA, tênis, vôlei, Fórmula 1, MotoGP e jogos eletrônicos — atualizado o dia todo.
+              </p>
+            </div>
+            <SportsHub />
+          </section>
+        )}
 
         {/* Conteúdos */}
         <section className="space-y-6">

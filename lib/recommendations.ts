@@ -19,6 +19,7 @@ import {
 } from './data';
 import { haversineKm, type LatLng } from './geo';
 import { daysUntil, isHappeningNow, isUpcoming } from './datetime';
+import { dailyJitter } from './rotation';
 
 export interface ScoredEvent {
   event: EventItem;
@@ -56,6 +57,9 @@ const W = {
   tagMatch: 8, // tag casa com subtema do tema seguido
   sameCity: 10,
   farPenalty: 45, // penaliza o que está fora do alcance real do usuário
+  // Amplitude da rotação diária. Menor que qualquer critério de relevância
+  // (tema, proximidade, urgência), então só desempata itens parecidos.
+  dailyRotation: 7,
 };
 
 /**
@@ -156,6 +160,10 @@ export function scoreEvents(input: RecommendationInput): ScoredEvent[] {
       }
       score += tagAffinity(event, interests);
 
+      // 5) Rotação diária — gira a ordem entre itens de relevância parecida,
+      // para o feed trazer indicações novas todo dia sem perder a pertinência.
+      score += dailyJitter(event.id, W.dailyRotation);
+
       return { event, score, distanceKm, reasons: reasons.slice(0, 3) };
     })
     .filter((r) => r.score > -100)
@@ -182,6 +190,7 @@ export function scoreContents(input: RecommendationInput): ScoredContent[] {
         score += 6;
         reasons.push('Publicado hoje');
       }
+      score += dailyJitter(content.id, W.dailyRotation);
       return { content, score, reasons: reasons.slice(0, 2) };
     })
     .sort((a, b) => b.score - a.score);

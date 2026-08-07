@@ -10,11 +10,14 @@ import { supabase } from '@/lib/supabase';
 import { isPlatformAdmin } from '@/lib/auth';
 import { TOPICS } from '@/lib/data';
 
+// `dropdown: true` sai da barra do desktop (que ficaria apertada) e aparece
+// dentro do menu de Interesses; no mobile a lista completa é mostrada.
 const links = [
   { href: '/', label: 'Início', icon: 'calendar' as const },
   { href: '/agenda', label: 'Compromissos', icon: 'calendarCheck' as const },
   { href: '/interesses', label: 'Interesses', icon: 'sparkles' as const },
-  { href: '/livros', label: 'Livros', icon: 'library' as const },
+  { href: '/esporte', label: 'Esporte ao vivo', icon: 'trophy' as const, dropdown: true },
+  { href: '/livros', label: 'Livros que li esse ano', icon: 'library' as const, dropdown: true },
   { href: '/bom-dia', label: 'Bom Dia', icon: 'sunrise' as const },
   { href: '/questionario', label: 'Questionário', icon: 'compass' as const },
 ];
@@ -58,7 +61,7 @@ export default function Navbar() {
 
         {/* Desktop */}
         <nav className="hidden items-center gap-1 text-sm md:flex">
-          {links.map((l) =>
+          {links.filter((l) => !l.dropdown).map((l) =>
             l.href === '/interesses' ? (
               // "Interesses e hobbies" abre a área completa e lista os nichos ao passar o mouse.
               <div key={l.href} className="relative" onMouseLeave={() => setTopicsOpen(false)}>
@@ -81,13 +84,18 @@ export default function Navbar() {
                     >
                       <Icon name="sparkles" size={17} /> Interesses e hobbies
                     </Link>
-                    <Link
-                      href="/livros"
-                      onClick={() => setTopicsOpen(false)}
-                      className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-300 transition hover:bg-zinc-800"
-                    >
-                      <Icon name="library" size={17} /> Livros que li esse ano
-                    </Link>
+                    {links
+                      .filter((x) => x.dropdown)
+                      .map((x) => (
+                        <Link
+                          key={x.href}
+                          href={x.href}
+                          onClick={() => setTopicsOpen(false)}
+                          className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-emerald-300 transition hover:bg-zinc-800"
+                        >
+                          <Icon name={x.icon} size={17} /> {x.label}
+                        </Link>
+                      ))}
                     <div className="my-1 h-px bg-zinc-800" />
                     <div className="max-h-[60vh] overflow-y-auto">
                       {TOPICS.map((t) => (
