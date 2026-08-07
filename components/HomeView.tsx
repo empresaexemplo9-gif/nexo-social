@@ -7,6 +7,7 @@ import Icon from '@/components/icons';
 import InterestsView from '@/components/InterestsView';
 import LiveAlerts from '@/components/LiveAlerts';
 import HeritageShelf from '@/components/HeritageShelf';
+import ClipsShelf from '@/components/ClipsShelf';
 import InstallApp from '@/components/InstallApp';
 import AgendaTimeline from '@/components/AgendaTimeline';
 import { usePreferences } from '@/lib/preferences';
@@ -54,6 +55,9 @@ export default function HomeView({ events }: Props) {
 
         {/* O que está no ar agora nos temas seguidos */}
         <LiveAlerts />
+
+        {/* Clipes do primeiro tema seguido */}
+        {prefs.interests?.[0] && <ClipsShelf topic={prefs.interests[0]} />}
 
         {/* Acervo histórico dos temas seguidos — muda todo dia */}
         <HeritageShelf titulo="Para conhecer hoje" />

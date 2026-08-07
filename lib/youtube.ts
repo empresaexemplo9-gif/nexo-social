@@ -94,6 +94,45 @@ export async function searchVideo(query: string): Promise<ResolvedVideo | null> 
 }
 
 /**
+ * Vários vídeos para um termo — é o que alimenta a estante de clipes e a busca.
+ *
+ * Custa as mesmas 100 unidades de uma busca por um só vídeo: o preço é por
+ * chamada, não por resultado. Por isso vale sempre pedir vários de uma vez em
+ * vez de repetir a consulta.
+ */
+export async function searchVideos(
+  query: string,
+  max = 8,
+  extras: Record<string, string> = {},
+): Promise<ResolvedVideo[]> {
+  const body = await call(
+    'search',
+    {
+      part: 'snippet',
+      q: query,
+      type: 'video',
+      maxResults: String(Math.min(Math.max(max, 1), 25)),
+      videoEmbeddable: 'true',
+      videoSyndicated: 'true',
+      safeSearch: 'moderate',
+      relevanceLanguage: 'pt',
+      ...extras,
+    },
+    21600,
+  );
+
+  return (body?.items ?? [])
+    .filter((i: any) => i?.id?.videoId)
+    .map((i: any) => ({
+      id: i.id.videoId,
+      title: i.snippet?.title ?? '',
+      channel: i.snippet?.channelTitle ?? '',
+      thumb: i.snippet?.thumbnails?.medium?.url ?? null,
+      embedUrl: `https://www.youtube.com/embed/${i.id.videoId}?rel=0`,
+    }));
+}
+
+/**
  * Id do canal a partir do @handle. Necessário para embutir a transmissão ao
  * vivo: o YouTube aceita /embed/live_stream?channel=<ID>, mas não o handle.
  * Cache de 30 dias — id de canal não muda.
