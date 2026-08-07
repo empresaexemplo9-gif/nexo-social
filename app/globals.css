@@ -144,3 +144,16 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Âncoras não devem parar atrás da barra inferior nem do cabeçalho fixo. */
+html {
+  scroll-padding-top: calc(4rem + env(safe-area-inset-top));
+  scroll-padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
+/* Telas sem a barra de navegação (login, offline) precisam do próprio respiro
+   contra a barra de status do iOS. */
+.tela-sem-barra {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}

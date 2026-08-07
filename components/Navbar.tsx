@@ -52,7 +52,13 @@ export default function Navbar() {
   const admin = isPlatformAdmin(email);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/85 backdrop-blur-md">
+    <header
+      className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/85 backdrop-blur-md"
+      // Instalado no iOS, a barra de status fica SOBRE o conteúdo (viewport-fit
+      // cover + status bar translúcida). Sem este respiro, o logo e o menu
+      // ficam embaixo do relógio e da bateria.
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2.5">
           <LogoMark size={34} />

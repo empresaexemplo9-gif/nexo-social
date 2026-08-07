@@ -56,8 +56,18 @@ export default function MobileTabBar() {
 
   return (
     <>
-      {/* Espaçador: impede a barra de cobrir o fim do conteúdo. */}
-      <div aria-hidden className={ios ? 'h-[4.5rem] md:hidden' : 'h-16 md:hidden'} />
+      {/*
+        Espaçador: impede a barra de cobrir o fim do conteúdo.
+        A altura precisa somar a área segura de baixo — no iPhone com indicador
+        de início são ~34px que a barra ocupa a mais. Sem somar, o último item
+        da página fica escondido atrás dela.
+      */}
+      <div
+        id="espacador-barra"
+        aria-hidden
+        className="md:hidden"
+        style={{ height: `calc(${ios ? '4.5rem' : '4rem'} + env(safe-area-inset-bottom))` }}
+      />
 
       <nav
         aria-label="Navegação principal"
