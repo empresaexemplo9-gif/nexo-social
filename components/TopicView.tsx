@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import EventList from '@/components/EventList';
 import SportsHub from '@/components/SportsHub';
+import HeritageShelf from '@/components/HeritageShelf';
 import { usePreferences } from '@/lib/preferences';
 import { getTopic, type CategorySlug, type ContentItem, type EventItem } from '@/lib/data';
 import Icon from './icons';
@@ -77,6 +78,9 @@ export default function TopicView({ slug, contents, events }: Props) {
             <SportsHub />
           </section>
         )}
+
+        {/* Acervo histórico do tema */}
+        <HeritageShelf topic={slug} titulo={`Marcos de ${topic.label}`} />
 
         {/* Conteúdos */}
         <section className="space-y-6">

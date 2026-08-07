@@ -116,6 +116,38 @@ export function liveEmbedUrl(channelId: string): string {
   return `https://www.youtube.com/embed/live_stream?channel=${channelId}`;
 }
 
+export interface LiveStream {
+  videoId: string;
+  titulo: string;
+  canal: string;
+  thumb: string | null;
+  embedUrl: string;
+}
+
+/**
+ * O canal está transmitindo agora?
+ *
+ * Custa 100 unidades por chamada — é a operação mais cara da cota diária de
+ * 10.000. O cache de 15 min é compartilhado por todos os usuários, e quem
+ * chama precisa limitar quantos canais consulta de uma vez (ver MAX_CANAIS).
+ */
+export async function liveNow(channelId: string): Promise<LiveStream | null> {
+  const body = await call(
+    'search',
+    { part: 'snippet', channelId, eventType: 'live', type: 'video', maxResults: '1' },
+    900,
+  );
+  const item = body?.items?.[0];
+  if (!item?.id?.videoId) return null;
+  return {
+    videoId: item.id.videoId,
+    titulo: item.snippet?.title ?? '',
+    canal: item.snippet?.channelTitle ?? '',
+    thumb: item.snippet?.thumbnails?.medium?.url ?? null,
+    embedUrl: `https://www.youtube.com/embed/${item.id.videoId}?rel=0`,
+  };
+}
+
 /**
  * Traduz o motivo do Google na correção exata. Sem isso o usuário recebe um
  * conselho genérico e fica adivinhando qual das cinco causas possíveis é a sua.

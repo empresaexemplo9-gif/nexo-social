@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Icon from '@/components/icons';
 import InterestsView from '@/components/InterestsView';
+import LiveAlerts from '@/components/LiveAlerts';
+import HeritageShelf from '@/components/HeritageShelf';
 import AgendaTimeline from '@/components/AgendaTimeline';
 import { usePreferences } from '@/lib/preferences';
 import type { ContentItem, EventItem } from '@/lib/data';
@@ -45,6 +47,12 @@ export default function HomeView({ events }: Props) {
         {/* INTERESSES E HOBBIES — o coração da home:
             perfil, trilha do Spotify, nichos e indicações. */}
         <InterestsView events={events} />
+
+        {/* O que está no ar agora nos temas seguidos */}
+        <LiveAlerts />
+
+        {/* Acervo histórico dos temas seguidos — muda todo dia */}
+        <HeritageShelf titulo="Para conhecer hoje" />
 
         {/* Agenda pessoal, logo abaixo — o timeline já traz o próprio cabeçalho. */}
         <AgendaTimeline events={events} />
