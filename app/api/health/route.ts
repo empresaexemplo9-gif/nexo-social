@@ -110,7 +110,15 @@ async function checkTables() {
         const httpInfo = status ? ` [HTTP ${status}]` : '';
         const pgInfo = code ? ` [${code}]` : '';
 
-        if (/does not exist|schema cache/i.test(msg) || code === '42P01') {
+        // PGRST205 nomeia o SCHEMA em que o PostgREST procurou. Se não for
+        // `public`, o problema não é a tabela faltando: é o Data API exposto no
+        // schema errado, e mandar rodar o schema.sql não conserta nada.
+        const schemaProcurado = msg.match(/'([a-z0-9_]+)\.[a-z0-9_]+'/i)?.[1];
+        if (schemaProcurado && schemaProcurado !== 'public') {
+          out[t] =
+            `SCHEMA ERRADO — o Data API está exposto em "${schemaProcurado}", mas as tabelas ficam em "public". ` +
+            'Em Supabase → Project Settings → API → Data API, inclua "public" nos Exposed schemas.';
+        } else if (/does not exist|schema cache/i.test(msg) || code === '42P01') {
           out[t] = 'AUSENTE — rode o db/schema.sql';
         } else if (code === '42P17' || /infinite recursion/i.test(msg)) {
           out[t] = 'RECURSÃO no RLS — rode o db/schema.sql atualizado (current_tenant_id como SECURITY DEFINER)';
@@ -169,11 +177,18 @@ export async function GET() {
 
     // Se NENHUMA tabela responde, o problema é a credencial ou o projeto — não
     // o schema. Mandar rodar o schema.sql aqui só faria perder tempo.
-    if (comErro.length === todas.length && todas.length > 0) {
+    const schemaErrado = todas.find(([, v]) => v.startsWith('SCHEMA ERRADO'));
+    const chaveRecusada = todas.some(([, v]) => v.startsWith('CHAVE RECUSADA'));
+
+    if (schemaErrado) {
+      problemas.push(schemaErrado[1]);
+    } else if (comErro.length === todas.length && todas.length > 0) {
       problemas.push(
-        'NENHUMA tabela respondeu. Quando todas caem juntas o motivo é a credencial, não o schema: ' +
-          'a publishable embutida em lib/supabase-config.ts provavelmente foi revogada ou é de outro projeto. ' +
-          'Confira em Project Settings → API Keys se ela ainda existe.',
+        chaveRecusada
+          ? 'NENHUMA tabela respondeu e a credencial foi recusada: a publishable embutida em ' +
+            'lib/supabase-config.ts foi revogada ou é de outro projeto. Confira em Project Settings → API Keys.'
+          : 'NENHUMA tabela respondeu. Quando todas caem juntas o motivo costuma estar na configuração do ' +
+            'projeto (schema exposto no Data API ou credencial), não em tabela faltando. Veja o detalhe em "db.tables".',
       );
     } else if (faltando.length) {
       problemas.push(`Tabelas ausentes (${faltando.join(', ')}) — rode o db/schema.sql no SQL Editor.`);
