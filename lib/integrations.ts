@@ -459,6 +459,151 @@ function mapSegment(segment?: string): CategorySlug {
   return 'cultura';
 }
 
+// --- Leitura de um evento da Discovery v2 ------------------------------------
+// As funções abaixo existem porque a resposta real da API tem armadilhas que
+// não aparecem na documentação. Cada uma resolve uma delas.
+
+/**
+ * Data no fuso de QUEM VAI AO EVENTO, não no nosso.
+ *
+ * `dates.start.dateTime` é UTC. Formatar em America/Sao_Paulo faz um show de
+ * 18/set às 20:30 em Las Vegas aparecer como 19/set às 00:30 — a agenda mostra
+ * o dia errado. A própria resposta traz `dates.timezone`; é ele que manda.
+ */
+function dataDoEvento(ev: any): string {
+  const iso: string | undefined = ev?.dates?.start?.dateTime;
+  const tz: string = ev?.dates?.timezone || ev?._embedded?.venues?.[0]?.timezone || 'America/Sao_Paulo';
+  if (!iso) {
+    // Horário a confirmar: a API manda só `localDate`.
+    const d = ev?.dates?.start?.localDate;
+    return d ? d.split('-').reverse().join('/') : '';
+  }
+  try {
+    return new Date(iso).toLocaleString('pt-BR', { timeZone: tz });
+  } catch {
+    return new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  }
+}
+
+/**
+ * Melhor imagem: a maior que não seja miniatura nem placeholder.
+ *
+ * `images.find(i => i.width >= 640)` pega a PRIMEIRA da lista, e a ordem que a
+ * API devolve é arbitrária — dá para cair numa de 640×360 tendo uma de 2048
+ * logo abaixo. `fallback: true` marca a arte genérica de categoria, que não
+ * tem nada a ver com o evento.
+ */
+function melhorImagem(ev: any): string {
+  const imgs: any[] = Array.isArray(ev?.images) ? ev.images : [];
+  const boas = imgs.filter((i) => !i.fallback && i.width >= 640);
+  const pool = boas.length ? boas : imgs.filter((i) => i.width >= 640);
+  if (!pool.length) return imgs[0]?.url ?? '';
+  // 16_9 primeiro: é o formato dos cards. Entre iguais, a de maior largura.
+  const dezesseisNove = pool.filter((i) => i.ratio === '16_9');
+  const escolha = (dezesseisNove.length ? dezesseisNove : pool).sort((a, b) => b.width - a.width)[0];
+  return escolha?.url ?? '';
+}
+
+/**
+ * Descrição de verdade, não o aviso jurídico.
+ *
+ * No catálogo real, `info` costuma vir IGUAL a `pleaseNote` e conter o aviso de
+ * luzes piscantes, hápticos e taxas — texto que assusta e não descreve nada.
+ * Quando os dois campos coincidem, ou quando o texto começa com "PLEASE NOTE",
+ * é aviso: aí montamos uma frase a partir do que o evento realmente é.
+ */
+function descricaoEvento(ev: any): string {
+  const info = String(ev?.info ?? '').trim();
+  const aviso = String(ev?.pleaseNote ?? '').trim();
+  const ehAviso = !info || info === aviso || /^please note/i.test(info);
+
+  if (!ehAviso) return info.replace(/\s+/g, ' ').slice(0, 600);
+
+  const atracao = ev?._embedded?.attractions?.[0]?.name;
+  const local = ev?._embedded?.venues?.[0]?.name;
+  const cidade = ev?._embedded?.venues?.[0]?.city?.name;
+  const genero = ev?.classifications?.[0]?.genre?.name;
+  const onde = [local, cidade].filter(Boolean).join(', ');
+
+  return [
+    atracao ? `${atracao} ao vivo` : ev?.name,
+    onde && `em ${onde}`,
+    genero && genero !== 'Undefined' && `— ${genero}`,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 600);
+}
+
+/** Preço na moeda que a API informou. Rotular USD como R$ é mentir o valor. */
+function precoEvento(ev: any): string {
+  const faixa = ev?.priceRanges?.[0];
+  if (faixa?.min == null) return 'Consultar';
+  const moeda = String(faixa.currency ?? 'BRL').toUpperCase();
+  try {
+    const valor = Number(faixa.min).toLocaleString('pt-BR', { style: 'currency', currency: moeda });
+    return `A partir de ${valor}`;
+  } catch {
+    return `A partir de ${faixa.min} ${moeda}`;
+  }
+}
+
+/**
+ * O evento pode entrar na agenda?
+ *
+ * `dates.status.code` é o mesmo tipo de armadilha do `cancelled` da Sympla:
+ * a API devolve show cancelado junto com os demais, e quem não olhar o campo
+ * publica um evento que não vai acontecer. `test: true` são registros de
+ * homologação do próprio Ticketmaster.
+ */
+function eventoPublicavel(ev: any): boolean {
+  if (ev?.test === true) return false;
+  const status = String(ev?.dates?.status?.code ?? 'onsale').toLowerCase();
+  return status !== 'cancelled' && status !== 'canceled';
+}
+
+/**
+ * Tira as duplicatas do mesmo show.
+ *
+ * A resposta real traz, além do show, entradas como "Eagles - Suite
+ * Reservation" com a MESMA data e o MESMO local, vendidas por parceiros. São
+ * upsell de camarote, não outro evento — na agenda virariam dois shows no
+ * mesmo horário.
+ *
+ * A chave é física: um local não hospeda dois eventos diferentes no mesmo
+ * instante. Entre os concorrentes fica o que tem inventário do próprio
+ * Ticketmaster (`safeTix`) ou link no domínio deles.
+ */
+function semDuplicatasDeShow(eventos: any[]): any[] {
+  const porLocalEHora = new Map<string, any>();
+  const soltos: any[] = [];
+
+  const pontos = (ev: any) =>
+    (ev?.ticketing?.safeTix?.enabled ? 2 : 0) + (/(^|\.)ticketmaster\./i.test(hostDe(ev?.url)) ? 1 : 0);
+
+  for (const ev of eventos) {
+    const venueId = ev?._embedded?.venues?.[0]?.id;
+    const quando = ev?.dates?.start?.dateTime;
+    if (!venueId || !quando) {
+      soltos.push(ev);
+      continue;
+    }
+    const chave = `${venueId}@${quando}`;
+    const atual = porLocalEHora.get(chave);
+    if (!atual || pontos(ev) > pontos(atual)) porLocalEHora.set(chave, ev);
+  }
+
+  return [...Array.from(porLocalEHora.values()), ...soltos];
+}
+
+function hostDe(url?: string): string {
+  try {
+    return new URL(String(url)).hostname;
+  } catch {
+    return '';
+  }
+}
+
 export interface ImportResult {
   ok: boolean;
   fetched: number;
@@ -480,6 +625,8 @@ export async function importTicketmaster(
     city?: string; lat?: number; lng?: number; radiusKm?: number; size?: number;
     /** 'musica' traz shows; 'esporte' traz jogos; vazio traz os dois. */
     segmento?: 'musica' | 'esporte';
+    /** ISO de 2 letras. 'BR' por padrão; '' busca no catálogo mundial. */
+    pais?: string;
   } = {},
 ): Promise<ImportResult> {
   const def = getProvider('ticketmaster')!;
@@ -490,7 +637,11 @@ export async function importTicketmaster(
     return { ...base, message: 'TICKETMASTER_API_KEY não configurada.', hint: `Crie a chave em ${def.docsUrl} e adicione na Vercel.` };
   }
 
-  const params = new URLSearchParams({ apikey: key, countryCode: 'BR', size: String(opts.size ?? 50), sort: 'date,asc' });
+  const params = new URLSearchParams({ apikey: key, size: String(opts.size ?? 50), sort: 'date,asc' });
+  // Sem countryCode a Discovery devolve o catálogo mundial — foi o que trouxe
+  // as datas do Sphere em Las Vegas. O padrão continua Brasil.
+  const pais = opts.pais === undefined ? 'BR' : opts.pais.trim().toUpperCase();
+  if (pais) params.set('countryCode', pais);
   // O Ticketmaster separa o catálogo em segmentos; é o que permite pedir só
   // shows ou só jogos.
   if (opts.segmento === 'musica') params.set('classificationName', 'Music');
@@ -517,8 +668,14 @@ export async function importTicketmaster(
     return { ...base, message: n.message, hint: n.hint };
   }
 
-  const items: any[] = payload?._embedded?.events ?? [];
-  base.fetched = items.length;
+  const brutos: any[] = payload?._embedded?.events ?? [];
+  base.fetched = brutos.length;
+
+  // Filtra o que não é show e junta as duplicatas ANTES de gravar.
+  const publicaveis = brutos.filter(eventoPublicavel);
+  const items = semDuplicatasDeShow(publicaveis);
+  base.skipped = brutos.length - items.length;
+
   if (!items.length) {
     return {
       ...base,
@@ -537,16 +694,16 @@ export async function importTicketmaster(
       external_id: String(ev.id),
       title: ev.name,
       category: mapSegment(seg),
-      event_date: startISO ? new Date(startISO).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : (ev?.dates?.start?.localDate ?? ''),
+      event_date: dataDoEvento(ev),
       starts_at: startISO ?? null,
       ends_at: ev?.dates?.end?.dateTime ?? null,
       city: venue?.city?.name ?? '',
       location: venue?.name ?? 'Local a confirmar',
       lat: venue?.location?.latitude ? Number(venue.location.latitude) : null,
       lng: venue?.location?.longitude ? Number(venue.location.longitude) : null,
-      image_url: ev?.images?.find((i: any) => i.width >= 640)?.url ?? ev?.images?.[0]?.url ?? '',
-      description: ev?.info ?? ev?.pleaseNote ?? `${ev.name} — ingressos via Ticketmaster.`,
-      price: ev?.priceRanges?.[0]?.min != null ? `A partir de R$ ${ev.priceRanges[0].min}` : 'Consultar',
+      image_url: melhorImagem(ev),
+      description: descricaoEvento(ev),
+      price: precoEvento(ev),
       artist: ev?._embedded?.attractions?.[0]?.name ?? null,
       // O link de compra é a razão de ser da integração — sem ele o evento
       // chega sem destino.

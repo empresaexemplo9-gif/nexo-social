@@ -158,6 +158,14 @@ export default function Navbar() {
                   Painel
                 </Link>
               )}
+              <Link
+                href="/meus-ingressos"
+                className="rounded-xl p-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-50"
+                title="Meus ingressos"
+                aria-label="Meus ingressos"
+              >
+                <Icon name="ticket" size={18} />
+              </Link>
               <Link href="/conta" className="rounded-xl p-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-50" title="Minha conta">
                 <Icon name="user" size={18} />
               </Link>
@@ -205,6 +213,9 @@ export default function Navbar() {
                     <Icon name="plug" size={17} /> Painel
                   </Link>
                 )}
+                <Link href="/meus-ingressos" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-zinc-200">
+                  <Icon name="ticket" size={17} className="text-zinc-500" /> Meus ingressos
+                </Link>
                 <Link href="/conta" onClick={() => setOpen(false)} className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-zinc-200">
                   <Icon name="user" size={17} className="text-zinc-500" /> Minha conta
                 </Link>
