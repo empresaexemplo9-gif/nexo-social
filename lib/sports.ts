@@ -150,6 +150,36 @@ function espnState(raw: string | undefined): MatchState {
   return 'agendado';
 }
 
+/**
+ * Texto de situação — só o do jogo em andamento.
+ *
+ * A ESPN preenche `shortDetail` sempre, em inglês: um jogo que começa daqui a
+ * três horas vem com "Scheduled", e o `detail` é pior ainda ("Sun, August 9th
+ * at 3:00 PM EDT" — inglês e no fuso de Nova York). Devolvendo vazio, o card
+ * cai no `formatEventDateLong`, que já escreve a data em português e no fuso
+ * de São Paulo. Encerrado o card já diz "Encerrado" sozinho.
+ *
+ * Ao vivo o texto é o relógio da partida ("31'", "HT"), que é o que interessa
+ * e não depende de tradução.
+ */
+function espnDetalhe(state: string | undefined, tipo: any): string {
+  return state === 'in' ? (tipo?.shortDetail || tipo?.detail || '') : '';
+}
+
+/**
+ * Placar — nulo enquanto a bola não rola.
+ *
+ * A ESPN manda `score: "0"` para jogo que ainda vai começar. Convertido
+ * direto, o card mostrava "Bahia 0 x 0 Vasco" três horas antes do apito, com
+ * cara de empate sem gols em andamento.
+ */
+function espnPlacar(bruto: unknown, state: MatchState): number | null {
+  if (state === 'agendado') return null;
+  if (bruto === undefined || bruto === null || bruto === '') return null;
+  const n = Number(bruto);
+  return Number.isFinite(n) ? n : null;
+}
+
 function parseEspn(json: any, comp: Competition): Match[] {
   const events = Array.isArray(json?.events) ? json.events : [];
   return events.map((ev: any): Match => {
@@ -158,7 +188,11 @@ function parseEspn(json: any, comp: Competition): Match[] {
     const home = competitors.find((c: any) => c.homeAway === 'home') ?? competitors[0] ?? {};
     const away = competitors.find((c: any) => c.homeAway === 'away') ?? competitors[1] ?? {};
     const status = ev.status?.type ?? {};
-    const num = (v: unknown) => (v === undefined || v === null || v === '' ? null : Number(v));
+    const state = espnState(status.state);
+    // `ev.date` vem como "2026-08-09T14:00Z", sem segundos. O caminho do
+    // TheSportsDB devolve ISO completo; normalizar aqui deixa as duas fontes
+    // com o mesmo formato.
+    const quando = new Date(ev.date);
     return {
       id: `espn-${comp.id}-${ev.id}`,
       sport: comp.sport,
@@ -168,11 +202,11 @@ function parseEspn(json: any, comp: Competition): Match[] {
       away: away.team?.displayName ?? away.athlete?.displayName ?? '',
       homeLogo: home.team?.logo ?? null,
       awayLogo: away.team?.logo ?? null,
-      homeScore: num(home.score),
-      awayScore: num(away.score),
-      startsAt: ev.date,
-      state: espnState(status.state),
-      detail: status.shortDetail || status.description || '',
+      homeScore: espnPlacar(home.score, state),
+      awayScore: espnPlacar(away.score, state),
+      startsAt: Number.isNaN(quando.getTime()) ? ev.date : quando.toISOString(),
+      state,
+      detail: espnDetalhe(status.state, status),
       venue: competition.venue?.fullName ?? null,
       highlightUrl: null,
       thumb: null,
