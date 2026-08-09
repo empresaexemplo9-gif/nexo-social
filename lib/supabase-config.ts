@@ -18,8 +18,15 @@
 // ---------------------------------------------------------------------------
 const DEFAULT_SUPABASE_URL = 'https://srunjulrflvsbrkhllaf.supabase.co';
 
-/** Chave publishable (anon) — pública e segura para o navegador. */
-export const PUBLISHABLE_ANON_KEY = 'sb_publishable_cnuelDPyyicyEj48xk79zQ_4anTLWBM';
+/**
+ * Chave publishable (anon) — pública e segura para o navegador.
+ *
+ * Se ela for revogada no Supabase, TODA leitura do banco passa a responder
+ * 401 "Unregistered API key" de uma vez — agenda, login, ingressos. O sintoma
+ * assusta mas o conserto é só trocar esta linha. O /api/health identifica o
+ * caso pelo nome ("CHAVE RECUSADA") em vez de mandar rodar o schema.sql.
+ */
+export const PUBLISHABLE_ANON_KEY = 'sb_publishable_yxYtj1Ihh8W2qF-BlHQB-w_fJ4z36fr';
 
 export function normalizeSupabaseUrl(raw?: string | null): string | null {
   if (!raw) return null;
