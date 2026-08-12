@@ -20,6 +20,32 @@ export default function EventView({ event, related }: Props) {
   const [confirmed, setConfirmed] = useState(false);
   const [eu, setEu] = useState<{ nome: string; email: string }>({ nome: '', email: '' });
   const [vendeAqui, setVendeAqui] = useState(false);
+  const [compartilhado, setCompartilhado] = useState('');
+
+  /**
+   * Compartilha o evento pelo endereço da nexo.social.
+   *
+   * No celular abre a folha nativa (WhatsApp, Instagram, Mensagens); no
+   * desktop, que em geral não tem `navigator.share`, copia o link. Em ambos os
+   * casos o que circula é a nossa URL, e é a nossa prévia que aparece.
+   */
+  async function compartilhar() {
+    const url = typeof window !== 'undefined' ? window.location.href : '';
+    const dados = { title: event.title, text: `${event.title} — ${event.date}, ${event.venue}`, url };
+    try {
+      if (navigator.share) {
+        await navigator.share(dados);
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setCompartilhado('Link copiado');
+    } catch {
+      // A pessoa fechou a folha de compartilhamento, ou o navegador barrou a
+      // área de transferência. Nos dois casos não há erro a mostrar.
+      return;
+    }
+    setTimeout(() => setCompartilhado(''), 2500);
+  }
   const topic = getTopic(event.topic);
   const platformLinks = eventPlatformLinks(event);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${event.coords.lat},${event.coords.lng}`;
@@ -145,6 +171,17 @@ export default function EventView({ event, related }: Props) {
                   }`}
                 >
                   {confirmed ? '✓ Presença confirmada' : 'Confirmar presença'}
+                </button>
+                {/* Divulgação: o que circula é o endereço da nexo.social, com
+                    a prévia montada pelo generateMetadata da página. Mesmo
+                    evento importado de outra bilheteria é compartilhado por
+                    aqui. */}
+                <button
+                  type="button"
+                  onClick={compartilhar}
+                  className="rounded-xl border border-zinc-700 px-6 py-2.5 text-sm font-semibold text-zinc-100 transition hover:border-clay-500 hover:text-clay-300"
+                >
+                  <Icon name="external" size={16} /> {compartilhado || 'Compartilhar'}
                 </button>
                 <a
                   href={mapsUrl}
