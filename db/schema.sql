@@ -1091,3 +1091,25 @@ GRANT EXECUTE ON FUNCTION cancelar_meu_pedido(UUID) TO authenticated;
 -- continuam abertas de propósito: as policies de RLS as chamam com os direitos
 -- de quem consulta, então revogar quebraria o acesso legítimo. Todas são
 -- somente leitura e só respondem sobre o próprio chamador.
+
+-- =============================================================================
+-- QUESTIONÁRIO — o "sempre volta"
+--
+-- O resultado do questionário vivia só no localStorage do aparelho: em outro
+-- navegador, no app instalado, depois de limpar os dados ou numa aba anônima,
+-- a plataforma via um perfil vazio e pedia o questionário de novo.
+--
+-- A resposta passa a ficar na conta, e para isso a tabela precisa registrar
+-- QUANDO o questionário foi concluído — sem isso não há como distinguir "ainda
+-- não respondeu" de "respondeu e não escolheu nenhum tema".
+-- =============================================================================
+
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+
+-- Quem já respondeu antes desta migração tem interesses gravados, mas não a
+-- data. Sem este backfill essas contas continuariam vendo "Responder
+-- questionário" para sempre.
+UPDATE user_preferences
+   SET completed_at = COALESCE(updated_at, created_at, NOW())
+ WHERE completed_at IS NULL
+   AND COALESCE(array_length(interests, 1), 0) > 0;

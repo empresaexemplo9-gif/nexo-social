@@ -26,7 +26,8 @@ export default function TopicView({ slug, contents, events }: Props) {
   const following = prefs.interests.includes(slug);
   const toggleFollow = () => {
     const next = following ? prefs.interests.filter((s) => s !== slug) : [...prefs.interests, slug];
-    save({ interests: next });
+    // Seguir um tema agora acompanha a conta, e não só este aparelho.
+    void save({ interests: next });
   };
 
   return (

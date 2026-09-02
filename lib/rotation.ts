@@ -59,6 +59,46 @@ export function daily<T>(pool: readonly T[], n: number, extra = 0): T[] {
 }
 
 /**
+ * Gira, com a semente do dia, a ordem DENTRO de faixas de pontuação parecida.
+ *
+ * Recebe a lista já ordenada por relevância e agrupa itens cuja pontuação
+ * caiba numa janela de `tierWidth`; cada faixa é embaralhada por inteiro. É
+ * mais forte que somar um ruído à pontuação: o ruído só troca itens quando a
+ * diferença entre eles é menor que a amplitude, então um corte de "top 8"
+ * acabava congelado nos mesmos itens dia após dia. Aqui a faixa inteira gira,
+ * e nenhum item pula uma diferença real de relevância — nem a pontuação
+ * relatada é adulterada.
+ */
+export function rotateWithinTiers<T>(
+  items: readonly T[],
+  scoreOf: (item: T) => number,
+  tierWidth: number,
+  seed = dailySeed(),
+): T[] {
+  const out: T[] = [];
+  let tier: T[] = [];
+  let top = 0;
+
+  const flush = () => {
+    if (tier.length > 1) out.push(...seededShuffle(tier, seed + out.length));
+    else out.push(...tier);
+    tier = [];
+  };
+
+  for (const item of items) {
+    const score = scoreOf(item);
+    if (tier.length === 0) top = score;
+    else if (top - score > tierWidth) {
+      flush();
+      top = score;
+    }
+    tier.push(item);
+  }
+  flush();
+  return out;
+}
+
+/**
  * Variação diária de 0 a `amplitude` para uma chave estável (id do item).
  * Somada à pontuação, faz o ranking girar todo dia entre itens de relevância
  * parecida, sem nunca passar por cima de uma diferença real de relevância.

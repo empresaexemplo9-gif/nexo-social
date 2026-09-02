@@ -20,7 +20,7 @@ interface Account {
 }
 
 export default function ContaPage() {
-  const { prefs, ready, hasCompleted, reset } = usePreferences();
+  const { prefs, ready, hasCompleted, synced, reset } = usePreferences();
   const [account, setAccount] = useState<Account | null>(null);
   const [loading, setLoading] = useState(true);
   const [aviso, setAviso] = useState('');
@@ -138,10 +138,18 @@ export default function ContaPage() {
               <Row label="Cidade" value={prefs.city ?? 'Não definida'} />
               <Row label="Raio de eventos" value={`${prefs.radiusKm} km`} />
               <Row label="Frequência" value={prefs.frequency} />
+              <Row
+                label="Onde está salvo"
+                value={
+                  synced
+                    ? 'Na sua conta — vale em qualquer aparelho'
+                    : 'Só neste aparelho — entre na conta para não perder'
+                }
+              />
             </dl>
           )}
           <button onClick={reset} className="mt-4 text-xs text-zinc-500 underline hover:text-white">
-            Limpar preferências deste dispositivo
+            Limpar preferências
           </button>
         </section>
       </main>

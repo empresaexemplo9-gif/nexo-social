@@ -3,6 +3,27 @@ import { getSession } from '@/lib/api-helpers';
 
 export const dynamic = 'force-dynamic';
 
+/** Linha do banco → formato usado pelo aplicativo (camelCase). */
+function toClient(row: Record<string, any>) {
+  const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
+  const interests = arr(row.interests);
+  return {
+    interests,
+    subtopics: arr(row.subtopics),
+    musicGenres: arr(row.music_genres),
+    filmGenres: arr(row.film_genres),
+    bookGenres: arr(row.book_genres),
+    hobbies: arr(row.hobbies),
+    readingGoal: Number.isFinite(row.reading_goal) ? Number(row.reading_goal) : 12,
+    city: row.city ?? null,
+    radiusKm: Number.isFinite(row.radius_km) ? Number(row.radius_km) : 50,
+    frequency: row.frequency ?? 'semanal',
+    // Contas anteriores à coluna completed_at têm interesses mas não têm data.
+    // Sem esta herança elas voltariam a ver "responda o questionário".
+    completedAt: row.completed_at ?? (interests.length > 0 ? (row.updated_at ?? row.created_at ?? null) : null),
+  };
+}
+
 // Lê as preferências do usuário autenticado.
 export async function GET() {
   const { sb, user } = await getSession();
@@ -11,7 +32,9 @@ export async function GET() {
 
   const { data, error } = await sb.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ preferences: data ?? null });
+  // O userId identifica de quem é o perfil guardado no aparelho: sem ele, as
+  // respostas de quem usou o navegador antes seriam adotadas por esta conta.
+  return NextResponse.json({ userId: user.id, preferences: data ? toClient(data) : null });
 }
 
 // Cria/atualiza as preferências do usuário autenticado (resultado do questionário).
@@ -50,7 +73,29 @@ export async function PUT(request: Request) {
   if (typeof b.frequency === 'string') row.frequency = b.frequency;
   if (Number.isFinite(b.readingGoal)) row.reading_goal = Math.min(365, Math.max(1, Number(b.readingGoal)));
 
-  const { error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' });
+  // A conclusão do questionário fica na conta — é ela que impede a plataforma
+  // de pedir o questionário de novo em outro aparelho. `null` limpa (é o que
+  // "refazer questionário" envia), senão o perfil antigo voltaria depois.
+  if ('completedAt' in b) {
+    if (b.completedAt === null) row.completed_at = null;
+    else if (typeof b.completedAt === 'string' && !Number.isNaN(Date.parse(b.completedAt))) {
+      row.completed_at = new Date(b.completedAt).toISOString();
+    }
+  }
+
+  let { error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' });
+
+  // Janela entre publicar o código e rodar a migração: sem a coluna, o
+  // questionário inteiro falharia. Salva o que dá e avisa nos logs — a
+  // conclusão volta a persistir assim que db/schema.sql for aplicado.
+  if (error && 'completed_at' in row && /completed_at/.test(error.message)) {
+    console.warn('[preferences] coluna completed_at ausente — rode db/schema.sql:', error.message);
+    delete row.completed_at;
+    ({ error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' }));
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+
+  // Devolve o estado final para o cliente alinhar o armazenamento do aparelho.
+  const { data } = await sb.from('user_preferences').select('*').eq('user_id', user.id).maybeSingle();
+  return NextResponse.json({ ok: true, preferences: data ? toClient(data) : null });
 }
