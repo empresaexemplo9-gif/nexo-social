@@ -19,7 +19,7 @@ import {
 } from './data';
 import { haversineKm, type LatLng } from './geo';
 import { daysUntil, isHappeningNow, isUpcoming } from './datetime';
-import { dailyJitter } from './rotation';
+import { rotateWithinTiers } from './rotation';
 
 export interface ScoredEvent {
   event: EventItem;
@@ -57,10 +57,15 @@ const W = {
   tagMatch: 8, // tag casa com subtema do tema seguido
   sameCity: 10,
   farPenalty: 45, // penaliza o que está fora do alcance real do usuário
-  // Amplitude da rotação diária. Menor que qualquer critério de relevância
-  // (tema, proximidade, urgência), então só desempata itens parecidos.
-  dailyRotation: 7,
+  // Largura da faixa girada a cada dia. Menor que qualquer critério de
+  // relevância (tema, proximidade, urgência), então a rotação só reordena
+  // itens que já eram equivalentes entre si.
+  rotationTier: 12,
 };
+
+/** Teto de itens do mesmo tema e da mesma cidade num bloco de sugestões. */
+const MAX_PER_TOPIC = 2;
+const MAX_PER_CITY = 3;
 
 /**
  * Proximidade: bônus alto dentro do raio, decaimento nas cidades vizinhas e
@@ -118,7 +123,7 @@ export function scoreEvents(input: RecommendationInput): ScoredEvent[] {
   const now = input.now ?? new Date();
   const userCity = origin ? nearestCityName(origin) : null;
 
-  return events
+  const ranked = events
     .filter((e) => !e.startsAt || isUpcoming(e.startsAt, e.endsAt, now))
     .map((event) => {
       const reasons: string[] = [];
@@ -160,20 +165,20 @@ export function scoreEvents(input: RecommendationInput): ScoredEvent[] {
       }
       score += tagAffinity(event, interests);
 
-      // 5) Rotação diária — gira a ordem entre itens de relevância parecida,
-      // para o feed trazer indicações novas todo dia sem perder a pertinência.
-      score += dailyJitter(event.id, W.dailyRotation);
-
       return { event, score, distanceKm, reasons: reasons.slice(0, 3) };
     })
     .filter((r) => r.score > -100)
     .sort((a, b) => b.score - a.score);
+
+  // Rotação diária — gira a ordem entre itens de relevância parecida, para o
+  // feed trazer indicações novas todo dia sem perder a pertinência.
+  return rotateWithinTiers(ranked, (r) => r.score, W.rotationTier);
 }
 
 /** Pontua conteúdos editoriais pelos interesses do usuário. */
 export function scoreContents(input: RecommendationInput): ScoredContent[] {
   const { interests, contents } = input;
-  return contents
+  const ranked = contents
     .map((content) => {
       const reasons: string[] = [];
       let score = interests.length === 0 ? W.interestNeutral : 0;
@@ -190,10 +195,10 @@ export function scoreContents(input: RecommendationInput): ScoredContent[] {
         score += 6;
         reasons.push('Publicado hoje');
       }
-      score += dailyJitter(content.id, W.dailyRotation);
       return { content, score, reasons: reasons.slice(0, 2) };
     })
     .sort((a, b) => b.score - a.score);
+  return rotateWithinTiers(ranked, (r) => r.score, W.rotationTier);
 }
 
 /**
@@ -217,6 +222,37 @@ export function diversify<T>(items: T[], topicOf: (item: T) => string, maxPerTop
   return [...primary, ...overflow];
 }
 
+/**
+ * Escolhe `n` sugestões variadas.
+ *
+ * Cortar direto o topo do ranking devolvia blocos monótonos — o mesmo tema na
+ * mesma cidade repetido, porque tema e proximidade dominam a pontuação. Aqui o
+ * teto por tema e por cidade vale ANTES do corte: quem excede vira reserva e só
+ * entra se faltar item para completar o bloco.
+ */
+export function pickSuggestions(scored: ScoredEvent[], n: number): ScoredEvent[] {
+  const porTema = new Map<string, number>();
+  const porCidade = new Map<string, number>();
+  const escolhidos: ScoredEvent[] = [];
+  const reservas: ScoredEvent[] = [];
+
+  for (const r of scored) {
+    if (escolhidos.length >= n) break;
+    const tema = porTema.get(r.event.topic) ?? 0;
+    const cidade = porCidade.get(r.event.city) ?? 0;
+    if (tema >= MAX_PER_TOPIC || cidade >= MAX_PER_CITY) {
+      reservas.push(r);
+      continue;
+    }
+    escolhidos.push(r);
+    porTema.set(r.event.topic, tema + 1);
+    porCidade.set(r.event.city, cidade + 1);
+  }
+
+  // Catálogo pequeno: completa com as reservas em vez de devolver menos.
+  return [...escolhidos, ...reservas].slice(0, n);
+}
+
 export function nearestCityName(origin: LatLng): string {
   return [...CITIES].sort((a, b) => haversineKm(origin, a.coords) - haversineKm(origin, b.coords))[0].name;
 }
@@ -238,28 +274,43 @@ export function buildFeed(input: RecommendationInput): {
   const scored = scoreEvents({ ...input, now });
   const { origin, radiusKm } = input;
 
-  const agora = scored.filter(
-    (s) => s.event.startsAt && (isHappeningNow(s.event.startsAt, s.event.endsAt, now) || daysUntil(s.event.startsAt, now) <= 1),
+  // Cada evento entra em UMA seção só. Antes os filtros eram independentes, e
+  // um show hoje, perto e nesta semana aparecia três vezes na mesma resposta —
+  // a maior fonte de "as indicações estão repetitivas". A ordem abaixo é a da
+  // seção mais específica para a mais genérica.
+  const usados = new Set<string>();
+  const claim = (candidatos: ScoredEvent[]) => {
+    const meus = candidatos.filter((s) => !usados.has(s.event.id));
+    for (const s of meus) usados.add(s.event.id);
+    return meus;
+  };
+
+  const agora = claim(
+    scored.filter(
+      (s) => s.event.startsAt && (isHappeningNow(s.event.startsAt, s.event.endsAt, now) || daysUntil(s.event.startsAt, now) <= 1),
+    ),
   );
-  const semana = scored.filter((s) => {
-    if (!s.event.startsAt) return false;
-    const d = daysUntil(s.event.startsAt, now);
-    return d > 1 && d <= 7;
-  });
-  const perto = origin ? scored.filter((s) => s.distanceKm != null && s.distanceKm <= radiusKm) : [];
+  const semana = claim(
+    scored.filter((s) => {
+      if (!s.event.startsAt) return false;
+      const d = daysUntil(s.event.startsAt, now);
+      return d > 1 && d <= 7;
+    }),
+  );
+  const perto = origin ? claim(scored.filter((s) => s.distanceKm != null && s.distanceKm <= radiusKm)) : [];
   const vizinhas = origin
-    ? scored.filter((s) => s.distanceKm != null && s.distanceKm > radiusKm && s.distanceKm <= radiusKm * 4)
+    ? claim(scored.filter((s) => s.distanceKm != null && s.distanceKm > radiusKm && s.distanceKm <= radiusKm * 4))
     : [];
 
   const sections: FeedSection[] = [
-    { id: 'agora', title: 'Acontecendo agora e hoje', subtitle: 'O que dá para fazer sem sair do lugar', events: agora },
-    { id: 'perto', title: 'Perto de você', subtitle: `Dentro do seu raio de ${radiusKm} km`, events: diversify(perto, (s) => s.event.topic) },
+    { id: 'agora', title: 'Acontecendo agora e hoje', subtitle: 'O que dá para fazer sem sair do lugar', events: diversify(agora, (s) => s.event.topic) },
     { id: 'semana', title: 'Esta semana', subtitle: 'Programe-se com antecedência', events: diversify(semana, (s) => s.event.topic) },
+    { id: 'perto', title: 'Perto de você', subtitle: `Dentro do seu raio de ${radiusKm} km`, events: diversify(perto, (s) => s.event.topic) },
     { id: 'vizinhas', title: 'Nas cidades próximas', subtitle: 'Vale a viagem curta', events: diversify(vizinhas, (s) => s.event.city, 2) },
   ].filter((s) => s.events.length > 0);
 
   return {
-    destaques: diversify(scored, (s) => s.event.topic).slice(0, 6),
+    destaques: pickSuggestions(scored, 6),
     sections,
     contents: diversify(scoreContents(input), (s) => s.content.topic).slice(0, 8),
   };

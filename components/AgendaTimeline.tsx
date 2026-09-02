@@ -9,7 +9,7 @@ import { useGeolocation } from '@/lib/useGeolocation';
 import { cityCoords, getTopic, type EventItem } from '@/lib/data';
 import { formatDistance, haversineKm } from '@/lib/geo';
 import { daysUntil, isHappeningNow, relativeLabel } from '@/lib/datetime';
-import { scoreEvents } from '@/lib/recommendations';
+import { pickSuggestions, scoreEvents } from '@/lib/recommendations';
 
 interface Props {
   events: EventItem[];
@@ -114,15 +114,20 @@ export default function AgendaTimeline({ events }: Props) {
     });
 
     const savedSet = new Set(saved);
-    const decorated = ranked.map((r) => ({
+    const decorar = (r: (typeof ranked)[number]) => ({
       ...r.event,
       distanceKm: r.distanceKm,
       saved: savedSet.has(r.event.id),
-    }));
+    });
 
     // Agenda = o que o usuário salvou primeiro; depois as melhores sugestões.
-    const mine = decorated.filter((e) => e.saved);
-    const suggestions = decorated.filter((e) => !e.saved).slice(0, 8);
+    // As sugestões passam pelo teto por tema e por cidade: cortar direto o topo
+    // do ranking enchia o bloco com o mesmo tema na mesma cidade.
+    const mine = ranked.filter((r) => savedSet.has(r.event.id)).map(decorar);
+    const suggestions = pickSuggestions(
+      ranked.filter((r) => !savedSet.has(r.event.id)),
+      8,
+    ).map(decorar);
     const merged = [...mine, ...suggestions].sort((a, b) => {
       const ta = a.startsAt ? new Date(a.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
       const tb = b.startsAt ? new Date(b.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
