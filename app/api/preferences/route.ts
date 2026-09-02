@@ -83,7 +83,16 @@ export async function PUT(request: Request) {
     }
   }
 
-  const { error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' });
+  let { error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' });
+
+  // Janela entre publicar o código e rodar a migração: sem a coluna, o
+  // questionário inteiro falharia. Salva o que dá e avisa nos logs — a
+  // conclusão volta a persistir assim que db/schema.sql for aplicado.
+  if (error && 'completed_at' in row && /completed_at/.test(error.message)) {
+    console.warn('[preferences] coluna completed_at ausente — rode db/schema.sql:', error.message);
+    delete row.completed_at;
+    ({ error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' }));
+  }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Devolve o estado final para o cliente alinhar o armazenamento do aparelho.
