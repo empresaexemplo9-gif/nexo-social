@@ -169,17 +169,10 @@ export default function ReadingYear() {
   const ano = new Date().getFullYear();
   const resumo = useMemo(() => summarizeYear(entries, ano), [entries, ano]);
 
-  // A meta vale no aparelho na hora e sobe para a conta em seguida.
+  // A meta vale no aparelho na hora e sobe para a conta em seguida — quem
+  // cuida das duas pontas é o próprio `save`.
   const setMeta = (n: number) => {
-    const meta = Math.max(1, Math.min(365, n || 1));
-    save({ readingGoal: meta });
-    fetch('/api/preferences', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ readingGoal: meta }),
-    }).catch(() => {
-      /* sem conta ou offline — fica só no aparelho */
-    });
+    void save({ readingGoal: Math.max(1, Math.min(365, n || 1)) });
   };
 
   const meta = prefs.readingGoal ?? 12;

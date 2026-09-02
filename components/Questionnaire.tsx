@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from './icons';
 import { usePreferences, type Frequency } from '@/lib/preferences';
@@ -52,7 +52,7 @@ function Chips({
 
 export default function Questionnaire() {
   const router = useRouter();
-  const { prefs, complete } = usePreferences();
+  const { prefs, ready, complete } = usePreferences();
 
   const [step, setStep] = useState(0);
   const [interests, setInterests] = useState<CategorySlug[]>(prefs.interests);
@@ -67,12 +67,45 @@ export default function Questionnaire() {
   const [detecting, setDetecting] = useState(false);
   const [detectMsg, setDetectMsg] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  // O perfil chega em duas ondas (aparelho e depois conta). Enquanto ninguém
+  // mexeu no formulário, ele acompanha — assim "Ajustar perfil" abre com as
+  // respostas de antes em vez de uma tela em branco que obriga a refazer tudo.
+  const touched = useRef(false);
+  useEffect(() => {
+    if (!ready || touched.current) return;
+    setInterests(prefs.interests);
+    setSubtopics(prefs.subtopics ?? []);
+    setMusicGenres(prefs.musicGenres ?? []);
+    setFilmGenres(prefs.filmGenres ?? []);
+    setBookGenres(prefs.bookGenres ?? []);
+    setHobbies(prefs.hobbies ?? []);
+    setCity(prefs.city);
+    setRadiusKm(prefs.radiusKm);
+    setFrequency(prefs.frequency);
+  }, [ready, prefs]);
 
   const STEPS = ['Temas', 'Detalhes', 'Música', 'Cinema', 'Livros', 'Hobbies', 'Região', 'Ritmo'];
   const total = STEPS.length;
 
-  const toggle = <T extends string>(list: T[], set: (v: T[]) => void, value: T) =>
+  const toggle = <T extends string>(list: T[], set: (v: T[]) => void, value: T) => {
+    touched.current = true;
     set(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
+  };
+
+  const chooseCity = (v: string | null) => {
+    touched.current = true;
+    setCity(v);
+  };
+  const chooseRadius = (v: number) => {
+    touched.current = true;
+    setRadiusKm(v);
+  };
+  const chooseFrequency = (v: Frequency) => {
+    touched.current = true;
+    setFrequency(v);
+  };
 
   /** Subtemas apenas dos temas escolhidos — evita uma lista gigante. */
   const availableSubtopics = useMemo(
@@ -91,7 +124,7 @@ export default function Questionnaire() {
       (pos) => {
         const me = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         const nearest = [...CITIES].sort((a, b) => haversineKm(me, a.coords) - haversineKm(me, b.coords))[0];
-        setCity(nearest.name);
+        chooseCity(nearest.name);
         setDetectMsg(`Detectamos que você está perto de ${nearest.name}.`);
         setDetecting(false);
       },
@@ -105,15 +138,25 @@ export default function Questionnaire() {
 
   const finish = async () => {
     setSaving(true);
-    complete({ interests, subtopics, musicGenres, filmGenres, bookGenres, hobbies, city, radiusKm, frequency });
-    try {
-      await fetch('/api/preferences', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ interests, subtopics, musicGenres, filmGenres, bookGenres, hobbies, city, radiusKm, frequency }),
-      });
-    } catch {
-      /* segue com o armazenamento local */
+    setSaveError('');
+    // `complete` grava no aparelho e sobe para a conta — é a subida que impede
+    // o questionário de voltar no próximo acesso.
+    const res = await complete({
+      interests,
+      subtopics,
+      musicGenres,
+      filmGenres,
+      bookGenres,
+      hobbies,
+      city,
+      radiusKm,
+      frequency,
+    });
+    if (!res.ok) {
+      // Sair daqui agora perderia a resposta na próxima visita: melhor avisar.
+      setSaveError(`${res.error} Suas escolhas ficaram salvas neste aparelho — tente concluir de novo.`);
+      setSaving(false);
+      return;
     }
     router.push('/');
   };
@@ -284,7 +327,7 @@ export default function Questionnaire() {
                 {CITIES.map((c) => (
                   <button
                     key={c.name}
-                    onClick={() => setCity(c.name)}
+                    onClick={() => chooseCity(c.name)}
                     className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
                       city === c.name
                         ? 'border-emerald-600 bg-emerald-950/40 text-emerald-300'
@@ -302,7 +345,7 @@ export default function Questionnaire() {
                 {RADII.map((r) => (
                   <button
                     key={r}
-                    onClick={() => setRadiusKm(r)}
+                    onClick={() => chooseRadius(r)}
                     className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
                       radiusKm === r
                         ? 'bg-emerald-500 font-semibold text-zinc-950'
@@ -328,7 +371,7 @@ export default function Questionnaire() {
               {FREQUENCIES.map((f) => (
                 <button
                   key={f.value}
-                  onClick={() => setFrequency(f.value)}
+                  onClick={() => chooseFrequency(f.value)}
                   className={`rounded-2xl border p-4 text-left transition ${
                     frequency === f.value ? 'border-emerald-600 bg-emerald-950/40' : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-700'
                   }`}
@@ -385,6 +428,12 @@ export default function Questionnaire() {
             </button>
           )}
         </div>
+
+        {saveError && (
+          <p className="mt-4 rounded-2xl border border-clay-800/60 bg-clay-950/40 px-4 py-3 text-xs text-clay-300">
+            {saveError}
+          </p>
+        )}
       </div>
     </div>
   );
