@@ -15,8 +15,13 @@ interface Notification {
   createdAt: string;
 }
 
-/** Sino de notificações — só aparece para quem está autenticado. */
-export default function NotificationsBell() {
+/**
+ * Sino de notificações — só aparece para quem está autenticado.
+ *
+ * `lateral`: o sino está na barra lateral esquerda, então a lista abre ao lado
+ * dele (para a direita e para cima), e não embaixo — senão sairia da tela.
+ */
+export default function NotificationsBell({ lateral = false, rotulo }: { lateral?: boolean; rotulo?: string }) {
   const [items, setItems] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -57,10 +62,12 @@ export default function NotificationsBell() {
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-xl p-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-50"
+        className={`relative flex items-center gap-3 rounded-xl p-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-50 ${rotulo ? 'w-full px-3 text-sm' : ''}`}
         aria-label="Notificações"
+        title="Notificações"
       >
-        <Icon name="alert" size={18} />
+        <Icon name="alert" size={18} className="shrink-0" />
+        {rotulo && <span className="truncate">{rotulo}</span>}
         {unread > 0 && (
           <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-clay-500 px-1 text-[10px] font-bold text-zinc-950">
             {unread > 9 ? '9+' : unread}
@@ -71,7 +78,11 @@ export default function NotificationsBell() {
       {open && (
         <>
           <button className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} aria-hidden />
-          <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft">
+          <div
+            className={`absolute z-50 w-80 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-soft ${
+              lateral ? 'bottom-0 left-full ml-3' : 'right-0 mt-2'
+            }`}
+          >
             <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
               <span className="text-sm font-semibold text-zinc-100">Notificações</span>
               {unread > 0 && (

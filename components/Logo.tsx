@@ -4,12 +4,12 @@ import React from 'react';
  * Logo do nexo.social em SVG — vetorial, nítido em qualquer tamanho.
  *
  * O monograma é um "D" de cantos retos à esquerda e arredondados à direita,
- * cortado por uma fenda diagonal fina, em preto sobre um bloco creme de cantos
- * arredondados. A geometria foi medida na arte de referência e é a mesma de
- * public/logo.svg e dos ícones do app (public/icon-*.png).
+ * cortado por uma fenda diagonal fina. A geometria foi medida na arte de
+ * referência e é a mesma de public/logo.svg e dos ícones do app.
  *
- * Com `bloco={false}` sai só o monograma, na cor do texto (currentColor) —
- * útil sobre fundos claros ou em versão monocromática.
+ * Na plataforma ele aparece sozinho, com fundo transparente e no azul neon dos
+ * botões: `bloco={false}` + `className="text-emerald-400"` (usa currentColor).
+ * `bloco` (padrão) desenha a versão em preto sobre o bloco creme.
  */
 export const MONOGRAMA = {
   esquerda: 'M14.9 16.1H61.6A20.5 20.5 0 0 1 65.1 16.4L35.73 84.6H14.9Z',
@@ -27,7 +27,9 @@ export function LogoMark({
 }) {
   const tinta = bloco ? '#000' : 'currentColor';
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" className={className} role="img" aria-label="nexo.social">
+    // Sem o bloco, recorta justo no monograma: o "D" ocupa o tamanho pedido
+    // em vez de ficar pequeno no meio das margens do bloco.
+    <svg width={size} height={size} viewBox={bloco ? '0 0 100 100' : '12 14 73 73'} className={className} role="img" aria-label="nexo.social">
       {bloco && <rect width="100" height="100" rx="12" fill="#f8f1e9" />}
       <path fill={tinta} d={MONOGRAMA.esquerda} />
       <path fill={tinta} d={MONOGRAMA.direita} />

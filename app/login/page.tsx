@@ -82,7 +82,7 @@ export default function LoginPage() {
       <div className="card-soft cantos-hud w-full max-w-md space-y-6 p-8">
         <div className="text-center">
           <Link href="/" className="inline-flex flex-col items-center gap-2">
-            <LogoMark size={44} />
+            <LogoMark size={44} bloco={false} className="text-emerald-400 drop-shadow-[0_0_10px_rgba(31,208,242,0.6)]" />
             <span className="text-xl font-bold text-white">
               nexo<span className="text-emerald-400">.social</span>
             </span>

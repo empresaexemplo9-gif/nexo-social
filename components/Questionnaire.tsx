@@ -338,7 +338,7 @@ export default function Questionnaire() {
     <div className="grid grid-cols-1 gap-6 pb-28 lg:grid-cols-12 lg:gap-8 lg:pb-0">
       {/* Painel lateral: progresso, atalhos, resumo e salvar */}
       <aside className="lg:col-span-4 xl:col-span-3">
-        <div className="card-soft cantos-hud space-y-5 p-5 lg:sticky lg:top-24">
+        <div className="card-soft cantos-hud space-y-5 p-5 lg:sticky lg:top-6">
           <div>
             <p className="rotulo-hud">Progresso</p>
             <p className="mt-2 font-mono text-3xl font-semibold text-emerald-300 texto-neon">

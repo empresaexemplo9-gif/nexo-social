@@ -94,6 +94,38 @@ h2 {
   }
 }
 
+/* ---------------------------------------------------------------------------
+   Barra lateral (components/Navbar.tsx)
+   A largura e o recuo do conteúdo saem daqui, lidos de html[data-lateral], que
+   o script do <head> aplica antes da página pintar — sem a barra "piscar".
+   -------------------------------------------------------------------------*/
+.barra-lateral {
+  width: 15.5rem;
+  transition: width 0.2s ease;
+}
+@media (min-width: 1024px) {
+  /* Só as páginas que têm a barra ganham o recuo (login e offline não têm). */
+  body:has(.barra-lateral) {
+    padding-left: 15.5rem;
+    transition: padding-left 0.2s ease;
+  }
+  html[data-lateral='recolhida'] body:has(.barra-lateral) {
+    padding-left: 4.75rem;
+  }
+}
+html[data-lateral='recolhida'] .barra-lateral {
+  width: 4.75rem;
+}
+html[data-lateral='recolhida'] .barra-lateral .rotulo-menu,
+html[data-lateral='recolhida'] .barra-lateral .so-expandida {
+  display: none;
+}
+html[data-lateral='recolhida'] .barra-lateral .item-menu {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 /* Linhas de varredura finas sobre superfícies grandes (a antiga "textura de
    papel" virou tela de monitor). */
 .texture-grain {
