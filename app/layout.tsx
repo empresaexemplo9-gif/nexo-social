@@ -33,11 +33,38 @@ const mono = JetBrains_Mono({
   display: 'swap',
 });
 
+/**
+ * Endereço público do site.
+ *
+ * Sem isto o Next não consegue transformar `/imagem.jpg` em URL absoluta, e
+ * WhatsApp, Instagram e Twitter exigem URL absoluta para montar a prévia — o
+ * link sai sem imagem nenhuma.
+ */
+const SITE =
+  (process.env.NEXT_PUBLIC_SITE_URL || '').trim() ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
+  'https://nexo-social-two.vercel.app';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE),
   title: 'nexo.social — sua agenda pessoal',
   description: 'Sua agenda pessoal de eventos e conteúdos, perto de você.',
   applicationName: 'nexo.social',
   manifest: '/manifest.webmanifest',
+  // Prévia padrão de qualquer página que não defina a sua.
+  openGraph: {
+    type: 'website',
+    siteName: 'nexo.social',
+    locale: 'pt_BR',
+    url: SITE,
+    title: 'nexo.social — sua agenda pessoal',
+    description: 'Sua agenda pessoal de eventos e conteúdos, perto de você.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'nexo.social — sua agenda pessoal',
+    description: 'Sua agenda pessoal de eventos e conteúdos, perto de você.',
+  },
   icons: {
     icon: [
       { url: '/logo.svg', type: 'image/svg+xml' },
