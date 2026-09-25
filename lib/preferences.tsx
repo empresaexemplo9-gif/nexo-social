@@ -10,9 +10,12 @@
 //     instalado, uma aba anônima ou uma limpeza de dados apagavam o perfil e a
 //     plataforma pedia tudo de novo.
 //
-// Ao abrir, o aparelho responde primeiro (instantâneo) e a conta manda em
-// seguida. Quem respondeu deslogado não perde nada: a resposta local sobe para
-// a conta assim que houver login.
+// Ao abrir, o aparelho responde primeiro (instantâneo) e a conta chega em
+// seguida. Quem manda é a versão MAIS NOVA: toda edição feita aqui fica marcada
+// como pendente até a conta confirmar que recebeu. Sem essa marca, a conta
+// vencia sempre — e uma escolha que não chegou a subir (sessão expirada, rede
+// caindo, resposta dada deslogado) era sobrescrita pela versão antiga no
+// próximo acesso, como se o questionário não tivesse gravado nada.
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CategorySlug } from './data';
@@ -56,6 +59,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
 const STORAGE_KEY = 'nexo:prefs:v1';
 /** De quem é o perfil guardado neste aparelho (id da conta que o sincronizou). */
 const OWNER_KEY = 'nexo:prefs:owner';
+/** Quando foi a última edição feita aqui que a conta ainda não confirmou. */
+const PENDING_KEY = 'nexo:prefs:pending';
 
 /** Como o salvamento na conta terminou — o questionário usa para avisar. */
 export type SaveResult =
@@ -105,6 +110,39 @@ function writeOwner(userId: string) {
   }
 }
 
+function readPending(): string | null {
+  try {
+    return window.localStorage.getItem(PENDING_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/** Marca uma edição local ainda não confirmada pela conta. Devolve a marca. */
+function markPending(): string {
+  const stamp = new Date().toISOString();
+  try {
+    window.localStorage.setItem(PENDING_KEY, stamp);
+  } catch {
+    /* armazenamento indisponível */
+  }
+  return stamp;
+}
+
+/**
+ * A conta confirmou. Só limpa se nenhuma edição mais nova apareceu enquanto a
+ * requisição ia e voltava — essa ainda precisa subir.
+ */
+function clearPending(stamp?: string) {
+  try {
+    if (!stamp || window.localStorage.getItem(PENDING_KEY) === stamp) {
+      window.localStorage.removeItem(PENDING_KEY);
+    }
+  } catch {
+    /* armazenamento indisponível */
+  }
+}
+
 /** Envia o perfil para a conta. Erro de rede/sem login não quebra o app. */
 async function pushToAccount(patch: Partial<UserPreferences>): Promise<SaveResult> {
   try {
@@ -127,7 +165,8 @@ async function pushToAccount(patch: Partial<UserPreferences>): Promise<SaveResul
 }
 
 /**
- * Junta o que está no aparelho com o que está na conta.
+ * Junta o que está no aparelho com o que está na conta, quando o aparelho não
+ * tem edição pendente.
  *
  * A conta manda sempre que já tem um questionário concluído — é ela que vale em
  * todos os aparelhos. O que está no aparelho só prevalece quando a conta ainda
@@ -136,6 +175,16 @@ async function pushToAccount(patch: Partial<UserPreferences>): Promise<SaveResul
 function merge(local: UserPreferences, remote: UserPreferences): UserPreferences {
   if (remote.completedAt) return remote;
   return local.completedAt ? local : { ...local, ...remote };
+}
+
+/**
+ * A edição pendente do aparelho é mais nova que a versão da conta? Sem data na
+ * conta, a edição local é o que há de mais recente.
+ */
+function pendingIsNewer(pendingAt: string | null, remoteUpdatedAt: string | null): boolean {
+  if (!pendingAt) return false;
+  if (!remoteUpdatedAt) return true;
+  return Date.parse(pendingAt) > Date.parse(remoteUpdatedAt);
 }
 
 export function PreferencesProvider({ children }: { children: React.ReactNode }) {
@@ -162,34 +211,47 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
 
     (async () => {
       let remote: UserPreferences | null = null;
+      let remoteUpdatedAt: string | null = null;
       let userId = '';
       try {
         const res = await fetch('/api/preferences');
-        if (!res.ok) return; // 401/503 => segue no modo aparelho
+        if (!res.ok) return; // 401/503 => segue no modo aparelho (a pendência fica)
         const json = await res.json();
         userId = typeof json.userId === 'string' ? json.userId : '';
         remote = json.preferences ? { ...DEFAULT_PREFERENCES, ...json.preferences } : null;
+        remoteUpdatedAt = typeof json.updatedAt === 'string' ? json.updatedAt : null;
       } catch {
         return; // offline — segue no modo aparelho
       }
       if (editedRef.current) return;
 
-      // Perfil que ficou no aparelho de outra conta não pertence a esta.
+      // Perfil que ficou no aparelho de outra conta não pertence a esta — nem a
+      // edição pendente dele.
       const owner = readOwner();
       const doOutro = Boolean(owner && userId && owner !== userId);
       const mine = doOutro ? DEFAULT_PREFERENCES : local;
+      const pendingAt = doOutro ? null : readPending();
+      if (doOutro) clearPending();
 
       if (userId) writeOwner(userId);
 
-      if (!remote) {
-        // A conta ainda não tem perfil. Quem respondeu antes de entrar não
-        // pode perder a resposta: ela sobe agora.
-        if (mine.completedAt) {
-          const r = await pushToAccount(mine);
-          setSynced(r.ok && r.scope === 'conta');
-        } else if (doOutro) {
-          persist(DEFAULT_PREFERENCES);
+      // Edição feita aqui que a conta não chegou a receber, e mais nova que a
+      // versão dela: é a escolha atual da pessoa. Fica e sobe inteira.
+      if (pendingIsNewer(pendingAt, remoteUpdatedAt) || (!remote && mine.completedAt)) {
+        persist(mine);
+        const r = await pushToAccount(mine);
+        if (r.ok && r.scope === 'conta') {
+          if (pendingAt) clearPending(pendingAt);
+          setSynced(true);
         }
+        return;
+      }
+      // A conta tem algo mais novo que a pendência (editou em outro aparelho
+      // depois): a pendência daqui ficou velha.
+      if (pendingAt) clearPending(pendingAt);
+
+      if (!remote) {
+        if (doOutro) persist(DEFAULT_PREFERENCES);
         return;
       }
 
@@ -208,9 +270,17 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   const save = useCallback<PreferencesContextValue['save']>(
     async (patch) => {
       editedRef.current = true;
-      persist({ ...readStorage(), ...patch });
-      const r = await pushToAccount(patch);
-      if (r.ok && r.scope === 'conta') setSynced(true);
+      // Havia edição que não subiu: manda o perfil inteiro, senão ela se perde
+      // quando esta subir e limpar a pendência.
+      const atrasada = Boolean(readPending());
+      const next = { ...readStorage(), ...patch };
+      persist(next);
+      const stamp = markPending();
+      const r = await pushToAccount(atrasada ? next : patch);
+      if (r.ok && r.scope === 'conta') {
+        clearPending(stamp);
+        setSynced(true);
+      }
       return r;
     },
     [persist],
@@ -222,10 +292,14 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       const completedAt = new Date().toISOString();
       const next = { ...readStorage(), ...patch, completedAt };
       persist(next);
+      const stamp = markPending();
       // Manda o perfil inteiro (e não só o que mudou): é o que garante que a
       // conta fica idêntica ao aparelho depois de concluir.
       const r = await pushToAccount(next);
-      if (r.ok && r.scope === 'conta') setSynced(true);
+      if (r.ok && r.scope === 'conta') {
+        clearPending(stamp);
+        setSynced(true);
+      }
       return r;
     },
     [persist],
@@ -235,9 +309,12 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     editedRef.current = true;
     setSynced(false);
     persist(DEFAULT_PREFERENCES);
+    const stamp = markPending();
     // Não apaga OWNER_KEY: o aparelho continua sendo desta conta.
     // Limpa também na conta, senão o perfil antigo voltaria no próximo acesso.
-    void pushToAccount({ ...DEFAULT_PREFERENCES, completedAt: null });
+    void pushToAccount({ ...DEFAULT_PREFERENCES, completedAt: null }).then((r) => {
+      if (r.ok && r.scope === 'conta') clearPending(stamp);
+    });
   }, [persist]);
 
   const value = useMemo<PreferencesContextValue>(

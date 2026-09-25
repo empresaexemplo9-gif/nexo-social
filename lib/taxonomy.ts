@@ -79,7 +79,7 @@ export const HOBBIES: HobbyOption[] = [
   { id: 'fotografar', label: 'Fotografar', icon: 'video' },
   { id: 'tocar', label: 'Tocar um instrumento', icon: 'music' },
   { id: 'ler', label: 'Ler', icon: 'book' },
-  { id: 'jogar', label: 'Games', icon: 'gamepad' },
+  { id: 'jogar', label: 'Jogar videogame', icon: 'gamepad' },
   { id: 'viajar', label: 'Viajar', icon: 'compass' },
   { id: 'desenhar', label: 'Desenhar & pintar', icon: 'palette' },
   { id: 'jardinagem', label: 'Plantas', icon: 'leaf' },

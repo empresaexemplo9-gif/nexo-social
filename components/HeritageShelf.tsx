@@ -50,7 +50,7 @@ export default function HeritageShelf({ topic, titulo }: { topic?: CategorySlug;
         {tocando && <InlinePlayer req={tocando} onClose={() => setTocando(null)} />}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {itens.map((h) => {
           const t = getTopic(h.topic);
           return (
