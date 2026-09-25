@@ -61,7 +61,7 @@ export default function Navbar() {
     >
       <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-10 2xl:px-14">
         <Link href="/" className="flex items-center gap-2.5">
-          <LogoMark size={34} className="drop-shadow-[0_0_10px_rgba(31,208,242,0.55)]" />
+          <LogoMark size={34} />
           <span className="font-display text-lg font-semibold tracking-tight text-zinc-50">
             nexo<span className="text-emerald-400">.social</span>
           </span>

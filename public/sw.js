@@ -12,7 +12,10 @@
  *   - qualquer /api/: passa direto, sem tocar no cache.
  */
 
-const VERSAO = 'nexo-v1';
+// Suba a versão quando um arquivo sem hash no nome mudar de conteúdo (ícones,
+// logo.svg): o cache antigo é apagado na ativação e o novo é baixado.
+// v2: logo nova (monograma preto sobre bloco creme).
+const VERSAO = 'nexo-v2';
 const SHELL = `${VERSAO}-shell`;
 const ESTATICO = `${VERSAO}-estatico`;
 const OFFLINE = '/offline';
