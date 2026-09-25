@@ -96,7 +96,7 @@ export default function ClipsShelf({ topic }: { topic: CategorySlug }) {
       )}
 
       {estado === 'ok' && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
           {clips.map((c) => (
             <button
               key={c.id}

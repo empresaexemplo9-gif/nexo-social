@@ -78,8 +78,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="tela-sem-barra flex min-h-screen items-center justify-center bg-zinc-950 p-4 text-zinc-100">
-      <div className="w-full max-w-md space-y-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
+    <div className="tela-sem-barra flex min-h-screen items-center justify-center p-4 text-zinc-100">
+      <div className="card-soft cantos-hud w-full max-w-md space-y-6 p-8">
         <div className="text-center">
           <Link href="/" className="inline-flex flex-col items-center gap-2">
             <LogoMark size={44} />

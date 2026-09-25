@@ -53,16 +53,16 @@ export default function Navbar() {
 
   return (
     <header
-      className="sticky top-0 z-50 border-b border-zinc-800/60 bg-zinc-950/85 backdrop-blur-md"
+      className="sticky top-0 z-50 border-b border-emerald-400/10 bg-zinc-950/70 shadow-[0_1px_0_0_rgba(31,208,242,0.08),0_10px_30px_-20px_rgba(31,208,242,0.35)] backdrop-blur-xl"
       // Instalado no iOS, a barra de status fica SOBRE o conteúdo (viewport-fit
       // cover + status bar translúcida). Sem este respiro, o logo e o menu
       // ficam embaixo do relógio e da bateria.
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="flex h-16 w-full items-center justify-between gap-4 px-4 sm:px-6 lg:px-10 2xl:px-14">
         <Link href="/" className="flex items-center gap-2.5">
-          <LogoMark size={34} />
-          <span className="text-lg font-semibold tracking-tight text-zinc-50">
+          <LogoMark size={34} className="drop-shadow-[0_0_10px_rgba(31,208,242,0.55)]" />
+          <span className="font-display text-lg font-semibold tracking-tight text-zinc-50">
             nexo<span className="text-emerald-400">.social</span>
           </span>
         </Link>

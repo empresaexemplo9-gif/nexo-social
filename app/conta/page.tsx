@@ -72,7 +72,7 @@ export default function ContaPage() {
   const admin = isPlatformAdmin(account?.email);
 
   return (
-    <div className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
+    <div className="min-h-screen font-sans text-zinc-100 antialiased">
       <Navbar />
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-12 sm:px-6 lg:px-8">
         <div>

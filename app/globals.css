@@ -4,6 +4,9 @@
 
 :root {
   color-scheme: dark;
+  --neon: 31 208 242; /* ciano da marca (emerald-400) */
+  --neon-magenta: 255 77 191; /* clay-400 */
+  --neon-violeta: 139 92 246;
 }
 
 html {
@@ -11,47 +14,88 @@ html {
 }
 
 body {
-  /* Fundo do mesmo tom da logo, com brilhos suaves de teal e argila. */
-  background-color: #121110;
-  color: #f0ece8;
-  background-image:
-    radial-gradient(1200px 620px at 10% -12%, rgba(21, 156, 153, 0.13), transparent 60%),
-    radial-gradient(900px 520px at 100% 4%, rgba(226, 130, 95, 0.08), transparent 58%),
-    radial-gradient(760px 760px at 50% 118%, rgba(21, 156, 153, 0.07), transparent 62%);
-  background-attachment: fixed;
+  background-color: #060a16;
+  color: #e3ecfa;
 }
 
-/* Títulos em serifa (Fraunces) — o toque humano da identidade */
+/* Títulos em Chakra Petch — cortes retos de painel de equipamento. */
 h1,
 h2 {
-  font-family: var(--font-display), Georgia, serif;
-  letter-spacing: -0.015em;
-  font-optical-sizing: auto;
+  font-family: var(--font-display), var(--font-sans), sans-serif;
+  letter-spacing: -0.01em;
 }
 
 ::selection {
-  background-color: #2bb8b2;
-  color: #121110;
+  background-color: #1fd0f2;
+  color: #060a16;
 }
 
-/* Barra de rolagem discreta */
+/* Barra de rolagem fina, no tom dos painéis */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #121110;
+  background: #060a16;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2f2a27;
+  background: #18223a;
   border-radius: 9999px;
-  border: 2px solid #121110;
+  border: 2px solid #060a16;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #463f3b;
+  background: #006f8e;
 }
 
-/* Textura de papel sutil — dá calor às superfícies grandes */
+/* ---------------------------------------------------------------------------
+   Fundo tecnológico (components/TechBackdrop.tsx)
+   -------------------------------------------------------------------------*/
+.fundo-tech {
+  position: fixed;
+  inset: 0;
+  z-index: -10;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fundo-tech > div {
+  position: absolute;
+  inset: 0;
+}
+.fundo-tech__brilhos {
+  background:
+    radial-gradient(1100px 620px at 6% -8%, rgb(var(--neon) / 0.16), transparent 62%),
+    radial-gradient(900px 560px at 100% 0%, rgb(var(--neon-violeta) / 0.16), transparent 60%),
+    radial-gradient(760px 520px at 88% 100%, rgb(var(--neon-magenta) / 0.08), transparent 62%),
+    radial-gradient(1200px 700px at 30% 110%, rgb(47 107 255 / 0.12), transparent 60%);
+}
+.fundo-tech__circuito {
+  background: url('/bg/circuito.svg') center / cover no-repeat;
+  opacity: 0.26;
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, #000 30%, transparent 85%);
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, #000 30%, transparent 85%);
+}
+.fundo-tech__grade {
+  top: auto !important;
+  height: 42vh;
+  background: url('/bg/grade.svg') center top / cover no-repeat;
+  opacity: 0.24;
+}
+/* Linha de varredura lenta, como um monitor de radar. */
+.fundo-tech__varredura {
+  background: linear-gradient(to bottom, transparent 0%, rgb(var(--neon) / 0.05) 48%, rgb(var(--neon) / 0.09) 50%, transparent 52%);
+  animation: varredura 9s linear infinite;
+}
+@keyframes varredura {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* Linhas de varredura finas sobre superfícies grandes (a antiga "textura de
+   papel" virou tela de monitor). */
 .texture-grain {
   position: relative;
 }
@@ -59,18 +103,84 @@ h2 {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  background-image: repeating-linear-gradient(to bottom, rgb(255 255 255 / 0.028) 0 1px, transparent 1px 3px);
   pointer-events: none;
-  mix-blend-mode: overlay;
-  opacity: 0.55;
+  border-radius: inherit;
 }
 
-/* Cartão padrão: cantos generosos e borda quase imperceptível */
+/* Cartão padrão: vidro azul-escuro com fio de neon no topo */
 .card-soft {
-  background-color: rgba(28, 26, 24, 0.72);
-  border: 1px solid rgba(70, 63, 59, 0.55);
-  border-radius: 1.5rem;
-  backdrop-filter: blur(6px);
+  background:
+    linear-gradient(90deg, transparent, rgb(var(--neon) / 0.55), transparent) top / 100% 1px no-repeat,
+    linear-gradient(180deg, rgb(13 20 38 / 0.82), rgb(6 10 22 / 0.78));
+  border: 1px solid rgb(var(--neon) / 0.16);
+  border-radius: 1.125rem;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.03),
+    0 20px 50px -30px rgb(0 0 0 / 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Cantoneiras de HUD nos quatro cantos do elemento. */
+.cantos-hud {
+  position: relative;
+}
+.cantos-hud::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  --c: rgb(var(--neon) / 0.75);
+  --t: 16px;
+  background:
+    linear-gradient(var(--c) 0 0) top left / var(--t) 1.5px,
+    linear-gradient(var(--c) 0 0) top left / 1.5px var(--t),
+    linear-gradient(var(--c) 0 0) top right / var(--t) 1.5px,
+    linear-gradient(var(--c) 0 0) top right / 1.5px var(--t),
+    linear-gradient(var(--c) 0 0) bottom left / var(--t) 1.5px,
+    linear-gradient(var(--c) 0 0) bottom left / 1.5px var(--t),
+    linear-gradient(var(--c) 0 0) bottom right / var(--t) 1.5px,
+    linear-gradient(var(--c) 0 0) bottom right / 1.5px var(--t);
+  background-repeat: no-repeat;
+  z-index: 1;
+}
+
+/* Rótulo de painel: caixa-alta monoespaçada com um traço aceso à esquerda. */
+.rotulo-hud {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #4de3fb;
+}
+.rotulo-hud::before {
+  content: '';
+  width: 1.25rem;
+  height: 2px;
+  border-radius: 2px;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+/* Brilho de neon em títulos de destaque. */
+.texto-neon {
+  text-shadow:
+    0 0 18px rgb(var(--neon) / 0.45),
+    0 0 2px rgb(var(--neon) / 0.6);
+}
+
+/* Degradê ciano → violeta → magenta para palavras-chave. */
+.texto-degrade {
+  background: linear-gradient(90deg, #4de3fb, #8b5cf6 55%, #ff4dbf);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 /* ---------------------------------------------------------------------------

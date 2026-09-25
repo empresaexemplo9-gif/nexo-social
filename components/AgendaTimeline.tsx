@@ -144,17 +144,20 @@ export default function AgendaTimeline({ events }: Props) {
   return (
     <div className="space-y-6">
       {/* Resumo do dia */}
-      <div className="card-soft texture-grain relative overflow-hidden p-6 md:p-8">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+      <div className="card-soft texture-grain cantos-hud relative overflow-hidden p-6 md:p-8">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 w-full bg-chip bg-cover bg-center opacity-60 [mask-image:linear-gradient(to_left,black_20%,transparent_85%)] md:w-2/3"
+        />
         <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-emerald-400">
-              <Icon name="calendarCheck" size={15} /> Sua agenda
+            <p className="rotulo-hud">
+              <Icon name="calendarCheck" size={14} /> Sua agenda
             </p>
             <h2 className="mt-2 text-3xl font-semibold leading-tight text-zinc-50 md:text-4xl">
               {nextEvent ? (
                 <>
-                  A seguir: <span className="italic text-clay-300">{nextEvent.title}</span>
+                  A seguir: <span className="text-clay-300 [text-shadow:0_0_18px_rgba(255,77,191,0.45)]">{nextEvent.title}</span>
                 </>
               ) : (
                 'Sua agenda está livre'
@@ -189,7 +192,7 @@ export default function AgendaTimeline({ events }: Props) {
                 <span className="h-px flex-1 bg-zinc-800" />
                 <span className="text-xs text-zinc-500">{bucket.events.length}</span>
               </div>
-              <ul className="space-y-3">
+              <ul className="grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-3">
                 {bucket.events.map((e) => (
                   <AgendaRow key={e.id} event={e} distanceKm={e.distanceKm} saved={e.saved} />
                 ))}

@@ -1,27 +1,35 @@
 import React from 'react';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Fraunces, Space_Grotesk } from 'next/font/google';
+import { Chakra_Petch, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import { PreferencesProvider } from '@/lib/preferences';
 import { AgendaProvider } from '@/lib/agenda';
 import { ReadingProvider } from '@/lib/reading';
 import MobileTabBar from '@/components/MobileTabBar';
 import PWARegister from '@/components/PWARegister';
+import TechBackdrop from '@/components/TechBackdrop';
 
-// Fraunces: serif "old style" com calor vintage — usada nos títulos.
-const display = Fraunces({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '900'],
-  style: ['normal', 'italic'],
+// Chakra Petch: cortes retos e angulares, cara de painel — usada nos títulos.
+const display = Chakra_Petch({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-display',
   display: 'swap',
 });
 
-// Space Grotesk: sans geométrica com ar futurista — corpo e interface.
+// Space Grotesk: sans geométrica, legível em texto corrido — corpo e interface.
 const sans = Space_Grotesk({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans',
+  display: 'swap',
+});
+
+// JetBrains Mono: rótulos de HUD, contadores e códigos.
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-mono',
   display: 'swap',
 });
 
@@ -48,7 +56,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#09090b',
+  themeColor: '#060a16',
   width: 'device-width',
   initialScale: 1,
   // Necessário para o conteúdo alcançar as bordas em aparelhos com entalhe;
@@ -59,8 +67,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${display.variable} ${sans.variable}`}>
+    <html lang="pt-BR" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
       <body className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
+        <TechBackdrop />
         <PreferencesProvider>
           <AgendaProvider>
             <ReadingProvider>

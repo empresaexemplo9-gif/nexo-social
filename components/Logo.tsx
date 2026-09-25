@@ -23,8 +23,8 @@ export function LogoMark({
       {gradient && (
         <defs>
           <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#2bb8b2" />
-            <stop offset="1" stopColor="#0f7f7d" />
+            <stop offset="0" stopColor="#4de3fb" />
+            <stop offset="1" stopColor="#008fb5" />
           </linearGradient>
         </defs>
       )}

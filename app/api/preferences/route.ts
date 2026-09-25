@@ -34,7 +34,13 @@ export async function GET() {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   // O userId identifica de quem é o perfil guardado no aparelho: sem ele, as
   // respostas de quem usou o navegador antes seriam adotadas por esta conta.
-  return NextResponse.json({ userId: user.id, preferences: data ? toClient(data) : null });
+  // updatedAt diz ao aparelho se uma edição que ele não conseguiu subir é mais
+  // nova que a versão da conta — e por isso deve vencer em vez de ser apagada.
+  return NextResponse.json({
+    userId: user.id,
+    preferences: data ? toClient(data) : null,
+    updatedAt: data?.updated_at ?? null,
+  });
 }
 
 // Cria/atualiza as preferências do usuário autenticado (resultado do questionário).

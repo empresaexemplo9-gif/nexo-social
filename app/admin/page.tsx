@@ -128,7 +128,7 @@ export default function AdminPage() {
   const inputClass = 'w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none';
 
   return (
-    <div className="min-h-screen bg-zinc-950 p-6 font-sans text-zinc-100 md:p-12">
+    <div className="min-h-screen p-6 font-sans text-zinc-100 md:p-12">
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="flex items-center justify-between border-b border-zinc-800 pb-6">
           <div>
