@@ -137,8 +137,40 @@ CREATE INDEX IF NOT EXISTS events_starts_at_idx ON events (starts_at);
 -- O par (source, external_id) evita duplicar na reimportação.
 ALTER TABLE events      ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
 ALTER TABLE events      ADD COLUMN IF NOT EXISTS external_id TEXT;
-CREATE UNIQUE INDEX IF NOT EXISTS events_source_external_idx
-  ON events (source, external_id) WHERE external_id IS NOT NULL;
+-- Índice COMUM, não parcial: a importação grava com
+-- `ON CONFLICT (source, external_id)`, e o PostgreSQL só usa índice parcial ali
+-- se o comando repetir a condição do WHERE — o PostgREST não repete. Com o
+-- índice parcial toda importação falhava com "no unique or exclusion
+-- constraint matching the ON CONFLICT specification". O efeito é o mesmo:
+-- NULL não conflita com NULL, então eventos manuais (sem external_id) seguem
+-- livres. Bancos que já têm o parcial trocam por este.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'events_source_external_idx' AND indexdef LIKE '%WHERE%') THEN
+    DROP INDEX public.events_source_external_idx;
+  END IF;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS events_source_external_idx ON events (source, external_id);
+
+-- Bancos criados por uma versão ANTIGA do projeto têm outra tabela events
+-- (category_id, location_id, cover_image_url, start_datetime obrigatório…).
+-- O CREATE TABLE IF NOT EXISTS lá em cima não mexe nela, então as colunas que
+-- o app usa nunca chegavam e todo cadastro de evento falhava — pelo painel,
+-- pelo "Popular banco" e pela importação. Aqui elas entram (opcionais, para
+-- não travar linhas antigas) e o start_datetime antigo deixa de ser exigido.
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS category TEXT;
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS event_date TEXT;
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS location TEXT;
+ALTER TABLE events      ADD COLUMN IF NOT EXISTS image_url TEXT;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'events' AND column_name = 'start_datetime' AND is_nullable = 'NO'
+  ) THEN
+    ALTER TABLE events ALTER COLUMN start_datetime DROP NOT NULL;
+  END IF;
+END $$;
 
 ALTER TABLE bom_dia     ADD COLUMN IF NOT EXISTS tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE;
 
@@ -489,10 +521,18 @@ ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS finished_at DATE;
 ALTER TABLE reading_log ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS reading_log_user_idx ON reading_log (user_id, finished_at DESC);
--- Evita duplicar a mesma obra vinda da mesma fonte.
-CREATE UNIQUE INDEX IF NOT EXISTS reading_log_unique_source
-  ON reading_log (user_id, source, external_id)
-  WHERE source IS NOT NULL AND external_id IS NOT NULL;
+-- Evita duplicar a mesma obra vinda da mesma fonte. Índice COMUM pelo mesmo
+-- motivo do events_source_external_idx: /api/leituras grava com
+-- `ON CONFLICT (user_id, source, external_id)`, que não usa índice parcial, e
+-- salvar um livro do catálogo falhava. NULL não conflita, então as obras
+-- digitadas à mão (sem fonte) continuam podendo repetir título.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'reading_log_unique_source' AND indexdef LIKE '%WHERE%') THEN
+    DROP INDEX public.reading_log_unique_source;
+  END IF;
+END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS reading_log_unique_source ON reading_log (user_id, source, external_id);
 
 ALTER TABLE reading_log ENABLE ROW LEVEL SECURITY;
 
