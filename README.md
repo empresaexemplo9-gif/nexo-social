@@ -36,6 +36,8 @@ Abra http://localhost:3000.
 4. Em Auth → Providers, habilite **Email**.
 5. Cadastre-se em `/login` com `thiagohccarvalho00@gmail.com` para virar admin, entre em `/admin` e clique em **🌱 Popular banco** para semear todo o dataset.
 
+> **Ingressos:** a plataforma não vende ingresso — cada evento leva à bilheteria oficial. Em bancos que tiveram a antiga bilheteria própria, rodar o `db/schema.sql` já desliga a compra; para apagar também as tabelas de pedidos, exporte o que precisar e rode **`db/remover-bilheteria.sql`**.
+
 ## 🔌 API
 
 | Método | Rota | Descrição | Acesso |

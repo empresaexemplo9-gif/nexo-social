@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseEnv, isSecretKey, resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config';
 import { createAnonServerClient, serviceRoleStatus } from '@/lib/supabase-server';
-import { statusPagamento } from '@/lib/pagamento';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,11 +79,7 @@ async function checkServiceRole(url: string) {
 async function checkTables() {
   const sb = createAnonServerClient();
   if (!sb) return { ok: false, error: 'cliente indisponível' };
-  const tables = [
-    'tenants', 'profiles', 'contents', 'events', 'bom_dia', 'user_preferences', 'subscribers',
-    // Bilheteria própria.
-    'ticket_types', 'ticket_orders', 'ticket_order_items', 'tickets',
-  ];
+  const tables = ['tenants', 'profiles', 'contents', 'events', 'bom_dia', 'user_preferences', 'subscribers'];
   const out: Record<string, string> = {};
   await Promise.all(
     tables.map(async (t) => {
@@ -157,10 +152,7 @@ export async function GET() {
     checkServiceRole(resolveSupabaseUrl()),
   ]);
 
-  const pagamento = statusPagamento();
-
   const problemas: string[] = [];
-  if (!pagamento.ok) problemas.push(`Ingressos pagos: ${pagamento.motivo}`);
   if (!serviceRole.aceita) {
     problemas.push(
       `Service role: ${serviceRole.detalhe} Sem ela, o cadastro ainda funciona, mas exige confirmação por e-mail.`,
@@ -202,7 +194,6 @@ export async function GET() {
     serviceRole,
     auth,
     db,
-    pagamento,
     problemas: problemas.length ? problemas : ['Nenhum problema detectado.'],
   });
 }
