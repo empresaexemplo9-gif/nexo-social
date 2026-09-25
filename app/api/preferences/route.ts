@@ -3,6 +3,15 @@ import { getSession } from '@/lib/api-helpers';
 
 export const dynamic = 'force-dynamic';
 
+const MIXES = ['misturar', 'famosas', 'lancamentos'];
+
+/**
+ * Colunas que podem ainda não existir no banco (vieram depois): se o upsert
+ * falhar por causa de uma delas, salva o resto em vez de perder o questionário
+ * inteiro — e avisa nos logs para rodar o db/schema.sql.
+ */
+const COLUNAS_OPCIONAIS = ['completed_at', 'music_hits', 'music_mix'];
+
 /** Linha do banco → formato usado pelo aplicativo (camelCase). */
 function toClient(row: Record<string, any>) {
   const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
@@ -11,6 +20,8 @@ function toClient(row: Record<string, any>) {
     interests,
     subtopics: arr(row.subtopics),
     musicGenres: arr(row.music_genres),
+    musicHits: row.music_hits === true,
+    musicMix: MIXES.includes(row.music_mix) ? row.music_mix : 'misturar',
     filmGenres: arr(row.film_genres),
     bookGenres: arr(row.book_genres),
     hobbies: arr(row.hobbies),
@@ -78,6 +89,8 @@ export async function PUT(request: Request) {
   if (Number.isFinite(b.radiusKm)) row.radius_km = b.radiusKm;
   if (typeof b.frequency === 'string') row.frequency = b.frequency;
   if (Number.isFinite(b.readingGoal)) row.reading_goal = Math.min(365, Math.max(1, Number(b.readingGoal)));
+  if (typeof b.musicHits === 'boolean') row.music_hits = b.musicHits;
+  if (typeof b.musicMix === 'string' && MIXES.includes(b.musicMix)) row.music_mix = b.musicMix;
 
   // A conclusão do questionário fica na conta — é ela que impede a plataforma
   // de pedir o questionário de novo em outro aparelho. `null` limpa (é o que
@@ -92,11 +105,13 @@ export async function PUT(request: Request) {
   let { error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' });
 
   // Janela entre publicar o código e rodar a migração: sem a coluna, o
-  // questionário inteiro falharia. Salva o que dá e avisa nos logs — a
-  // conclusão volta a persistir assim que db/schema.sql for aplicado.
-  if (error && 'completed_at' in row && /completed_at/.test(error.message)) {
-    console.warn('[preferences] coluna completed_at ausente — rode db/schema.sql:', error.message);
-    delete row.completed_at;
+  // questionário inteiro falharia. Tira a coluna que o banco recusou e tenta de
+  // novo — uma vez por coluna opcional, no máximo.
+  for (let i = 0; error && i < COLUNAS_OPCIONAIS.length; i++) {
+    const ausente = COLUNAS_OPCIONAIS.find((c) => c in row && error!.message.includes(c));
+    if (!ausente) break;
+    console.warn(`[preferences] coluna ${ausente} ausente — rode db/schema.sql:`, error.message);
+    delete row[ausente];
     ({ error } = await sb.from('user_preferences').upsert(row, { onConflict: 'user_id' }));
   }
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

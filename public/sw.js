@@ -14,8 +14,8 @@
 
 // Suba a versão quando um arquivo sem hash no nome mudar de conteúdo (ícones,
 // logo.svg): o cache antigo é apagado na ativação e o novo é baixado.
-// v2: logo nova (monograma preto sobre bloco creme).
-const VERSAO = 'nexo-v2';
+// v3: "D" em azul neon, sem fundo.
+const VERSAO = 'nexo-v3';
 const SHELL = `${VERSAO}-shell`;
 const ESTATICO = `${VERSAO}-estatico`;
 const OFFLINE = '/offline';

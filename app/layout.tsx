@@ -67,7 +67,17 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${display.variable} ${sans.variable} ${mono.variable}`}>
+    <html lang="pt-BR" className={`${display.variable} ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Barra lateral recolhida: aplicado antes de pintar, senão ela abriria
+            e fecharia a cada carregamento (ver components/Navbar.tsx). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('nexo:lateral')==='recolhida')document.documentElement.dataset.lateral='recolhida'}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
         <TechBackdrop />
         <PreferencesProvider>
