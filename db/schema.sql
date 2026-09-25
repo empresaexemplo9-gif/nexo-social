@@ -764,3 +764,22 @@ UPDATE user_preferences
    SET completed_at = COALESCE(updated_at, created_at, NOW())
  WHERE completed_at IS NULL
    AND COALESCE(array_length(interests, 1), 0) > 0;
+
+-- =============================================================================
+-- MÚSICA — como a pessoa gosta de ouvir
+--
+-- Duas perguntas do questionário decidem a trilha: se ela gosta dos hits e
+-- clássicos do estilo (music_hits) e se prefere misturar lançamentos com
+-- antigas, ouvir só as mais famosas ou só lançamentos (music_mix). O padrão é
+-- fugir do óbvio misturando novas e antigas.
+-- =============================================================================
+
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS music_hits BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS music_mix TEXT NOT NULL DEFAULT 'misturar';
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_preferences_music_mix_check') THEN
+    ALTER TABLE user_preferences
+      ADD CONSTRAINT user_preferences_music_mix_check CHECK (music_mix IN ('misturar', 'famosas', 'lancamentos'));
+  END IF;
+END $$;

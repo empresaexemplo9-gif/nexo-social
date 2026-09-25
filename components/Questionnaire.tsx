@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon, { type IconName } from './icons';
-import { usePreferences, type Frequency } from '@/lib/preferences';
+import { usePreferences, type Frequency, type MusicMix } from '@/lib/preferences';
 import { CITIES, TOPICS, getTopic, type CategorySlug } from '@/lib/data';
 import { BOOK_GENRES, FILM_GENRES, HOBBIES, MUSIC_GENRES, type GenreOption } from '@/lib/taxonomy';
 import { haversineKm } from '@/lib/geo';
@@ -22,6 +22,17 @@ const FREQUENCIES: { value: Frequency; label: string; hint: string }[] = [
 ];
 
 const RADII = [10, 25, 50, 100, 250];
+
+// As duas perguntas de "jeito de ouvir": a trilha do Spotify segue as duas.
+const HITS: { value: boolean; label: string; hint: string }[] = [
+  { value: true, label: 'Sim, adoro os hits', hint: 'Os clássicos e sucessos que todo mundo conhece entram na trilha.' },
+  { value: false, label: 'Não, quero fugir do óbvio', hint: 'Os mais tocados ficam de fora — só descobertas.' },
+];
+const MIXES: { value: MusicMix; label: string; hint: string }[] = [
+  { value: 'misturar', label: 'Misturar novas e antigas', hint: 'Lançamentos junto com faixas de outras épocas.' },
+  { value: 'famosas', label: 'Só as mais famosas', hint: 'As conhecidas do estilo, sem lançamentos.' },
+  { value: 'lancamentos', label: 'Só lançamentos', hint: 'O que saiu do ano passado para cá.' },
+];
 
 type SecaoId = 'temas' | 'detalhes' | 'musica' | 'cinema' | 'livros' | 'hobbies' | 'regiao' | 'ritmo';
 
@@ -125,6 +136,8 @@ export default function Questionnaire() {
   const [interests, setInterests] = useState<CategorySlug[]>(prefs.interests);
   const [subtopics, setSubtopics] = useState<string[]>(prefs.subtopics ?? []);
   const [musicGenres, setMusicGenres] = useState<string[]>(prefs.musicGenres ?? []);
+  const [musicHits, setMusicHits] = useState<boolean>(prefs.musicHits ?? false);
+  const [musicMix, setMusicMix] = useState<MusicMix>(prefs.musicMix ?? 'misturar');
   const [filmGenres, setFilmGenres] = useState<string[]>(prefs.filmGenres ?? []);
   const [bookGenres, setBookGenres] = useState<string[]>(prefs.bookGenres ?? []);
   const [hobbies, setHobbies] = useState<string[]>(prefs.hobbies ?? []);
@@ -144,6 +157,8 @@ export default function Questionnaire() {
     setInterests(prefs.interests);
     setSubtopics(prefs.subtopics ?? []);
     setMusicGenres(prefs.musicGenres ?? []);
+    setMusicHits(prefs.musicHits ?? false);
+    setMusicMix(prefs.musicMix ?? 'misturar');
     setFilmGenres(prefs.filmGenres ?? []);
     setBookGenres(prefs.bookGenres ?? []);
     setHobbies(prefs.hobbies ?? []);
@@ -250,6 +265,8 @@ export default function Questionnaire() {
       interests,
       subtopics,
       musicGenres,
+      musicHits,
+      musicMix,
       filmGenres,
       bookGenres,
       hobbies,
@@ -278,6 +295,7 @@ export default function Questionnaire() {
     ['Temas', interests.map((s) => topicosPorId.get(s)?.label).filter(Boolean).join(', ')],
     ['Detalhes', subtopics.join(', ')],
     ['Música', musicGenres.map((g) => MUSIC_GENRES.find((x) => x.id === g)?.label).filter(Boolean).join(', ')],
+    ['Jeito de ouvir', `${MIXES.find((m) => m.value === musicMix)?.label} · ${musicHits ? 'com os hits' : 'sem os hits'}`],
     ['Cinema', filmGenres.map((g) => FILM_GENRES.find((x) => x.id === g)?.label).filter(Boolean).join(', ')],
     ['Livros', bookGenres.map((g) => BOOK_GENRES.find((x) => x.id === g)?.label).filter(Boolean).join(', ')],
     ['Hobbies', hobbies.map((h) => HOBBIES.find((x) => x.id === h)?.label).filter(Boolean).join(', ')],
@@ -430,10 +448,65 @@ export default function Questionnaire() {
           </div>
         </Secao>
 
-        <div className="grid grid-cols-1 gap-6 2xl:grid-cols-3">
-          <Secao id="musica" numero={3} titulo="Que música você ouve?" apoio="Monta sua trilha no Spotify e sugere shows." feito={respondidas.musica}>
-            <Chips options={MUSIC_GENRES} selected={musicGenres} onToggle={(id) => toggle(musicGenres, setMusicGenres, id)} />
-          </Secao>
+        <Secao id="musica" numero={3} titulo="Que música você ouve?" apoio="Monta sua trilha no Spotify e sugere shows." feito={respondidas.musica}>
+          <Chips options={MUSIC_GENRES} selected={musicGenres} onToggle={(id) => toggle(musicGenres, setMusicGenres, id)} />
+
+          {/* Jeito de ouvir: as duas escolhas que decidem hits x descobertas */}
+          <div className="mt-6 grid grid-cols-1 gap-5 border-t border-zinc-800 pt-5 xl:grid-cols-2">
+            <fieldset>
+              <legend className="text-sm font-semibold text-zinc-100">Você gosta dos hits e clássicos do estilo?</legend>
+              <p className="mt-0.5 text-xs text-zinc-400">As músicas que todo mundo conhece — os “clichês”.</p>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {HITS.map((o) => (
+                  <button
+                    key={String(o.value)}
+                    type="button"
+                    aria-pressed={musicHits === o.value}
+                    onClick={() => {
+                      mexeu();
+                      setMusicHits(o.value);
+                    }}
+                    className={`rounded-xl border p-3.5 text-left transition ${
+                      musicHits === o.value
+                        ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(31,208,242,0.6)]'
+                        : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-zinc-50">{o.label}</span>
+                    <span className="mt-1 block text-xs text-zinc-400">{o.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend className="text-sm font-semibold text-zinc-100">Como você prefere a sua trilha?</legend>
+              <p className="mt-0.5 text-xs text-zinc-400">Vale para todos os estilos que você marcou.</p>
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {MIXES.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    aria-pressed={musicMix === o.value}
+                    onClick={() => {
+                      mexeu();
+                      setMusicMix(o.value);
+                    }}
+                    className={`rounded-xl border p-3.5 text-left transition ${
+                      musicMix === o.value
+                        ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(31,208,242,0.6)]'
+                        : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
+                    }`}
+                  >
+                    <span className="block text-sm font-semibold text-zinc-50">{o.label}</span>
+                    <span className="mt-1 block text-xs text-zinc-400">{o.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          </div>
+        </Secao>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Secao id="cinema" numero={4} titulo="Cinema e séries" apoio="Indicações de filmes, mostras e sessões." feito={respondidas.cinema}>
             <Chips options={FILM_GENRES} selected={filmGenres} onToggle={(id) => toggle(filmGenres, setFilmGenres, id)} />
           </Secao>

@@ -94,3 +94,41 @@ export function genreLabel(list: GenreOption[], id: string): string {
 export function genreQueries(list: GenreOption[], ids: string[]): string[] {
   return ids.map((id) => list.find((g) => g.id === id)?.query).filter(Boolean) as string[];
 }
+
+/**
+ * Como cada gênero do questionário é encontrado no Spotify.
+ *
+ * - `generos`: nomes da taxonomia de gêneros do Spotify, testados em ordem no
+ *   filtro `genre:"…"`. O filtro olha o gênero do ARTISTA — é o que garante que
+ *   a faixa é do estilo escolhido. (A busca por palavra, que o app usava como
+ *   reserva, trazia qualquer música com "rock" ou "samba" no título.)
+ * - `termo`: como o estilo aparece no nome de playlists brasileiras.
+ * - `sinais`: pelo menos um precisa estar no nome ou na descrição da playlist,
+ *   senão ela não é considerada do gênero.
+ */
+export interface MusicaNoSpotify {
+  generos: string[];
+  termo: string;
+  sinais: string[];
+}
+
+export const MUSICA_SPOTIFY: Record<string, MusicaNoSpotify> = {
+  mpb: { generos: ['mpb', 'nova mpb'], termo: 'mpb', sinais: ['mpb', 'música popular brasileira', 'musica popular brasileira'] },
+  samba: { generos: ['samba', 'pagode'], termo: 'samba', sinais: ['samba', 'pagode'] },
+  sertanejo: { generos: ['sertanejo', 'sertanejo universitario', 'sertanejo pop'], termo: 'sertanejo', sinais: ['sertanej', 'modão', 'modao'] },
+  forro: { generos: ['forro', 'piseiro', 'forro tradicional'], termo: 'forró', sinais: ['forró', 'forro', 'piseiro', 'xote', 'baião', 'baiao'] },
+  funk: { generos: ['funk carioca', 'funk brasileiro', 'funk paulista'], termo: 'funk', sinais: ['funk', 'baile'] },
+  rap: { generos: ['brazilian hip hop', 'trap brasileiro', 'hip hop', 'rap'], termo: 'rap', sinais: ['rap', 'hip hop', 'hip-hop', 'trap'] },
+  rock: { generos: ['brazilian rock', 'rock', 'alternative rock'], termo: 'rock', sinais: ['rock'] },
+  indie: { generos: ['brazilian indie', 'indie', 'indie rock', 'indie pop'], termo: 'indie', sinais: ['indie', 'independente', 'alternativ'] },
+  pop: { generos: ['brazilian pop', 'pop', 'pop nacional'], termo: 'pop', sinais: ['pop'] },
+  eletronica: { generos: ['electronic', 'electronica', 'house', 'techno'], termo: 'eletrônica', sinais: ['eletrônic', 'eletronic', 'electronic', 'house', 'techno', 'edm'] },
+  jazz: { generos: ['brazilian jazz', 'jazz', 'contemporary jazz'], termo: 'jazz', sinais: ['jazz'] },
+  blues: { generos: ['blues', 'modern blues'], termo: 'blues', sinais: ['blues'] },
+  classica: { generos: ['classical', 'contemporary classical', 'neo-classical'], termo: 'clássica', sinais: ['clássic', 'classic', 'erudit', 'orquestra', 'piano'] },
+  reggae: { generos: ['brazilian reggae', 'reggae', 'dub'], termo: 'reggae', sinais: ['reggae', 'dub'] },
+  metal: { generos: ['brazilian metal', 'metal', 'heavy metal'], termo: 'metal', sinais: ['metal'] },
+  gospel: { generos: ['brazilian gospel', 'gospel', 'worship'], termo: 'gospel', sinais: ['gospel', 'worship', 'louvor', 'adoração', 'adoracao'] },
+  kpop: { generos: ['k-pop', 'k-pop girl group', 'k-pop boy group'], termo: 'k-pop', sinais: ['k-pop', 'kpop'] },
+  lofi: { generos: ['lo-fi beats', 'lo-fi', 'chillhop'], termo: 'lo-fi', sinais: ['lo-fi', 'lofi', 'chill'] },
+};

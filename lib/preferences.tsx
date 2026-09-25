@@ -22,12 +22,19 @@ import type { CategorySlug } from './data';
 
 export type Frequency = 'diaria' | 'semanal' | 'mensal';
 
+/** Como a pessoa quer a trilha: misturar novas e antigas, só hits ou só lançamentos. */
+export type MusicMix = 'misturar' | 'famosas' | 'lancamentos';
+
 export interface UserPreferences {
   interests: CategorySlug[];
   /** Subtemas escolhidos dentro de cada tema (afina a indicação). */
   subtopics: string[];
   /** Gêneros musicais — alimentam a trilha do Spotify. */
   musicGenres: string[];
+  /** Gosta dos hits e clássicos do estilo (as que todo mundo conhece)? */
+  musicHits: boolean;
+  /** Misturar lançamentos com antigas, só as mais famosas ou só lançamentos. */
+  musicMix: MusicMix;
   /** Gêneros de cinema e séries. */
   filmGenres: string[];
   /** Gêneros literários. */
@@ -46,6 +53,9 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   interests: [],
   subtopics: [],
   musicGenres: [],
+  // Padrão de quem ainda não respondeu: fugir do óbvio, misturando novas e antigas.
+  musicHits: false,
+  musicMix: 'misturar',
   filmGenres: [],
   bookGenres: [],
   hobbies: [],
