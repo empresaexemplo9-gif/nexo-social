@@ -875,7 +875,7 @@ $$;
 -- "thiago@gmail.com" → "th•••@gmail.com": ajuda a distinguir homônimos sem
 -- entregar o e-mail de quem não tem vínculo com você.
 CREATE OR REPLACE FUNCTION mask_email(p_email TEXT)
-RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
+RETURNS TEXT LANGUAGE sql IMMUTABLE SET search_path = public AS $$
   SELECT CASE
     WHEN p_email IS NULL OR position('@' IN p_email) = 0 THEN NULL
     ELSE left(split_part(p_email, '@', 1), 2) || '•••@' || split_part(p_email, '@', 2)
@@ -1217,7 +1217,7 @@ CREATE TRIGGER community_members_notify
 
 -- --- A sala guarda o relógio do servidor, nunca o do aparelho ---------------
 CREATE OR REPLACE FUNCTION community_session_stamp()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
   NEW.updated_at := clock_timestamp();
   NEW.updated_by := COALESCE(auth.uid(), NEW.updated_by);
@@ -1233,7 +1233,7 @@ CREATE TRIGGER community_sessions_stamp
 -- --- Foto de perfil: cada um só aponta para a própria pasta ----------------
 -- (Senão daria para "usar" a foto de outra pessoa como a sua.)
 CREATE OR REPLACE FUNCTION protect_profile_avatar()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
   IF NEW.avatar_path IS NOT NULL
      AND NEW.avatar_path IS DISTINCT FROM OLD.avatar_path
