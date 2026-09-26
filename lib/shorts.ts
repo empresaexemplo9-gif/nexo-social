@@ -13,7 +13,7 @@ import 'server-only';
 import { diaDeHoje, embaralhar, sorteador } from './descoberta-musical';
 import { isYoutubeConfigured, searchVideos } from './youtube';
 import { decodificarEntidades } from './midia';
-import { canalPorHandle, videosDoCanal } from './youtube-aberto';
+import { buscarNoYoutubeAberto, canalPorHandle, videosDoCanal } from './youtube-aberto';
 import { FILM_GENRES, HOBBIES, MUSIC_GENRES, BOOK_GENRES, genreLabel } from './taxonomy';
 import { getTopic } from './data';
 
@@ -112,7 +112,18 @@ export function descreverChave(chave: string): { rotulo: string; termo: string }
 // Fontes
 // ---------------------------------------------------------------------------
 
+/**
+ * Shorts de um termo: a página pública de resultados com o filtro de Shorts
+ * (sem chave, sem cota) e, se ela falhar, a API.
+ */
 async function porBusca(chave: string, termo: string): Promise<Short[]> {
+  try {
+    const abertos = await buscarNoYoutubeAberto(termo, 'shorts', 30);
+    if (abertos.length) return abertos.map((v) => ({ id: v.id, titulo: v.titulo, canal: v.canal, capa: v.capa, de: chave }));
+  } catch {
+    // tenta a API
+  }
+  if (!isYoutubeConfigured()) return [];
   const videos = await searchVideos(`${termo} #shorts`, 25, { videoDuration: 'short', regionCode: 'BR' });
   return videos.map((v) => ({
     id: v.id,
@@ -171,21 +182,25 @@ function paraCanais(chaves: string[]): string[] {
 }
 
 export async function montarFeed(chaves: string[], rodada: number): Promise<Feed> {
-  const usarBusca = isYoutubeConfigured();
   const validas = chaves.filter((c) => descreverChave(c));
   const rand = sorteador(`${diaDeHoje()}:shorts:${rodada}`);
-  const escolhidas = embaralhar(usarBusca ? [...validas] : paraCanais(validas), rand).slice(0, 4);
+  const escolhidas = embaralhar([...validas], rand).slice(0, 4);
   const avisos: string[] = [];
+  let usouCanais = false;
 
+  // Cada interesse: busca de Shorts (sem cota) → API → canais curados do tema.
   const listas = await Promise.all(
     escolhidas.map(async (chave) => {
       try {
-        if (usarBusca) return await porBusca(chave, descreverChave(chave)!.termo);
-        return await porCanais(chave);
+        const achados = await porBusca(chave, descreverChave(chave)!.termo);
+        if (achados.length) return achados;
       } catch (e) {
         avisos.push(`${chave}: ${(e as Error).message}`);
-        return [];
       }
+      const [canal] = paraCanais([chave]);
+      const dosCanais = await porCanais(canal).catch(() => [] as Short[]);
+      if (dosCanais.length) usouCanais = true;
+      return dosCanais.map((s) => ({ ...s, de: chave }));
     }),
   );
 
@@ -202,5 +217,5 @@ export async function montarFeed(chaves: string[], rodada: number): Promise<Feed
       }
     }
   }
-  return { itens: itens.slice(0, 60), fonte: usarBusca ? 'busca' : 'canais', avisos };
+  return { itens: itens.slice(0, 60), fonte: usouCanais ? 'canais' : 'busca', avisos };
 }

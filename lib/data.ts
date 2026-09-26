@@ -73,6 +73,8 @@ export interface EventItem {
   artist?: string;
   /** Link direto de compra, quando o evento veio de uma plataforma de venda. */
   ticketUrl?: string;
+  /** Exemplo da casa (não é evento real) — só aparece quando falta evento real do tema. */
+  exemplo?: boolean;
 }
 
 // ---------------------------------------------------------------------------

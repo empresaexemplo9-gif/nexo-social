@@ -1,6 +1,7 @@
 import 'server-only';
 import { createAnonServerClient } from './supabase-server';
 import { formatEventDate } from './datetime';
+import { eventoRealPorId, eventosReais } from './eventos-reais';
 import {
   CONTENTS,
   EVENTS,
@@ -8,6 +9,7 @@ import {
   eventsByTopic,
   getContent,
   getEvent,
+  TOPICS,
   type CategorySlug,
   type ContentItem,
   type EventItem,
@@ -106,20 +108,47 @@ export async function fetchContentById(id: string): Promise<ContentItem | null> 
 // ---------------------------------------------------------------------------
 // Eventos
 // ---------------------------------------------------------------------------
-export async function fetchEvents(topic?: CategorySlug): Promise<EventItem[]> {
+/** Eventos importados para o banco (painel de integrações). */
+async function eventosDoBanco(topic?: CategorySlug): Promise<EventItem[]> {
   const sb = createAnonServerClient();
-  const fallback = topic ? eventsByTopic(topic) : EVENTS;
-  if (!sb) return fallback;
-
+  if (!sb) return [];
   let query = sb.from('events').select('*').order('created_at', { ascending: false });
   if (topic) query = query.eq('category', topic);
-
   const { data, error } = await query;
-  if (error || !data || data.length === 0) return fallback;
+  if (error || !data) return [];
   return data.map(mapEvent);
 }
 
+/** Ainda vai acontecer (ou está acontecendo)? Sem data, fica. */
+const aindaVale = (e: EventItem, agora = Date.now()) => !e.startsAt || Date.parse(e.endsAt ?? e.startsAt) + 3 * 3600e3 >= agora;
+
+const exemplos = (topic?: CategorySlug) => (topic ? eventsByTopic(topic) : EVENTS).map((e) => ({ ...e, exemplo: true }));
+
+/**
+ * Agenda: eventos reais (Ticketmaster ao vivo + os importados no banco), só os
+ * que ainda vão acontecer. Os exemplos da casa só entram nos temas que ficaram
+ * sem nenhum evento real — e vão marcados como exemplo.
+ */
+export async function fetchEvents(topic?: CategorySlug): Promise<EventItem[]> {
+  const temas = topic ? [topic] : TOPICS.map((t) => t.slug as CategorySlug);
+  const [doBanco, ...reais] = await Promise.all([eventosDoBanco(topic), ...temas.map((t) => eventosReais(t))]);
+
+  const vistos = new Set<string>();
+  const juntos = [...doBanco, ...reais.flat()].filter((e) => {
+    if (!aindaVale(e)) return false;
+    const chave = `${e.title.toLowerCase()}@${e.startsAt ?? e.date}`;
+    if (vistos.has(chave)) return false;
+    vistos.add(chave);
+    return true;
+  });
+
+  const temasComEvento = new Set(juntos.map((e) => e.topic));
+  const completar = temas.filter((t) => !temasComEvento.has(t)).flatMap((t) => exemplos(t));
+  return [...juntos, ...completar];
+}
+
 export async function fetchEventById(id: string): Promise<EventItem | null> {
+  if (id.startsWith('tm-')) return eventoRealPorId(id, TOPICS.map((t) => t.slug as CategorySlug));
   const sb = createAnonServerClient();
   if (!sb) return getEvent(id) ?? null;
   const { data, error } = await sb.from('events').select('*').eq('id', id).maybeSingle();

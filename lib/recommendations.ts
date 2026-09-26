@@ -57,6 +57,7 @@ const W = {
   tagMatch: 8, // tag casa com subtema do tema seguido
   sameCity: 10,
   farPenalty: 45, // penaliza o que está fora do alcance real do usuário
+  exemplo: 60, // exemplo da casa (não é evento real)
   // Largura da faixa girada a cada dia. Menor que qualquer critério de
   // relevância (tema, proximidade, urgência), então a rotação só reordena
   // itens que já eram equivalentes entre si.
@@ -164,6 +165,12 @@ export function scoreEvents(input: RecommendationInput): ScoredEvent[] {
         reasons.push('Entrada gratuita');
       }
       score += tagAffinity(event, interests);
+
+      // 5) Exemplo da casa fica atrás dos eventos reais parecidos.
+      if (event.exemplo) {
+        score -= W.exemplo;
+        reasons.push('Exemplo — ainda sem evento real deste tema');
+      }
 
       return { event, score, distanceKm, reasons: reasons.slice(0, 3) };
     })

@@ -19,7 +19,7 @@ import { PAUTA, FORMATOS, TERMOS_DA_HISTORIA, slugDaPauta, type FormatoDeMateria
 import type { CategorySlug } from './data';
 import { CANAIS } from './shorts';
 import { canalPorHandle, videosDoCanal } from './youtube-aberto';
-import { isYoutubeConfigured, searchVideos } from './youtube';
+import { searchVideos } from './youtube';
 import { decodificarEntidades } from './midia';
 
 const WIKI = 'https://pt.wikipedia.org';
@@ -235,8 +235,8 @@ async function imagensDoVerbete(titulo: string, n = 5): Promise<Imagem[]> {
 }
 
 /**
- * Busca do vídeo de um verbete: custa 100 unidades da cota do YouTube, então
- * o resultado fica guardado por um mês (o vídeo certo de "Bossa nova" não muda).
+ * Busca do vídeo de um verbete. Fica guardada por um mês: o vídeo certo de
+ * "Bossa nova" não muda, e quando a busca cai na API cada uma custa 100 unidades.
  */
 const buscarVideo = unstable_cache(
   async (titulo: string): Promise<Materia['video']> => {
@@ -247,15 +247,13 @@ const buscarVideo = unstable_cache(
   { revalidate: 30 * UM_DIA },
 );
 
-/** Vídeo da matéria: busca com a chave; sem ela, o último vídeo de um canal oficial do tema. */
+/** Vídeo da matéria: busca no YouTube; se não achar, o último vídeo de um canal oficial do tema. */
 async function videoDaMateria(tema: CategorySlug, titulo: string): Promise<Materia['video']> {
-  if (isYoutubeConfigured()) {
-    try {
-      const v = await buscarVideo(titulo);
-      if (v) return v;
-    } catch {
-      // segue para os canais do tema
-    }
+  try {
+    const v = await buscarVideo(titulo);
+    if (v) return v;
+  } catch {
+    // segue para os canais do tema
   }
   return (await videosDoTema(tema, 1))[0] ?? null;
 }

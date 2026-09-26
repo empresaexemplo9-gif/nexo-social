@@ -5,7 +5,7 @@ import { aoVivoDoCanal, canalPorHandle, videosDoCanal } from '@/lib/youtube-aber
 export const revalidate = 3600;
 
 /**
- * GET /api/video?q=<termo>      → vídeo para tocar embutido (precisa da chave)
+ * GET /api/video?q=<termo>      → vídeo para tocar embutido (sem chave; a API é reserva)
  * GET /api/video?canal=@handle  → transmissão ao vivo do canal, embutida; fora
  *                                 do ar, os vídeos recentes dele (sem chave)
  */
@@ -37,17 +37,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ configurado: true, encontrado: false, aoVivo: false, channelId, recentes });
   }
 
-  if (!isYoutubeConfigured()) {
-    return NextResponse.json(
-      {
-        configurado: false,
-        error: 'YouTube não configurado.',
-        hint: 'Esta busca precisa da YOUTUBE_API_KEY na Vercel (é gratuita). Sem ela, o vídeo abre no YouTube.',
-      },
-      { status: 503 },
-    );
-  }
-
+  // Termo → vídeo: página pública de resultados primeiro, API de reserva.
   try {
     const video = await searchVideo(q);
     if (!video) return NextResponse.json({ configurado: true, encontrado: false }, { status: 404 });

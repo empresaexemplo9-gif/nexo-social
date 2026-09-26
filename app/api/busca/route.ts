@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { buscar } from '@/lib/search';
-import { explicarErroYoutube, isYoutubeConfigured, searchVideos } from '@/lib/youtube';
+import { explicarErroYoutube, searchVideos } from '@/lib/youtube';
 
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
@@ -24,22 +24,12 @@ export async function GET(request: Request) {
   const resultados = buscar(q, 30);
 
   if (!querVideo) {
-    return NextResponse.json({ q, resultados, videos: [], videoDisponivel: isYoutubeConfigured() });
-  }
-
-  if (!isYoutubeConfigured()) {
-    return NextResponse.json({
-      q,
-      resultados,
-      videos: [],
-      videoDisponivel: false,
-      videoAviso: 'Sem YOUTUBE_API_KEY a busca por vídeo não funciona; o catálogo da plataforma continua normal.',
-    });
+    return NextResponse.json({ q, resultados, videos: [], videoDisponivel: true });
   }
 
   try {
     const videos = await searchVideos(q, 8);
-    return NextResponse.json({ q, resultados, videos, videoDisponivel: true, custoUnidades: 100 });
+    return NextResponse.json({ q, resultados, videos, videoDisponivel: true });
   } catch (e: any) {
     return NextResponse.json({
       q,

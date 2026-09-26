@@ -494,7 +494,7 @@ function dataDoEvento(ev: any): string {
  * logo abaixo. `fallback: true` marca a arte genérica de categoria, que não
  * tem nada a ver com o evento.
  */
-function melhorImagem(ev: any): string {
+export function melhorImagem(ev: any): string {
   const imgs: any[] = Array.isArray(ev?.images) ? ev.images : [];
   const boas = imgs.filter((i) => !i.fallback && i.width >= 640);
   const pool = boas.length ? boas : imgs.filter((i) => i.width >= 640);
@@ -513,7 +513,7 @@ function melhorImagem(ev: any): string {
  * Quando os dois campos coincidem, ou quando o texto começa com "PLEASE NOTE",
  * é aviso: aí montamos uma frase a partir do que o evento realmente é.
  */
-function descricaoEvento(ev: any): string {
+export function descricaoEvento(ev: any): string {
   const info = String(ev?.info ?? '').trim();
   const aviso = String(ev?.pleaseNote ?? '').trim();
   const ehAviso = !info || info === aviso || /^please note/i.test(info);
@@ -537,7 +537,7 @@ function descricaoEvento(ev: any): string {
 }
 
 /** Preço na moeda que a API informou. Rotular USD como R$ é mentir o valor. */
-function precoEvento(ev: any): string {
+export function precoEvento(ev: any): string {
   const faixa = ev?.priceRanges?.[0];
   if (faixa?.min == null) return 'Consultar';
   const moeda = String(faixa.currency ?? 'BRL').toUpperCase();
@@ -557,7 +557,7 @@ function precoEvento(ev: any): string {
  * publica um evento que não vai acontecer. `test: true` são registros de
  * homologação do próprio Ticketmaster.
  */
-function eventoPublicavel(ev: any): boolean {
+export function eventoPublicavel(ev: any): boolean {
   if (ev?.test === true) return false;
   const status = String(ev?.dates?.status?.code ?? 'onsale').toLowerCase();
   return status !== 'cancelled' && status !== 'canceled';
@@ -575,7 +575,7 @@ function eventoPublicavel(ev: any): boolean {
  * instante. Entre os concorrentes fica o que tem inventário do próprio
  * Ticketmaster (`safeTix`) ou link no domínio deles.
  */
-function semDuplicatasDeShow(eventos: any[]): any[] {
+export function semDuplicatasDeShow(eventos: any[]): any[] {
   const porLocalEHora = new Map<string, any>();
   const soltos: any[] = [];
 

@@ -4,6 +4,72 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import Icon from '../icons';
 import { usePreferences } from '@/lib/preferences';
 import { CHAVES_DE_PARTIDA, chavesDoPerfil } from '@/lib/interesses';
+import { TOPICS } from '@/lib/data';
+import { HOBBIES } from '@/lib/taxonomy';
+
+/** Todos os interesses que viram filtro, para o painel "Todos os temas". */
+const TODOS_OS_TEMAS = [
+  { grupo: 'Temas', itens: TOPICS.map((t) => ({ chave: `tema:${t.slug}`, rotulo: t.label })) },
+  { grupo: 'Hobbies', itens: HOBBIES.map((h) => ({ chave: `hobby:${h.id}`, rotulo: h.label })) },
+];
+const ROTULO_LOCAL = Object.fromEntries(TODOS_OS_TEMAS.flatMap((g) => g.itens.map((i) => [i.chave, i.rotulo])));
+
+/**
+ * Fileira de filtros que rola para os lados: setas nas pontas (só quando há
+ * mais para ver) e a rodinha do mouse vira rolagem horizontal.
+ */
+function FileiraDeFiltros({ children }: { children: React.ReactNode }) {
+  const trilho = useRef<HTMLDivElement>(null);
+  const [pontas, setPontas] = useState({ esq: false, dir: false });
+  const medir = useCallback(() => {
+    const el = trilho.current;
+    if (!el) return;
+    setPontas({ esq: el.scrollLeft > 4, dir: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 });
+  }, []);
+  useEffect(() => {
+    const el = trilho.current;
+    if (!el) return;
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(el);
+    const roda = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || el.scrollWidth <= el.clientWidth) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaY;
+    };
+    el.addEventListener('wheel', roda, { passive: false });
+    return () => {
+      obs.disconnect();
+      el.removeEventListener('wheel', roda);
+    };
+  }, [medir, children]);
+  const rolar = (dir: 1 | -1) => trilho.current?.scrollBy({ left: dir * trilho.current.clientWidth * 0.7, behavior: 'smooth' });
+  const seta = 'absolute top-0 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 text-zinc-200 shadow-soft transition hover:border-clay-500 hover:text-clay-400';
+  return (
+    <div className="relative min-w-0 flex-1">
+      {pontas.esq && (
+        <button type="button" onClick={() => rolar(-1)} aria-label="Ver temas anteriores" className={`${seta} left-0`}>
+          <Icon name="chevronRight" size={16} className="rotate-180" />
+        </button>
+      )}
+      <div
+        ref={trilho}
+        onScroll={medir}
+        className={`flex gap-2 overflow-x-auto pb-3 [scrollbar-width:none] ${pontas.esq ? 'pl-10' : ''} ${pontas.dir ? 'pr-10' : ''}`}
+        style={{
+          maskImage: `linear-gradient(to right, ${pontas.esq ? 'transparent, #000 3rem' : '#000'}, ${pontas.dir ? '#000 calc(100% - 3rem), transparent' : '#000'})`,
+        }}
+      >
+        {children}
+      </div>
+      {pontas.dir && (
+        <button type="button" onClick={() => rolar(1)} aria-label="Ver mais temas" className={`${seta} right-0`}>
+          <Icon name="chevronRight" size={16} />
+        </button>
+      )}
+    </div>
+  );
+}
 
 interface Short {
   id: string;
@@ -50,6 +116,7 @@ export default function FeedShorts() {
   const [salvos, setSalvos] = useState<string[]>([]);
   const [aviso, setAviso] = useState('');
   const [altura, setAltura] = useState<number | null>(null);
+  const [painel, setPainel] = useState(false);
 
   const caixa = useRef<HTMLDivElement>(null);
   const player = useRef<HTMLIFrameElement>(null);
@@ -216,25 +283,71 @@ export default function FeedShorts() {
   };
 
   const filtros = ['todos', ...chaves, ...(extra && !chaves.includes(extra) ? [extra] : [])];
+  const rotuloDe = (c: string) => (c === 'todos' ? 'Para você' : rotulos[c] ?? ROTULO_LOCAL[c] ?? c.split(':')[1]);
+  const escolher = (c: string) => {
+    if (c !== 'todos' && !chaves.includes(c)) setExtra(c);
+    setFiltro(c);
+    setPainel(false);
+  };
 
   return (
     <div className="relative">
-      {/* Filtros: os interesses do perfil */}
-      <div className="flex gap-2 overflow-x-auto pb-3 [scrollbar-width:none]">
-        {filtros.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => setFiltro(c)}
-            aria-pressed={filtro === c}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-              filtro === c ? 'bg-zinc-50 text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-clay-500 hover:text-clay-300'
-            }`}
-          >
-            {c === 'todos' ? 'Para você' : rotulos[c] ?? c.split(':')[1]}
-          </button>
-        ))}
+      {/* Filtros: os interesses do perfil + qualquer tema pelo painel */}
+      <div className="flex items-start gap-2">
+        <FileiraDeFiltros>
+          {filtros.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => escolher(c)}
+              aria-pressed={filtro === c}
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                filtro === c ? 'bg-zinc-50 text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-clay-500 hover:text-clay-300'
+              }`}
+            >
+              {rotuloDe(c)}
+            </button>
+          ))}
+        </FileiraDeFiltros>
+        <button
+          type="button"
+          onClick={() => setPainel((v) => !v)}
+          aria-expanded={painel}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+            painel ? 'bg-clay-500 text-zinc-900' : 'border border-clay-500/60 bg-zinc-900 text-clay-400 hover:bg-clay-500 hover:text-zinc-900'
+          }`}
+        >
+          <Icon name="grade" size={13} /> Todos os temas
+        </button>
       </div>
+      {painel && (
+        <div role="dialog" aria-label="Todos os temas" className="mb-3 rounded-3xl border border-zinc-800 bg-zinc-900 p-4 shadow-soft">
+          {TODOS_OS_TEMAS.map((g) => (
+            <div key={g.grupo} className="mb-3 last:mb-0">
+              <p className="rotulo-hud">{g.grupo}</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {g.itens.map((i) => (
+                  <button
+                    key={i.chave}
+                    type="button"
+                    onClick={() => escolher(i.chave)}
+                    aria-pressed={filtro === i.chave}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      filtro === i.chave
+                        ? 'bg-zinc-50 text-zinc-950'
+                        : chaves.includes(i.chave)
+                          ? 'border border-emerald-400/50 bg-zinc-900 text-emerald-400 hover:border-clay-500 hover:text-clay-400'
+                          : 'border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-clay-500 hover:text-clay-400'
+                    }`}
+                  >
+                    {i.rotulo}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div
         ref={caixa}
@@ -255,6 +368,14 @@ export default function FeedShorts() {
                 ? `Não deu para carregar os Shorts agora (${aviso}).`
                 : 'Nenhum short destes interesses por enquanto. Tente outro filtro ou volte daqui a pouco.'}
             </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button type="button" onClick={() => void buscar(rodada + 1, true)} className="rounded-full bg-zinc-50 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-clay-500">
+                Tentar de novo
+              </button>
+              <button type="button" onClick={() => setPainel(true)} className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-semibold text-zinc-300 hover:border-clay-500 hover:text-clay-400">
+                Escolher outro tema
+              </button>
+            </div>
           </div>
         )}
         {estado === 'ok' &&

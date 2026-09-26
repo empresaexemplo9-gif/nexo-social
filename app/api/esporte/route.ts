@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { buildSportsBoard, getSport, SPORTS, type SportId } from '@/lib/sports';
 import { broadcastersOf, daily, legendsOf } from '@/lib/sports-media';
-import { isYoutubeConfigured } from '@/lib/youtube';
 
 // Placar ao vivo pede janela curta; o resto do quadro é cacheado pelas
 // próprias chamadas às fontes.
@@ -25,7 +24,8 @@ export async function GET(request: Request) {
       // Rotação diária: as lendas em destaque mudam à meia-noite.
       lendas: daily(legendsOf(sport), 6, SPORTS.findIndex((s) => s.id === sport)),
       // Sem chave, os craques históricos abrem no YouTube em vez de tocar aqui.
-      youtubeConfigurado: isYoutubeConfigured(),
+      // A busca de vídeo funciona sem chave (página pública de resultados).
+      youtubeConfigurado: true,
     });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Falha ao montar o quadro esportivo.' }, { status: 500 });

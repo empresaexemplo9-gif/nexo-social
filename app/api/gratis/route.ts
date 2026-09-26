@@ -6,6 +6,7 @@ import {
   type AreaGratis,
   type EstiloDeIndicacao,
   type IdiomaDeIndicacao,
+  type ResultadoGratis,
 } from '@/lib/gratis';
 import { BOOK_GENRES, FILM_GENRES, HOBBIES } from '@/lib/taxonomy';
 
@@ -23,10 +24,23 @@ function chaveValida(area: AreaGratis, chave: string): boolean {
 
 // Uma montagem por área/gênero/estilo/idioma/rodada por dia — as fontes são
 // lentas e o YouTube cobra cota por busca.
+/**
+ * Resultado vazio ou sem a parte do YouTube (que falhou) não vai para o cache:
+ * uma falha passageira não trava o dia.
+ */
+class SemItens extends Error {
+  constructor(readonly resultado: ResultadoGratis) {
+    super('Sem itens');
+  }
+}
+
 const montar = unstable_cache(
-  async (area: AreaGratis, chave: string, estilo: EstiloDeIndicacao, idioma: IdiomaDeIndicacao, rodada: number, _dia: string) =>
-    indicacoesGratis({ area, chave, estilo, idioma, rodada }),
-  ['gratis-v1'],
+  async (area: AreaGratis, chave: string, estilo: EstiloDeIndicacao, idioma: IdiomaDeIndicacao, rodada: number, _dia: string) => {
+    const r = await indicacoesGratis({ area, chave, estilo, idioma, rodada });
+    if (!r.itens.length || r.buscaExterna) throw new SemItens(r);
+    return r;
+  },
+  ['gratis-v2'],
   { revalidate: 43200 },
 );
 
@@ -57,9 +71,12 @@ export async function GET(request: Request) {
   const rodada = Math.abs(Number.parseInt(p.get('rodada') || '0', 10) || 0) % RODADAS;
   const dia = new Date().toISOString().slice(0, 10);
 
-  const r = await montar(area, chave, estilo, idioma, rodada, dia);
+  const r = await montar(area, chave, estilo, idioma, rodada, dia).catch((e) => {
+    if (e instanceof SemItens) return e.resultado;
+    throw e;
+  });
   return NextResponse.json(
     { ...r, rodada, rodadas: RODADAS },
-    { headers: { 'Cache-Control': 'public, s-maxage=1800, stale-while-revalidate=43200' } },
+    { headers: { 'Cache-Control': r.itens.length && !r.buscaExterna ? 'public, s-maxage=1800, stale-while-revalidate=43200' : 'no-store' } },
   );
 }

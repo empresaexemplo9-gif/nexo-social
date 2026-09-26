@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import EventList from '@/components/EventList';
+import BuscarMaisEventos from '@/components/BuscarMaisEventos';
 import SportsHub from '@/components/SportsHub';
 import HeritageShelf from '@/components/HeritageShelf';
 import ClipsShelf from '@/components/ClipsShelf';
@@ -132,9 +133,12 @@ export default function TopicView({ slug, contents, events }: Props) {
         <section id="agenda" className="scroll-mt-20 space-y-6">
           <div>
             <h2 className="text-2xl font-semibold text-zinc-50">Agenda de {topic.label}</h2>
-            <p className="text-sm text-zinc-300">Eventos deste tema ordenados por proximidade da sua localização.</p>
+            <p className="text-sm text-zinc-300">
+              Eventos reais com ingresso à venda, os mais perto de você primeiro. A lista se renova a cada poucas horas.
+            </p>
           </div>
-          <EventList events={events} emptyLabel={`Ainda não há eventos de ${topic.label} cadastrados. Volte em breve!`} />
+          <EventList topic={slug} events={events} emptyLabel={`Nenhum evento de ${topic.label} com ingresso à venda agora.`} />
+          <BuscarMaisEventos tema={topic.label} />
         </section>
 
         <section className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-8 text-center">

@@ -19,7 +19,14 @@ export default function EventCard({ event, distanceKm }: Props) {
       href={`/evento/${event.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 transition hover:border-zinc-700 sm:flex-row"
     >
-      <img src={event.imageUrl} alt={event.title} className="h-48 w-full object-cover sm:w-48" />
+      {event.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={event.imageUrl} alt={event.title} loading="lazy" className="h-48 w-full object-cover sm:w-48" />
+      ) : (
+        <span className="flex h-48 w-full items-center justify-center bg-gradient-to-br from-emerald-400/25 to-clay-500/25 text-zinc-500 sm:w-48">
+          <Icon name="ticket" size={32} />
+        </span>
+      )}
       <div className="flex flex-1 flex-col justify-between p-5">
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
@@ -32,12 +39,17 @@ export default function EventCard({ event, distanceKm }: Props) {
               {event.startsAt ? relativeLabel(event.startsAt, event.endsAt) : (topic?.label ?? event.topic)}
             </span>
           </div>
+          {event.exemplo && (
+            <span className="mb-1.5 inline-block rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider text-zinc-400" title="Ainda não há evento real deste tema por perto — este é um exemplo do tipo de evento que aparece aqui.">
+              Exemplo
+            </span>
+          )}
           <h3 className="text-base font-semibold leading-snug text-zinc-50 transition group-hover:text-emerald-400">
             {event.title}
           </h3>
           <p className="mt-1 text-xs text-zinc-400">
             <Icon name="mapPin" size={13} className="inline -mt-0.5 mr-0.5" />{event.venue} — {event.city}
-            {typeof distanceKm === 'number' && (
+            {typeof distanceKm === 'number' && (event.coords.lat !== 0 || event.coords.lng !== 0) && (
               <span className="ml-1 font-medium text-emerald-400">• a {formatDistance(distanceKm)}</span>
             )}
           </p>
@@ -46,7 +58,7 @@ export default function EventCard({ event, distanceKm }: Props) {
         <div className="mt-4 flex items-center justify-between">
           <span className="text-xs text-zinc-500">{event.price}</span>
           <span className="text-xs font-medium text-emerald-400 transition group-hover:text-emerald-300">
-            Ver detalhes do evento →
+            {event.ticketUrl ? 'Detalhes e ingresso →' : 'Ver detalhes do evento →'}
           </span>
         </div>
       </div>

@@ -19,7 +19,7 @@ import 'server-only';
 // "Outras descobertas" (rodada) troca na hora.
 
 import { diaDeHoje, embaralhar, sorteador } from './descoberta-musical';
-import { isYoutubeConfigured, searchVideos } from './youtube';
+import { searchVideos } from './youtube';
 import { BOOK_GENRES, FILM_GENRES, HOBBIES, genreLabel } from './taxonomy';
 import { decodificarEntidades, type Midia } from './midia';
 
@@ -261,7 +261,6 @@ function doGutenberg(l: LivroGutendex): ItemGratis {
 // ---------------------------------------------------------------------------
 
 async function doYoutube(termo: string, duracao: 'long' | 'medium' | 'any'): Promise<ItemGratis[]> {
-  if (!isYoutubeConfigured()) return [];
   const extras: Record<string, string> = { regionCode: 'BR' };
   if (duracao !== 'any') extras.videoDuration = duracao;
   const videos = await searchVideos(termo, 12, extras);
@@ -301,9 +300,8 @@ async function comReserva(
   forcar = false,
 ): Promise<{ itens: ItemGratis[]; usouYoutube: boolean; buscaExterna: string | null }> {
   if (base.length >= QUANTOS / 2 && !forcar) return { itens: base, usouYoutube: false, buscaExterna: null };
-  if (!isYoutubeConfigured()) {
-    return { itens: base, usouYoutube: false, buscaExterna: buscaNoYoutube(termoYoutube) };
-  }
+  // A busca não precisa mais da chave: vai à página pública de resultados e
+  // só usa a API se ela falhar.
   try {
     const yt = await doYoutube(termoYoutube, duracao);
     return { itens: [...base, ...yt].slice(0, QUANTOS + 4), usouYoutube: yt.length > 0, buscaExterna: null };

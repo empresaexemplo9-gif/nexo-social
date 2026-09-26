@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import EventCard from './EventCard';
 import { usePreferences } from '@/lib/preferences';
 import { cityCoords, TOPICS, type CategorySlug, type EventItem } from '@/lib/data';
@@ -15,9 +15,13 @@ interface Props {
   showFilters?: boolean;
   /** Mensagem quando não há eventos após o filtro. */
   emptyLabel?: string;
+  /** Tema da lista: com ele, a lista também busca eventos reais perto da pessoa. */
+  topic?: CategorySlug;
 }
 
-export default function EventList({ events, showFilters = false, emptyLabel }: Props) {
+const POR_PAGINA = 12;
+
+export default function EventList({ events: iniciais, showFilters = false, emptyLabel, topic }: Props) {
   const { prefs } = usePreferences();
   const [gps, setGps] = useState<LatLng | null>(null);
   const [geoState, setGeoState] = useState<GeoState>('idle');
@@ -41,6 +45,33 @@ export default function EventList({ events, showFilters = false, emptyLabel }: P
 
   const origin: LatLng | null = gps ?? cityCoords(prefs.city);
   const interests = prefs.interests;
+  const [perto, setPerto] = useState<EventItem[]>([]);
+  const [mostrar, setMostrar] = useState(POR_PAGINA);
+
+  // Com tema e origem conhecidos, pede os eventos reais num raio de 200 km —
+  // a lista nacional vem por data e pode não ter nada da cidade da pessoa.
+  const oLat = origin ? origin.lat.toFixed(2) : null;
+  const oLng = origin ? origin.lng.toFixed(2) : null;
+  useEffect(() => {
+    if (!topic || !oLat || !oLng) return;
+    let vivo = true;
+    fetch(`/api/events?topic=${topic}&lat=${oLat}&lng=${oLng}&perto=1`)
+      .then((r) => (r.ok ? r.json() : { events: [] }))
+      .then((j) => vivo && setPerto(Array.isArray(j.events) ? j.events : []))
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [topic, oLat, oLng]);
+
+  // Junta os de perto com os da página; exemplo sai quando chega evento real.
+  const events = useMemo(() => {
+    const ids = new Set(iniciais.map((e) => e.id));
+    const novos = perto.filter((e) => !ids.has(e.id));
+    const todos = [...iniciais, ...novos];
+    const temReal = new Set(todos.filter((e) => !e.exemplo).map((e) => e.topic));
+    return todos.filter((e) => !e.exemplo || !temReal.has(e.topic));
+  }, [iniciais, perto]);
 
   const decorated = useMemo(() => {
     const base = filter === 'todos' ? events : events.filter((e) => e.topic === filter);
@@ -130,11 +161,24 @@ export default function EventList({ events, showFilters = false, emptyLabel }: P
           {emptyLabel ?? 'Nenhum evento encontrado para este filtro.'}
         </p>
       ) : (
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {decorated.map(({ event, distanceKm }) => (
-            <EventCard key={event.id} event={event} distanceKm={distanceKm} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {decorated.slice(0, mostrar).map(({ event, distanceKm }) => (
+              <EventCard key={event.id} event={event} distanceKm={distanceKm} />
+            ))}
+          </div>
+          {decorated.length > mostrar && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={() => setMostrar((n) => n + POR_PAGINA)}
+                className="rounded-full border border-zinc-800 bg-zinc-900 px-5 py-2 text-sm font-semibold text-zinc-200 transition hover:border-clay-500 hover:text-clay-400"
+              >
+                Mostrar mais eventos ({decorated.length - mostrar})
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

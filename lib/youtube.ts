@@ -7,8 +7,12 @@ import 'server-only';
 // para um id, o máximo que dá para fazer é mandar a pessoa para a busca do
 // YouTube, que é exatamente o comportamento que queremos eliminar.
 //
-// A YOUTUBE_API_KEY é gratuita (10.000 unidades/dia; cada busca custa 100).
-// Sem ela, quem chama recebe `configurado: false` e cai no link externo.
+// A busca de vídeo não depende mais só da API: primeiro vai à página pública
+// de resultados (sem chave, sem cota) e só usa a YOUTUBE_API_KEY (10.000
+// unidades/dia; cada busca custa 100) se a página falhar. Canal, ao vivo e
+// estatísticas continuam pela API.
+
+import { buscarNoYoutubeAberto, type FiltroDeBusca, type VideoDaBusca } from './youtube-aberto';
 
 const API = 'https://www.googleapis.com/youtube/v3';
 
@@ -65,7 +69,7 @@ async function call(path: string, params: Record<string, string>, revalidate: nu
  * Melhor vídeo para um termo. Cache de 24h: a indicação de um craque não muda
  * de hora em hora, e cada busca custa 100 unidades da cota.
  */
-export async function searchVideo(query: string): Promise<ResolvedVideo | null> {
+async function searchVideoPelaApi(query: string): Promise<ResolvedVideo | null> {
   const body = await call(
     'search',
     {
@@ -100,7 +104,7 @@ export async function searchVideo(query: string): Promise<ResolvedVideo | null> 
  * chamada, não por resultado. Por isso vale sempre pedir vários de uma vez em
  * vez de repetir a consulta.
  */
-export async function searchVideos(
+async function searchVideosPelaApi(
   query: string,
   max = 8,
   extras: Record<string, string> = {},
@@ -130,6 +134,58 @@ export async function searchVideos(
       thumb: i.snippet?.thumbnails?.medium?.url ?? null,
       embedUrl: `https://www.youtube.com/embed/${i.id.videoId}?rel=0`,
     }));
+}
+
+// ---------------------------------------------------------------------------
+// Busca de vídeo: primeiro sem cota, depois pela API
+// ---------------------------------------------------------------------------
+//
+// A página de resultados do YouTube (lib/youtube-aberto) devolve o mesmo que a
+// pessoa vê lá, sem chave e sem cota. A API entra quando a página falha — e
+// deixou de ser a única porta: com a cota do dia gasta (100 unidades por
+// busca, 10.000 por dia), tudo que dependia dela ficava vazio.
+
+const FILTRO: Record<string, FiltroDeBusca> = { long: 'longo', medium: 'medio', short: 'curto' };
+
+const paraResolvido = (v: VideoDaBusca): ResolvedVideo => ({
+  id: v.id,
+  title: v.titulo,
+  channel: v.canal,
+  thumb: v.capa,
+  embedUrl: `https://www.youtube.com/embed/${v.id}?rel=0`,
+});
+
+/**
+ * Vídeos para um termo. `extras.videoDuration` (long/medium/short) vale para
+ * as duas fontes. Só lança erro se as duas falharem.
+ */
+export async function searchVideos(query: string, max = 8, extras: Record<string, string> = {}): Promise<ResolvedVideo[]> {
+  const filtro = FILTRO[extras.videoDuration ?? ''] ?? 'qualquer';
+  let erroAberto: unknown = null;
+  try {
+    const abertos = await buscarNoYoutubeAberto(query, filtro, max * 2);
+    // Fora do filtro de curtos, Short não entra: o player aqui é horizontal.
+    const bons = filtro === 'curto' ? abertos : abertos.filter((v) => !v.short);
+    if (bons.length) return bons.slice(0, max).map(paraResolvido);
+  } catch (e) {
+    erroAberto = e;
+  }
+  if (!isYoutubeConfigured()) {
+    if (erroAberto) throw erroAberto;
+    return [];
+  }
+  return searchVideosPelaApi(query, max, extras);
+}
+
+/** Melhor vídeo para um termo (mesma ordem: página de resultados, depois API). */
+export async function searchVideo(query: string): Promise<ResolvedVideo | null> {
+  try {
+    const [v] = await searchVideos(query, 1);
+    if (v) return v;
+  } catch (e) {
+    if (!isYoutubeConfigured()) throw e;
+  }
+  return isYoutubeConfigured() ? searchVideoPelaApi(query) : null;
 }
 
 /**
