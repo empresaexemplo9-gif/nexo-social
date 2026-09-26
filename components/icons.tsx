@@ -73,7 +73,11 @@ export type IconName =
   | 'chat'
   | 'mail'
   | 'copy'
-  | 'logOut';
+  | 'logOut'
+  | 'image'
+  | 'camera'
+  | 'lock'
+  | 'globe';
 
 interface Props extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -410,6 +414,31 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
       <path d="M10 16l-4-4 4-4M6 12h10" />
+    </>
+  ),
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <circle cx="9" cy="9.5" r="1.8" />
+      <path d="m21 16-5-5-8.5 9" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M4 8h3l1.8-2.5h6.4L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z" />
     </>
   ),
 };

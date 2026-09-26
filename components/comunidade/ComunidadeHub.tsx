@@ -1,12 +1,15 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '../icons';
+import Avatar from '../Avatar';
+import EscolherTipo, { SeloDoTipo } from './EscolherTipo';
 import { formatEventDateLong } from '@/lib/datetime';
 import { EVENTO_CONVITES, responderConvite } from '@/lib/convites';
-import type { GrupoResumo } from '@/lib/comunidade-tipos';
+import { trocarImagemDoGrupo } from '@/lib/imagens';
+import type { GrupoResumo, Privacidade } from '@/lib/comunidade-tipos';
 
 const campo =
   'w-full rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-600 focus:outline-none';
@@ -20,7 +23,22 @@ export default function ComunidadeHub() {
   const [erro, setErro] = useState('');
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [criando, setCriando] = useState(false);
-  const [novo, setNovo] = useState({ name: '', description: '' });
+  const [novo, setNovo] = useState<{ name: string; description: string; privacy: Privacidade }>({
+    name: '',
+    description: '',
+    privacy: 'fechado',
+  });
+  const [imagem, setImagem] = useState<File | null>(null);
+  const [previa, setPrevia] = useState<string | null>(null);
+  const seletorDeImagem = useRef<HTMLInputElement>(null);
+
+  // Prévia local da imagem escolhida (o grupo ainda não existe para recebê-la).
+  useEffect(() => {
+    if (!imagem) return setPrevia(null);
+    const u = URL.createObjectURL(imagem);
+    setPrevia(u);
+    return () => URL.revokeObjectURL(u);
+  }, [imagem]);
 
   const carregar = useCallback(async () => {
     try {
@@ -56,6 +74,9 @@ export default function ComunidadeHub() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      // A imagem sobe depois: a pasta dela é a do grupo, que acabou de nascer.
+      // Se falhar, o grupo já existe — dá para pôr a imagem lá dentro.
+      if (imagem) await trocarImagemDoGrupo(json.id, imagem).catch(() => undefined);
       // Grupo novo abre já com o "Convidar amigos" à mão.
       router.push(`/comunidade/${json.id}?convidar=1`);
     } catch (e: any) {
@@ -123,6 +144,8 @@ export default function ComunidadeHub() {
           <ul className="space-y-3">
             {convites.map((g) => (
               <li key={g.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+                <div className="flex min-w-0 items-start gap-3">
+                <Avatar nome={g.name} path={g.imagePath} tamanho={48} quadrado />
                 <div className="min-w-0">
                   <p className="text-[11px] text-zinc-500">
                     <span className="font-medium text-zinc-300">{g.invitedByName ?? g.ownerName}</span> convidou você
@@ -132,6 +155,7 @@ export default function ComunidadeHub() {
                   <p className="mt-1 text-[11px] text-zinc-500">
                     {g.memberCount} {g.memberCount === 1 ? 'pessoa' : 'pessoas'} · criado por {g.ownerName}
                   </p>
+                </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   <button
@@ -178,6 +202,44 @@ export default function ComunidadeHub() {
             onChange={(e) => setNovo({ ...novo, description: e.target.value })}
             className={campo}
           />
+          <div>
+            <p className="mb-1.5 text-xs font-medium text-zinc-300">Quem pode convidar</p>
+            <EscolherTipo value={novo.privacy} onChange={(privacy) => setNovo({ ...novo, privacy })} />
+          </div>
+          <div className="flex items-center gap-3">
+            {previa ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={previa} alt="" className="h-14 w-14 rounded-2xl object-cover" />
+            ) : (
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-dashed border-zinc-700 text-zinc-500">
+                <Icon name="image" size={20} />
+              </span>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => seletorDeImagem.current?.click()}
+                className="rounded-xl border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-emerald-700"
+              >
+                {imagem ? 'Trocar imagem' : 'Imagem do grupo (opcional)'}
+              </button>
+              {imagem && (
+                <button type="button" onClick={() => setImagem(null)} className="rounded-xl px-2 py-2 text-xs text-zinc-500 hover:text-clay-300">
+                  Tirar
+                </button>
+              )}
+            </div>
+            <input
+              ref={seletorDeImagem}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                setImagem(e.target.files?.[0] ?? null);
+                e.target.value = '';
+              }}
+            />
+          </div>
           <div className="flex flex-wrap gap-2">
             <button
               type="submit"
@@ -223,11 +285,12 @@ export default function ComunidadeHub() {
               <li key={g.id}>
                 <Link href={`/comunidade/${g.id}`} className="card-soft levanta flex h-full flex-col p-5">
                   <div className="flex items-start gap-3">
-                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/15 font-display text-lg font-bold uppercase text-emerald-300">
-                      {g.name.slice(0, 1)}
-                    </span>
+                    <Avatar nome={g.name} path={g.imagePath} tamanho={48} quadrado />
                     <div className="min-w-0">
-                      <h3 className="truncate text-base font-semibold text-zinc-50">{g.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate text-base font-semibold text-zinc-50">{g.name}</h3>
+                        <SeloDoTipo privacy={g.privacy} />
+                      </div>
                       <p className="text-[11px] text-zinc-500">
                         {g.memberCount} {g.memberCount === 1 ? 'pessoa' : 'pessoas'} · {g.postCount}{' '}
                         {g.postCount === 1 ? 'publicação' : 'publicações'}

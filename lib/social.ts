@@ -148,6 +148,8 @@ export interface PessoaDTO {
   name: string;
   /** E-mail completo para quem tem vínculo com você; mascarado para os demais. */
   emailHint: string | null;
+  /** Foto de perfil (bucket público "perfis"). */
+  avatarPath: string | null;
   /** Contato, colega de compromisso ou de grupo. */
   proximo: boolean;
 }
@@ -164,6 +166,7 @@ export async function searchPeople(sb: SupabaseClient, q: string): Promise<Pesso
     id: r.id,
     name: r.name,
     emailHint: r.email_hint ?? null,
+    avatarPath: r.avatar_path ?? null,
     proximo: Boolean(r.proximo),
   }));
 }

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { getSession } from './api-helpers';
 import { isUuid } from './social';
-import type { GrupoResumo, Membro } from './comunidade-tipos';
+import type { Foto, GrupoResumo, Membro } from './comunidade-tipos';
 
 // Acesso da Comunidade no servidor. As regras de quem vê e quem mexe estão no
 // banco (RLS e funções em db/schema.sql); aqui ficam a sessão, o formato das
@@ -37,6 +37,8 @@ export function grupoResumo(r: any): GrupoResumo {
     id: r.id,
     name: r.name,
     description: r.description ?? null,
+    privacy: r.privacy === 'aberto' ? 'aberto' : 'fechado',
+    imagePath: r.image_path ?? null,
     ownerId: r.owner_id,
     ownerName: r.owner_name ?? 'Alguém',
     myRole: r.my_role === 'dono' ? 'dono' : 'membro',
@@ -56,6 +58,7 @@ export async function membrosDoGrupo(sb: SupabaseClient, groupId: string): Promi
   return (data ?? []).map((m: any) => ({
     userId: m.user_id,
     name: m.name,
+    avatarPath: m.avatar_path ?? null,
     role: m.role === 'dono' ? 'dono' : 'membro',
     status: m.status === 'convidado' ? 'convidado' : 'ativo',
     invitedByName: m.invited_by_name ?? null,
@@ -72,6 +75,51 @@ export async function minhaParticipacao(sb: SupabaseClient, groupId: string, use
     .eq('user_id', userId)
     .maybeSingle();
   return data as { role: 'dono' | 'membro'; status: 'ativo' | 'convidado' | 'recusado' } | null;
+}
+
+/** Validade dos links das fotos (bucket privado): o mural fica aberto por horas. */
+const VALIDADE_LINK = 12 * 3600;
+
+/** Linhas de community_photos → fotos com links assinados (uma chamada só). */
+export async function fotosDasLinhas(
+  sb: SupabaseClient,
+  rows: any[],
+  ctx: { nomes: Map<string, string>; meuId: string; souDono: boolean },
+): Promise<Foto[]> {
+  if (!rows.length) return [];
+  const caminhos = Array.from(new Set(rows.flatMap((r) => [r.storage_path, r.thumb_path]).filter(Boolean)));
+  const links = new Map<string, string>();
+  const { data } = await sb.storage.from('comunidade').createSignedUrls(caminhos, VALIDADE_LINK);
+  for (const d of data ?? []) if (d.path && d.signedUrl) links.set(d.path, d.signedUrl);
+  return rows.map((r) => ({
+    id: r.id,
+    postId: r.post_id,
+    albumId: r.album_id ?? null,
+    url: links.get(r.storage_path) ?? null,
+    thumbUrl: links.get(r.thumb_path) ?? links.get(r.storage_path) ?? null,
+    width: r.width ?? null,
+    height: r.height ?? null,
+    uploaderId: r.uploader_id,
+    uploaderName: ctx.nomes.get(r.uploader_id) ?? 'Ex-membro',
+    createdAt: r.created_at,
+    podeApagar: ctx.souDono || r.uploader_id === ctx.meuId,
+  }));
+}
+
+/** Arquivos das fotos (imagem + miniatura), para apagar do Storage. */
+export const arquivosDasFotos = (rows: { storage_path: string; thumb_path: string | null }[]) =>
+  rows.flatMap((r) => [r.storage_path, r.thumb_path]).filter((p): p is string => Boolean(p));
+
+/** Tudo o que está na pasta do grupo num bucket (o Storage lista por pasta). */
+export async function arquivosDaPasta(sb: SupabaseClient, bucket: string, pasta: string): Promise<string[]> {
+  const saida: string[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await sb.storage.from(bucket).list(pasta, { limit: 1000, offset });
+    if (error || !data?.length) break;
+    saida.push(...data.filter((o) => o.id).map((o) => `${pasta}/${o.name}`));
+    if (data.length < 1000) break;
+  }
+  return saida;
 }
 
 /** Texto do usuário: corta espaços e o excesso, e vazio vira null. */

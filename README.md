@@ -9,7 +9,8 @@ Plataforma de curadoria **personalizada** de conteúdo e **eventos por proximida
 - **Eventos por proximidade** — geolocalização do smartphone/iPhone (`navigator.geolocation`) + fórmula de Haversine, com _fallback_ pela cidade do perfil.
 - **Multi-tenant** — cadastro de conta **pessoal** ou **organização**; cada conta é um tenant isolado por RLS.
 - **Compromissos dentro da plataforma** — em `/agenda`, quem cria escolhe as pessoas pelo nome (nada de e-mail). O convite fica na agenda e nas notificações de cada convidado até ele responder **positivo** (concordo) ou **negativo** (não concordo).
-- **Comunidade** — em `/comunidade`, qualquer conta cria grupos ilimitados para compartilhar livros, músicas, clipes, filmes e links, e tem uma **sala sincronizada** para ouvir músicas e assistir a clipes juntos, no mesmo segundo. **Convidar amigos** chama quem já tem conta (pelas notificações) e manda o link do grupo para quem ainda não tem (WhatsApp, Telegram, SMS, e-mail ou copiar): a pessoa cria o acesso e já entra no grupo.
+- **Comunidade** — em `/comunidade`, qualquer conta cria grupos ilimitados para compartilhar **fotos**, livros, músicas, clipes, filmes e links, organizar **álbuns**, e tem uma **sala sincronizada** para ouvir músicas e assistir a clipes juntos, no mesmo segundo. O controle do grupo é de quem cria (edita, troca a **imagem do grupo**, remove pessoas, apaga). Grupo **fechado**: só o dono convida; **aberto**: todo membro convida. **Convidar amigos** chama quem já tem conta (pelas notificações) e manda o link do grupo para quem ainda não tem (WhatsApp, Telegram, SMS, e-mail ou copiar): a pessoa cria o acesso e já entra no grupo.
+- **Foto de perfil** — em `/conta`; aparece nos grupos, no mural e ao convidar.
 - **Admin da plataforma** — `/admin` é exclusivo de `thiagohccarvalho00@gmail.com` (protegido no middleware **e** no servidor).
 - **Backend completo** — API REST em Route Handlers, sessões via cookies (`@supabase/ssr`), seed idempotente e políticas RLS.
 
@@ -57,7 +58,11 @@ Abra http://localhost:3000.
 | `POST` | `/api/comunidade/grupos/[id]/convites` | Convida contas da plataforma | Membro |
 | `POST` | `/api/comunidade/grupos/[id]/resposta` | Aceita ou recusa o convite do grupo | Convidado |
 | `DELETE` | `/api/comunidade/grupos/[id]/membros` | Sair do grupo / remover alguém (dono) | Membro |
-| `GET` / `POST` / `DELETE` | `/api/comunidade/grupos/[id]/posts` | Mural do grupo | Membro |
+| `GET` / `POST` / `DELETE` | `/api/comunidade/grupos/[id]/posts` | Mural do grupo (inclusive publicações de fotos) | Membro |
+| `GET` / `PATCH` / `DELETE` | `/api/comunidade/grupos/[id]/fotos` | Fotos do grupo (links assinados), mover para álbum, apagar | Membro |
+| `GET` / `POST` | `/api/comunidade/grupos/[id]/albuns` | Álbuns do grupo; cria álbum | Membro |
+| `PATCH` / `DELETE` | `/api/comunidade/grupos/[id]/albuns/[albumId]` | Renomeia ou apaga o álbum (as fotos ficam) | Quem criou / dono |
+| `PUT` / `DELETE` | `/api/me/foto` | Foto de perfil | Autenticado |
 | `GET` / `PUT` | `/api/comunidade/grupos/[id]/sala` | Sala sincronizada (o que toca e em que segundo) | Membro |
 | `POST` | `/api/comunidade/entrar` | Entra no grupo pelo link de convite | Autenticado |
 | `POST` | `/api/admin/contents` | Cadastra conteúdo | Admin |
@@ -86,4 +91,4 @@ foi descontinuada e a do Sympla é restrita ao organizador).
 - `middleware.ts` — renovação de sessão + proteção de `/admin` e `/conta`.
 - `db/` — `schema.sql` e `seed.sql`; `test-multitenant.sql` e `test-comunidade.sql` testam as regras num Postgres local (nunca no Supabase).
 
-> **Comunidade e convites:** depois de atualizar o código, rode de novo o **`db/schema.sql`** no SQL Editor. Ele cria as tabelas `community_*`, os gatilhos que geram as notificações de convite e resposta (sem depender da service role) e liga o Realtime em `notifications`, `community_sessions` e `community_posts`.
+> **Comunidade e convites:** depois de atualizar o código, rode de novo o **`db/schema.sql`** no SQL Editor. Ele cria as tabelas `community_*`, os gatilhos que geram as notificações de convite e resposta (sem depender da service role) e liga o Realtime em `notifications`, `community_sessions` e `community_posts`. Também cria no Storage os buckets **`perfis`** (público: fotos de perfil e imagens dos grupos) e **`comunidade`** (privado: fotos do mural e dos álbuns, abertas só para membros por link assinado), com as políticas de quem envia e quem apaga. As imagens são reduzidas no navegador antes do envio (e perdem os dados de GPS da câmera).

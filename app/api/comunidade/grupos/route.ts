@@ -18,7 +18,10 @@ export async function GET() {
   });
 }
 
-/** Cria um grupo — sem limite de quantos. Quem cria entra como dono. */
+/**
+ * Cria um grupo — sem limite de quantos. Quem cria entra como dono e escolhe
+ * o tipo: fechado (só o dono convida, o padrão) ou aberto (todos convidam).
+ */
 export async function POST(request: Request) {
   const s = await exigirSessao();
   if (!s.ok) return s.response;
@@ -29,7 +32,12 @@ export async function POST(request: Request) {
 
   const { data, error } = await s.sb
     .from('community_groups')
-    .insert({ owner_id: s.user.id, name, description: texto(b?.description, 500) })
+    .insert({
+      owner_id: s.user.id,
+      name,
+      description: texto(b?.description, 500),
+      privacy: b?.privacy === 'aberto' ? 'aberto' : 'fechado',
+    })
     .select('id')
     .maybeSingle();
   if (error || !data) return falha(error, 'Falha ao criar o grupo.');

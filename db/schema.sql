@@ -963,10 +963,14 @@ CREATE TRIGGER appointment_participants_notify_answer
 -- COMUNIDADE — grupos para compartilhar livros, músicas, clipes e filmes, e
 -- para ouvir e assistir juntos, sincronizados.
 --
--- Qualquer conta cria quantos grupos quiser. Qualquer membro convida: contas
--- da plataforma recebem o convite nas notificações; quem ainda não tem conta
--- recebe o link do grupo (community_groups.invite_token), cria o acesso e
--- entra direto.
+-- Qualquer conta cria quantos grupos quiser, e o controle é de quem cria: só
+-- o dono edita, troca a imagem, remove gente e apaga. Quem convida depende do
+-- tipo do grupo:
+--   fechado — só o dono convida (e só ele vê o link de convite);
+--   aberto  — qualquer membro convida.
+-- Contas da plataforma recebem o convite nas notificações; quem ainda não tem
+-- conta recebe o link do grupo (community_group_links), cria o acesso e entra
+-- direto.
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS community_groups (
@@ -974,13 +978,23 @@ CREATE TABLE IF NOT EXISTS community_groups (
   owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL CHECK (char_length(trim(name)) BETWEEN 1 AND 80),
   description TEXT CHECK (description IS NULL OR char_length(description) <= 500),
-  -- Link de convite. gen_random_uuid (122 bits aleatórios) e não
-  -- gen_random_bytes: este não depende da extensão pgcrypto estar no
-  -- search_path de quem insere.
-  invite_token TEXT NOT NULL UNIQUE DEFAULT replace(gen_random_uuid()::text, '-', ''),
+  privacy TEXT NOT NULL DEFAULT 'fechado' CHECK (privacy IN ('aberto', 'fechado')),
+  -- Imagem do grupo no bucket público "perfis", sempre dentro da pasta dele.
+  image_path TEXT CHECK (image_path IS NULL OR image_path LIKE 'grupos/' || id::text || '/%'),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS community_groups_owner_idx ON community_groups (owner_id);
+
+-- Link de convite, numa tabela à parte para o RLS decidir quem o vê: num
+-- grupo fechado, só o dono; num aberto, todo membro. (Numa coluna do grupo,
+-- qualquer membro o leria direto pela API do Supabase.)
+-- gen_random_uuid (122 bits aleatórios) e não gen_random_bytes: este não
+-- depende da extensão pgcrypto estar no search_path de quem insere.
+CREATE TABLE IF NOT EXISTS community_group_links (
+  group_id UUID PRIMARY KEY REFERENCES community_groups(id) ON DELETE CASCADE,
+  token TEXT NOT NULL UNIQUE DEFAULT replace(gen_random_uuid()::text, '-', '') CHECK (token ~ '^[0-9a-f]{32}$'),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 CREATE TABLE IF NOT EXISTS community_members (
   group_id UUID NOT NULL REFERENCES community_groups(id) ON DELETE CASCADE,
@@ -999,14 +1013,18 @@ CREATE TABLE IF NOT EXISTS community_posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   group_id UUID NOT NULL REFERENCES community_groups(id) ON DELETE CASCADE,
   author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  kind TEXT NOT NULL DEFAULT 'recado' CHECK (kind IN ('recado', 'livro', 'musica', 'clipe', 'filme', 'link')),
+  -- 'foto': as imagens ficam em community_photos (post_id).
+  kind TEXT NOT NULL DEFAULT 'recado'
+    CONSTRAINT community_posts_kind_check CHECK (kind IN ('recado', 'livro', 'musica', 'clipe', 'filme', 'link', 'foto')),
   title TEXT CHECK (title IS NULL OR char_length(title) <= 200),
   subtitle TEXT CHECK (subtitle IS NULL OR char_length(subtitle) <= 200),
   url TEXT CHECK (url IS NULL OR (char_length(url) <= 1000 AND url ~* '^https?://')),
   body TEXT CHECK (body IS NULL OR char_length(body) <= 2000),
   youtube_id TEXT CHECK (youtube_id IS NULL OR youtube_id ~ '^[A-Za-z0-9_-]{11}$'),
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  CHECK (COALESCE(NULLIF(trim(title), ''), NULLIF(trim(body), '')) IS NOT NULL)
+  -- Publicação de fotos pode ir sem texto; as outras, não.
+  CONSTRAINT community_posts_conteudo_check
+    CHECK (kind = 'foto' OR COALESCE(NULLIF(trim(title), ''), NULLIF(trim(body), '')) IS NOT NULL)
 );
 CREATE INDEX IF NOT EXISTS community_posts_group_idx ON community_posts (group_id, created_at DESC);
 
@@ -1024,6 +1042,41 @@ CREATE TABLE IF NOT EXISTS community_sessions (
   updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Álbuns do grupo. Apagar um álbum NÃO apaga as fotos: elas continuam no
+-- grupo (em "Todas as fotos" e no mural), só deixam de estar no álbum.
+CREATE TABLE IF NOT EXISTS community_albums (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES community_groups(id) ON DELETE CASCADE,
+  created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL CHECK (char_length(trim(title)) BETWEEN 1 AND 120),
+  description TEXT CHECK (description IS NULL OR char_length(description) <= 500),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS community_albums_group_idx ON community_albums (group_id, created_at DESC);
+
+-- Fotos do grupo, no bucket privado "comunidade" (só membros abrem). Cada foto
+-- tem a imagem inteira e uma miniatura, as duas reduzidas no navegador antes
+-- do envio (o que também tira os dados de GPS da câmera). Toda foto nasce de
+-- uma publicação do tipo 'foto' — apagar a publicação apaga as fotos dela.
+CREATE TABLE IF NOT EXISTS community_photos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES community_groups(id) ON DELETE CASCADE,
+  post_id UUID NOT NULL REFERENCES community_posts(id) ON DELETE CASCADE,
+  album_id UUID REFERENCES community_albums(id) ON DELETE SET NULL,
+  uploader_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  storage_path TEXT NOT NULL UNIQUE CHECK (storage_path LIKE 'grupos/' || group_id::text || '/%'),
+  thumb_path TEXT CHECK (thumb_path IS NULL OR thumb_path LIKE 'grupos/' || group_id::text || '/%'),
+  width INT CHECK (width IS NULL OR width BETWEEN 1 AND 10000),
+  height INT CHECK (height IS NULL OR height BETWEEN 1 AND 10000),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS community_photos_group_idx ON community_photos (group_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS community_photos_album_idx ON community_photos (album_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS community_photos_post_idx ON community_photos (post_id);
+
+-- Foto de perfil (bucket público "perfis", pasta usuarios/<id>/).
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS avatar_path TEXT;
 
 ALTER TABLE notifications ADD COLUMN IF NOT EXISTS group_id UUID REFERENCES community_groups(id) ON DELETE CASCADE;
 
@@ -1047,13 +1100,52 @@ RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS
   SELECT EXISTS (SELECT 1 FROM community_groups WHERE id = p_group AND owner_id = auth.uid());
 $$;
 
--- --- Quem cria o grupo já entra como dono -----------------------------------
+-- Fechado: só o dono convida. Aberto: qualquer membro ativo.
+CREATE OR REPLACE FUNCTION can_invite_to_group(p_group UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM community_groups g
+    WHERE g.id = p_group
+      AND (g.owner_id = auth.uid() OR (g.privacy = 'aberto' AND is_group_member(g.id)))
+  );
+$$;
+
+-- Versões por PASTA, para as políticas do Storage: o caminho é
+-- grupos/<id do grupo>/arquivo e a pasta chega como texto, que pode nem ser
+-- um uuid — comparar como texto evita erro de conversão.
+CREATE OR REPLACE FUNCTION is_group_member_folder(p_folder TEXT)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM community_members
+    WHERE group_id::text = p_folder AND user_id = auth.uid() AND status = 'ativo'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION is_group_owner_folder(p_folder TEXT)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM community_groups WHERE id::text = p_folder AND owner_id = auth.uid());
+$$;
+
+-- A foto só entra num álbum e numa publicação do mesmo grupo — e a
+-- publicação tem que ser de quem envia a foto.
+CREATE OR REPLACE FUNCTION album_is_in_group(p_album UUID, p_group UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM community_albums WHERE id = p_album AND group_id = p_group);
+$$;
+
+CREATE OR REPLACE FUNCTION is_my_post_in_group(p_post UUID, p_group UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM community_posts WHERE id = p_post AND group_id = p_group AND author_id = auth.uid());
+$$;
+
+-- --- Quem cria o grupo já entra como dono, e o grupo já nasce com link ----
 CREATE OR REPLACE FUNCTION community_group_add_owner()
 RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
   INSERT INTO community_members (group_id, user_id, role, status, joined_at)
   VALUES (NEW.id, NEW.owner_id, 'dono', 'ativo', NOW())
   ON CONFLICT ON CONSTRAINT community_members_pkey DO UPDATE SET role = 'dono', status = 'ativo';
+  INSERT INTO community_group_links (group_id) VALUES (NEW.id) ON CONFLICT (group_id) DO NOTHING;
   RETURN NEW;
 END;
 $$;
@@ -1138,11 +1230,34 @@ CREATE TRIGGER community_sessions_stamp
   BEFORE INSERT OR UPDATE ON community_sessions
   FOR EACH ROW EXECUTE FUNCTION community_session_stamp();
 
+-- --- Foto de perfil: cada um só aponta para a própria pasta ----------------
+-- (Senão daria para "usar" a foto de outra pessoa como a sua.)
+CREATE OR REPLACE FUNCTION protect_profile_avatar()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.avatar_path IS NOT NULL
+     AND NEW.avatar_path IS DISTINCT FROM OLD.avatar_path
+     AND auth.uid() IS NOT NULL
+     AND NEW.avatar_path NOT LIKE 'usuarios/' || auth.uid()::text || '/%' THEN
+    NEW.avatar_path := OLD.avatar_path;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS profiles_protect_avatar ON profiles;
+CREATE TRIGGER profiles_protect_avatar
+  BEFORE UPDATE OF avatar_path ON profiles
+  FOR EACH ROW EXECUTE FUNCTION protect_profile_avatar();
+
 -- --- RLS ----------------------------------------------------------------------
 ALTER TABLE community_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_group_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE community_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE community_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE community_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_albums ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_photos ENABLE ROW LEVEL SECURITY;
 
 -- Grupos: membros e convidados enxergam; só o dono edita e apaga.
 DROP POLICY IF EXISTS community_groups_select ON community_groups;
@@ -1157,6 +1272,15 @@ CREATE POLICY community_groups_update ON community_groups FOR UPDATE
 DROP POLICY IF EXISTS community_groups_delete ON community_groups;
 CREATE POLICY community_groups_delete ON community_groups FOR DELETE
   USING (owner_id = auth.uid());
+
+-- Link de convite: vê quem pode convidar (dono; e todo membro se o grupo for
+-- aberto). Só o dono troca o link. Criado pelo gatilho do grupo.
+DROP POLICY IF EXISTS community_group_links_select ON community_group_links;
+CREATE POLICY community_group_links_select ON community_group_links FOR SELECT
+  USING (can_invite_to_group(group_id));
+DROP POLICY IF EXISTS community_group_links_update ON community_group_links;
+CREATE POLICY community_group_links_update ON community_group_links FOR UPDATE
+  USING (is_group_owner(group_id)) WITH CHECK (is_group_owner(group_id));
 
 -- Membros: quem participa vê a lista. Entrar, convidar e responder passam
 -- pelas funções abaixo (sem INSERT/UPDATE direto: ninguém se faz dono nem
@@ -1180,6 +1304,41 @@ DROP POLICY IF EXISTS community_posts_delete ON community_posts;
 CREATE POLICY community_posts_delete ON community_posts FOR DELETE
   USING (author_id = auth.uid() OR is_group_owner(group_id));
 
+-- Álbuns: qualquer membro cria; quem criou ou o dono do grupo renomeia e apaga.
+DROP POLICY IF EXISTS community_albums_select ON community_albums;
+CREATE POLICY community_albums_select ON community_albums FOR SELECT
+  USING (is_group_member(group_id));
+DROP POLICY IF EXISTS community_albums_insert ON community_albums;
+CREATE POLICY community_albums_insert ON community_albums FOR INSERT
+  WITH CHECK (created_by = auth.uid() AND is_group_member(group_id));
+DROP POLICY IF EXISTS community_albums_update ON community_albums;
+CREATE POLICY community_albums_update ON community_albums FOR UPDATE
+  USING (created_by = auth.uid() OR is_group_owner(group_id))
+  WITH CHECK (is_group_member(group_id));
+DROP POLICY IF EXISTS community_albums_delete ON community_albums;
+CREATE POLICY community_albums_delete ON community_albums FOR DELETE
+  USING (created_by = auth.uid() OR is_group_owner(group_id));
+
+-- Fotos: só membros veem e enviam; quem enviou ou o dono do grupo apagam.
+DROP POLICY IF EXISTS community_photos_select ON community_photos;
+CREATE POLICY community_photos_select ON community_photos FOR SELECT
+  USING (is_group_member(group_id));
+DROP POLICY IF EXISTS community_photos_insert ON community_photos;
+CREATE POLICY community_photos_insert ON community_photos FOR INSERT
+  WITH CHECK (
+    uploader_id = auth.uid()
+    AND is_group_member(group_id)
+    AND is_my_post_in_group(post_id, group_id)
+    AND (album_id IS NULL OR album_is_in_group(album_id, group_id))
+  );
+DROP POLICY IF EXISTS community_photos_update ON community_photos;
+CREATE POLICY community_photos_update ON community_photos FOR UPDATE
+  USING (uploader_id = auth.uid() OR is_group_owner(group_id))
+  WITH CHECK (is_group_member(group_id) AND (album_id IS NULL OR album_is_in_group(album_id, group_id)));
+DROP POLICY IF EXISTS community_photos_delete ON community_photos;
+CREATE POLICY community_photos_delete ON community_photos FOR DELETE
+  USING (uploader_id = auth.uid() OR is_group_owner(group_id));
+
 -- Sala: qualquer membro escolhe o que toca, dá play, pausa e avança.
 DROP POLICY IF EXISTS community_sessions_select ON community_sessions;
 CREATE POLICY community_sessions_select ON community_sessions FOR SELECT
@@ -1193,7 +1352,7 @@ CREATE POLICY community_sessions_update ON community_sessions FOR UPDATE
 
 -- --- Funções da comunidade --------------------------------------------------
 
--- Convida contas da plataforma. Qualquer membro ativo convida.
+-- Convida contas da plataforma. Grupo fechado: só o dono. Aberto: qualquer membro.
 CREATE OR REPLACE FUNCTION invite_to_group(p_group UUID, p_users UUID[])
 RETURNS TABLE (convidado_id UUID, resultado TEXT)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -1207,6 +1366,9 @@ BEGIN
   END IF;
   IF NOT is_group_member(p_group) THEN
     RAISE EXCEPTION 'Só quem participa do grupo pode convidar.';
+  END IF;
+  IF NOT can_invite_to_group(p_group) THEN
+    RAISE EXCEPTION 'Este grupo é fechado: só quem criou pode convidar.';
   END IF;
 
   FOR v_u IN SELECT DISTINCT u FROM unnest(COALESCE(p_users, '{}')) AS u WHERE u IS NOT NULL LIMIT 50 LOOP
@@ -1268,7 +1430,7 @@ BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Entre na sua conta para participar do grupo.';
   END IF;
-  SELECT id INTO v_group FROM community_groups WHERE invite_token = trim(COALESCE(p_token, ''));
+  SELECT group_id INTO v_group FROM community_group_links WHERE token = lower(trim(COALESCE(p_token, '')));
   IF v_group IS NULL THEN
     RAISE EXCEPTION 'Convite inválido: o link pode ter sido trocado pelo dono do grupo.';
   END IF;
@@ -1284,25 +1446,29 @@ $$;
 -- Prévia do convite por link — aberta a quem ainda não tem conta, para a
 -- página mostrar o grupo antes do cadastro. Só responde a quem tem o token.
 CREATE OR REPLACE FUNCTION group_invite_preview(p_token TEXT)
-RETURNS TABLE (group_id UUID, name TEXT, description TEXT, owner_name TEXT, member_count INT, already_member BOOLEAN)
+RETURNS TABLE (
+  group_id UUID, name TEXT, description TEXT, image_path TEXT, privacy TEXT,
+  owner_name TEXT, member_count INT, already_member BOOLEAN
+)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT g.id, g.name, g.description, display_name(g.owner_id),
+  SELECT g.id, g.name, g.description, g.image_path, g.privacy, display_name(g.owner_id),
          (SELECT count(*)::int FROM community_members m WHERE m.group_id = g.id AND m.status = 'ativo'),
          EXISTS (SELECT 1 FROM community_members m WHERE m.group_id = g.id AND m.user_id = auth.uid() AND m.status = 'ativo')
-  FROM community_groups g
-  WHERE length(trim(COALESCE(p_token, ''))) >= 16 AND g.invite_token = trim(p_token);
+  FROM community_group_links l
+  JOIN community_groups g ON g.id = l.group_id
+  WHERE length(trim(COALESCE(p_token, ''))) >= 16 AND l.token = lower(trim(p_token));
 $$;
 
 -- Meus grupos e os convites que estão esperando resposta.
 CREATE OR REPLACE FUNCTION my_community_groups()
 RETURNS TABLE (
-  id UUID, name TEXT, description TEXT, owner_id UUID, owner_name TEXT,
+  id UUID, name TEXT, description TEXT, privacy TEXT, image_path TEXT, owner_id UUID, owner_name TEXT,
   my_role TEXT, my_status TEXT, invited_by_name TEXT,
   member_count INT, post_count INT, playing_title TEXT,
   last_activity TIMESTAMPTZ, created_at TIMESTAMPTZ
 )
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT g.id, g.name, g.description, g.owner_id, display_name(g.owner_id),
+  SELECT g.id, g.name, g.description, g.privacy, g.image_path, g.owner_id, display_name(g.owner_id),
          m.role, m.status,
          CASE WHEN m.invited_by IS NOT NULL AND m.invited_by <> m.user_id THEN display_name(m.invited_by) END,
          (SELECT count(*)::int FROM community_members x WHERE x.group_id = g.id AND x.status = 'ativo'),
@@ -1313,14 +1479,15 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   FROM community_members m
   JOIN community_groups g ON g.id = m.group_id
   WHERE m.user_id = auth.uid() AND m.status IN ('ativo', 'convidado')
-  ORDER BY (m.status = 'convidado') DESC, 12 DESC NULLS LAST;
+  ORDER BY (m.status = 'convidado') DESC, 14 DESC NULLS LAST;
 $$;
 
 -- Membros de um grupo com o nome de cada um (sem expor e-mail).
 CREATE OR REPLACE FUNCTION community_group_members(p_group UUID)
-RETURNS TABLE (user_id UUID, name TEXT, role TEXT, status TEXT, invited_by_name TEXT, joined_at TIMESTAMPTZ)
+RETURNS TABLE (user_id UUID, name TEXT, avatar_path TEXT, role TEXT, status TEXT, invited_by_name TEXT, joined_at TIMESTAMPTZ)
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT m.user_id, display_name(m.user_id), m.role, m.status,
+  SELECT m.user_id, display_name(m.user_id), (SELECT p.avatar_path FROM profiles p WHERE p.id = m.user_id),
+         m.role, m.status,
          CASE WHEN m.invited_by IS NOT NULL AND m.invited_by <> m.user_id THEN display_name(m.invited_by) END,
          m.joined_at
   FROM community_members m
@@ -1374,7 +1541,7 @@ $$;
 -- com você, quem está nos seus grupos). Com termo: busca por nome ou pelo
 -- e-mail exato. Para quem não tem vínculo, o e-mail volta mascarado.
 CREATE OR REPLACE FUNCTION search_profiles(p_query TEXT DEFAULT NULL)
-RETURNS TABLE (id UUID, name TEXT, email_hint TEXT, proximo BOOLEAN)
+RETURNS TABLE (id UUID, name TEXT, email_hint TEXT, avatar_path TEXT, proximo BOOLEAN)
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_uid UUID := auth.uid();
@@ -1403,6 +1570,7 @@ BEGIN
   SELECT pr.id,
          COALESCE(NULLIF(trim(pr.full_name), ''), split_part(pr.email, '@', 1)),
          CASE WHEN px.uid IS NOT NULL OR lower(pr.email) = v_q THEN pr.email ELSE mask_email(pr.email) END,
+         pr.avatar_path,
          px.uid IS NOT NULL
   FROM profiles pr
   LEFT JOIN proximos px ON px.uid = pr.id
@@ -1436,6 +1604,70 @@ BEGIN
   END IF;
 END $$;
 
+-- --- Imagens (Supabase Storage) ---------------------------------------------
+--   perfis     (público)  usuarios/<id>/…  foto de perfil — só a própria pessoa envia
+--                         grupos/<id>/…    imagem do grupo — só o dono envia
+--   comunidade (privado)  grupos/<id>/…    fotos do mural e dos álbuns — só
+--                                          membros abrem (por link assinado) e enviam
+-- Apagar: quem enviou; no grupo, também o dono.
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES
+  ('perfis', 'perfis', TRUE, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+  ('comunidade', 'comunidade', FALSE, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
+ON CONFLICT (id) DO UPDATE
+  SET public = EXCLUDED.public,
+      file_size_limit = EXCLUDED.file_size_limit,
+      allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+-- Leitura pela API (a imagem em si é pública pelo link): o Storage precisa
+-- dela para apagar e para devolver o que acabou de ser enviado.
+DROP POLICY IF EXISTS nexo_perfis_select ON storage.objects;
+CREATE POLICY nexo_perfis_select ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'perfis' AND (
+      ((storage.foldername(name))[1] = 'usuarios' AND (storage.foldername(name))[2] = auth.uid()::text)
+      OR ((storage.foldername(name))[1] = 'grupos' AND is_group_owner_folder((storage.foldername(name))[2]))
+    )
+  );
+DROP POLICY IF EXISTS nexo_perfis_insert ON storage.objects;
+CREATE POLICY nexo_perfis_insert ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'perfis' AND (
+      ((storage.foldername(name))[1] = 'usuarios' AND (storage.foldername(name))[2] = auth.uid()::text)
+      OR ((storage.foldername(name))[1] = 'grupos' AND is_group_owner_folder((storage.foldername(name))[2]))
+    )
+  );
+DROP POLICY IF EXISTS nexo_perfis_delete ON storage.objects;
+CREATE POLICY nexo_perfis_delete ON storage.objects FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'perfis' AND (
+      ((storage.foldername(name))[1] = 'usuarios' AND (storage.foldername(name))[2] = auth.uid()::text)
+      OR ((storage.foldername(name))[1] = 'grupos' AND is_group_owner_folder((storage.foldername(name))[2]))
+    )
+  );
+
+DROP POLICY IF EXISTS nexo_comunidade_select ON storage.objects;
+CREATE POLICY nexo_comunidade_select ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'comunidade'
+    AND (storage.foldername(name))[1] = 'grupos'
+    AND is_group_member_folder((storage.foldername(name))[2])
+  );
+DROP POLICY IF EXISTS nexo_comunidade_insert ON storage.objects;
+CREATE POLICY nexo_comunidade_insert ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'comunidade'
+    AND (storage.foldername(name))[1] = 'grupos'
+    AND is_group_member_folder((storage.foldername(name))[2])
+  );
+DROP POLICY IF EXISTS nexo_comunidade_delete ON storage.objects;
+CREATE POLICY nexo_comunidade_delete ON storage.objects FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'comunidade'
+    AND (storage.foldername(name))[1] = 'grupos'
+    AND (owner_id = auth.uid()::text OR is_group_owner_folder((storage.foldername(name))[2]))
+  );
+
 -- --- Permissão de execução (ver a nota em "Permissão de execução" acima) ----
 REVOKE ALL ON FUNCTION display_name(UUID)               FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION mask_email(TEXT)                 FROM PUBLIC, anon, authenticated;
@@ -1444,6 +1676,7 @@ REVOKE ALL ON FUNCTION notify_appointment_answer()      FROM PUBLIC, anon, authe
 REVOKE ALL ON FUNCTION community_group_add_owner()      FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION notify_community_member()        FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION community_session_stamp()        FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION protect_profile_avatar()         FROM PUBLIC, anon, authenticated;
 
 REVOKE ALL ON FUNCTION search_profiles(TEXT)            FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION invite_to_group(UUID, UUID[])    FROM PUBLIC, anon;

@@ -1,19 +1,33 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '../icons';
+import Avatar from '../Avatar';
 import { responderConvite } from '@/lib/convites';
-import type { Membro, Sala } from '@/lib/comunidade-tipos';
+import { trocarImagemDoGrupo } from '@/lib/imagens';
+import type { Membro, Privacidade, Sala } from '@/lib/comunidade-tipos';
 import ConvidarAmigos from './ConvidarAmigos';
 import SalaSincronizada from './SalaSincronizada';
 import Mural from './Mural';
+import FotosEAlbuns from './FotosEAlbuns';
+import { SeloDoTipo } from './EscolherTipo';
 
 interface Detalhe {
   meuId: string;
   meuPapel: 'dono' | 'membro';
-  grupo: { id: string; name: string; description: string | null; ownerId: string; inviteToken: string };
+  /** Dono sempre; membros só se o grupo for aberto. */
+  podeConvidar: boolean;
+  grupo: {
+    id: string;
+    name: string;
+    description: string | null;
+    privacy: Privacidade;
+    imagePath: string | null;
+    ownerId: string;
+    inviteToken: string | null;
+  };
   membros: Membro[];
   sala: Sala | null;
   agora: string;
@@ -23,6 +37,7 @@ interface ConvitePendente {
   id: string;
   name: string;
   description: string | null;
+  imagePath: string | null;
   ownerName: string | null;
   invitedByName: string | null;
   memberCount: number | null;
@@ -41,6 +56,12 @@ export default function GrupoView({ id }: { id: string }) {
   const [editando, setEditando] = useState(false);
   const [edicao, setEdicao] = useState({ name: '', description: '' });
   const [ocupado, setOcupado] = useState(false);
+  const [aba, setAba] = useState<'mural' | 'fotos'>('mural');
+  // A aba de fotos só carrega quando é aberta pela primeira vez.
+  const [viuFotos, setViuFotos] = useState(false);
+  // Fotos mudaram numa aba: a outra recarrega quando for aberta.
+  const [versaoFotos, setVersaoFotos] = useState(0);
+  const seletorDeImagem = useRef<HTMLInputElement>(null);
 
   const carregar = useCallback(async () => {
     try {
@@ -140,9 +161,7 @@ export default function GrupoView({ id }: { id: string }) {
     };
     return (
       <div className="card-soft mx-auto max-w-lg p-8 text-center">
-        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/15 font-display text-2xl font-bold uppercase text-emerald-300">
-          {convite.name.slice(0, 1)}
-        </span>
+        <Avatar nome={convite.name} path={convite.imagePath} tamanho={72} quadrado className="mx-auto" />
         <p className="mt-4 text-sm text-zinc-400">
           <span className="font-medium text-zinc-200">{convite.invitedByName ?? convite.ownerName ?? 'Alguém'}</span> convidou você para
         </p>
@@ -170,8 +189,9 @@ export default function GrupoView({ id }: { id: string }) {
   }
 
   if (!d) return null;
-  const { grupo, membros, meuPapel, meuId } = d;
+  const { grupo, membros, meuPapel, meuId, podeConvidar } = d;
   const dono = meuPapel === 'dono';
+  const nomeDoDono = membros.find((m) => m.role === 'dono')?.name ?? 'quem criou';
   const ativos = membros.filter((m) => m.status === 'ativo');
   const pendentes = membros.filter((m) => m.status === 'convidado');
   const nomes = Object.fromEntries(membros.map((m) => [m.userId, m.name]));
@@ -189,7 +209,37 @@ export default function GrupoView({ id }: { id: string }) {
   const novoLink = async () => {
     if (!window.confirm('Gerar um novo link de convite? O link antigo para de funcionar na hora.')) return;
     const json = await acao(`/api/comunidade/grupos/${id}`, 'PATCH', { novoLink: true });
-    if (json) setD({ ...d, grupo: { ...grupo, inviteToken: json.grupo.inviteToken } });
+    if (json) setD({ ...d, grupo: { ...grupo, inviteToken: json.inviteToken } });
+  };
+
+  const trocarTipo = async () => {
+    const proximo: Privacidade = grupo.privacy === 'fechado' ? 'aberto' : 'fechado';
+    const pergunta =
+      proximo === 'aberto'
+        ? 'Tornar o grupo aberto? Todos os membros passam a poder convidar amigos (e a ver o link de convite).'
+        : 'Tornar o grupo fechado? Só você vai poder convidar. Gere um novo link se quiser invalidar o que os membros já têm.';
+    if (!window.confirm(pergunta)) return;
+    const json = await acao(`/api/comunidade/grupos/${id}`, 'PATCH', { privacy: proximo });
+    if (json) setD({ ...d, grupo: { ...grupo, privacy: json.grupo.privacy } });
+  };
+
+  const trocarImagem = async (file: File) => {
+    setOcupado(true);
+    setErro('');
+    try {
+      const path = await trocarImagemDoGrupo(id, file);
+      setD({ ...d, grupo: { ...grupo, imagePath: path } });
+    } catch (e: any) {
+      setErro(e?.message || 'Não deu para trocar a imagem.');
+    } finally {
+      setOcupado(false);
+    }
+  };
+
+  const tirarImagem = async () => {
+    if (!window.confirm('Tirar a imagem do grupo?')) return;
+    const json = await acao(`/api/comunidade/grupos/${id}`, 'PATCH', { imagePath: null });
+    if (json) setD({ ...d, grupo: { ...grupo, imagePath: null } });
   };
 
   const apagarGrupo = async () => {
@@ -212,6 +262,34 @@ export default function GrupoView({ id }: { id: string }) {
     <div className="space-y-6">
       {/* Cabeçalho */}
       <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-4">
+          {dono ? (
+            <button
+              type="button"
+              onClick={() => seletorDeImagem.current?.click()}
+              disabled={ocupado}
+              className="group relative mt-5 shrink-0 overflow-hidden rounded-2xl"
+              title="Trocar a imagem do grupo"
+              aria-label="Trocar a imagem do grupo"
+            >
+              <Avatar nome={grupo.name} path={grupo.imagePath} tamanho={72} quadrado />
+              <span className="absolute inset-0 flex items-center justify-center bg-zinc-950/60 text-[#f6f2ea] opacity-0 transition group-hover:opacity-100 group-focus-visible:opacity-100">
+                <Icon name="camera" size={20} />
+              </span>
+            </button>
+          ) : (
+            <Avatar nome={grupo.name} path={grupo.imagePath} tamanho={72} quadrado className="mt-5" />
+          )}
+          <input
+            ref={seletorDeImagem}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.[0]) trocarImagem(e.target.files[0]);
+              e.target.value = '';
+            }}
+          />
         <div className="min-w-0">
           <Link href="/comunidade" className="inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-200">
             <Icon name="chevronRight" size={12} className="rotate-180" /> Comunidade
@@ -240,19 +318,29 @@ export default function GrupoView({ id }: { id: string }) {
             <>
               <h1 className="mt-1 text-3xl font-semibold tracking-tight text-zinc-50">{grupo.name}</h1>
               {grupo.description && <p className="mt-1 max-w-2xl text-sm text-zinc-300">{grupo.description}</p>}
-              <p className="mt-1 text-xs text-zinc-500">
-                {ativos.length} {ativos.length === 1 ? 'pessoa' : 'pessoas'}
-                {pendentes.length > 0 && ` · ${pendentes.length} ${pendentes.length === 1 ? 'convite pendente' : 'convites pendentes'}`}
+              <p className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+                <SeloDoTipo privacy={grupo.privacy} />
+                <span>
+                  {ativos.length} {ativos.length === 1 ? 'pessoa' : 'pessoas'}
+                  {pendentes.length > 0 && ` · ${pendentes.length} ${pendentes.length === 1 ? 'convite pendente' : 'convites pendentes'}`}
+                </span>
               </p>
             </>
           )}
         </div>
-        <button
-          onClick={() => setConvidar(true)}
-          className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
-        >
-          <Icon name="users" size={16} /> Convidar amigos
-        </button>
+        </div>
+        {podeConvidar ? (
+          <button
+            onClick={() => setConvidar(true)}
+            className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+          >
+            <Icon name="users" size={16} /> Convidar amigos
+          </button>
+        ) : (
+          <p className="flex max-w-[16rem] items-start gap-1.5 rounded-2xl border border-zinc-800 px-4 py-3 text-xs text-zinc-400">
+            <Icon name="lock" size={14} className="mt-0.5 shrink-0" /> Grupo fechado: só {nomeDoDono} convida pessoas.
+          </p>
+        )}
       </div>
 
       {erro && <p className="rounded-2xl border border-clay-800/60 bg-clay-950/25 p-3 text-xs text-clay-200">{erro}</p>}
@@ -260,7 +348,39 @@ export default function GrupoView({ id }: { id: string }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
         <div className="min-w-0 space-y-6">
           <SalaSincronizada groupId={id} salaInicial={d.sala} agoraInicial={d.agora} meuId={meuId} meuNome={meuNome} nomes={nomes} />
-          <Mural groupId={id} />
+          <div className="flex gap-1.5 border-b border-zinc-800" role="tablist" aria-label="Seções do grupo">
+            {(
+              [
+                ['mural', 'Mural', 'chat'],
+                ['fotos', 'Fotos e álbuns', 'image'],
+              ] as const
+            ).map(([k, rotulo, icone]) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                aria-selected={aba === k}
+                onClick={() => {
+                  setAba(k);
+                  if (k === 'fotos') setViuFotos(true);
+                }}
+                className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
+                  aba === k ? 'border-emerald-500 text-emerald-300' : 'border-transparent text-zinc-400 hover:text-zinc-100'
+                }`}
+              >
+                <Icon name={icone} size={15} /> {rotulo}
+              </button>
+            ))}
+          </div>
+          {/* As duas ficam montadas: trocar de aba não perde o que foi carregado. */}
+          <div hidden={aba !== 'mural'}>
+            <Mural groupId={id} aoMudarFotos={() => setVersaoFotos((v) => v + 1)} />
+          </div>
+          {viuFotos && (
+            <div hidden={aba !== 'fotos'}>
+              <FotosEAlbuns groupId={id} versao={versaoFotos} aoMudar={() => setVersaoFotos((v) => v + 1)} />
+            </div>
+          )}
         </div>
 
         {/* Membros */}
@@ -270,13 +390,7 @@ export default function GrupoView({ id }: { id: string }) {
             <ul className="space-y-1">
               {[...ativos, ...pendentes].map((m) => (
                 <li key={m.userId} className="group flex items-center gap-2.5 rounded-xl px-1.5 py-1.5">
-                  <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold uppercase ${
-                      m.status === 'ativo' ? 'bg-emerald-500/15 text-emerald-300' : 'border border-dashed border-zinc-700 text-zinc-500'
-                    }`}
-                  >
-                    {m.name.slice(0, 1)}
-                  </span>
+                  <Avatar nome={m.name} path={m.avatarPath} tamanho={32} pendente={m.status === 'convidado'} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-zinc-100">
                       {m.name}
@@ -299,12 +413,14 @@ export default function GrupoView({ id }: { id: string }) {
                 </li>
               ))}
             </ul>
-            <button
-              onClick={() => setConvidar(true)}
-              className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-700 py-2 text-xs text-zinc-300 transition hover:border-emerald-700 hover:text-emerald-300"
-            >
-              <Icon name="plus" size={13} /> Convidar amigos
-            </button>
+            {podeConvidar && (
+              <button
+                onClick={() => setConvidar(true)}
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-700 py-2 text-xs text-zinc-300 transition hover:border-emerald-700 hover:text-emerald-300"
+              >
+                <Icon name="plus" size={13} /> Convidar amigos
+              </button>
+            )}
           </section>
 
           <section className="card-soft space-y-1 p-4 text-xs" aria-label="Opções do grupo">
@@ -319,6 +435,22 @@ export default function GrupoView({ id }: { id: string }) {
                 >
                   <Icon name="palette" size={14} /> Editar nome e descrição
                 </button>
+                <button onClick={trocarTipo} disabled={ocupado} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-zinc-300 hover:bg-zinc-800/60">
+                  <Icon name={grupo.privacy === 'fechado' ? 'globe' : 'lock'} size={14} />
+                  {grupo.privacy === 'fechado' ? 'Tornar aberto (todos convidam)' : 'Tornar fechado (só eu convido)'}
+                </button>
+                <button
+                  onClick={() => seletorDeImagem.current?.click()}
+                  disabled={ocupado}
+                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60"
+                >
+                  <Icon name="image" size={14} /> {grupo.imagePath ? 'Trocar imagem do grupo' : 'Adicionar imagem do grupo'}
+                </button>
+                {grupo.imagePath && (
+                  <button onClick={tirarImagem} disabled={ocupado} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60">
+                    <Icon name="close" size={14} /> Tirar imagem do grupo
+                  </button>
+                )}
                 <button onClick={novoLink} disabled={ocupado} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60">
                   <Icon name="link" size={14} /> Gerar novo link de convite
                 </button>
@@ -335,7 +467,7 @@ export default function GrupoView({ id }: { id: string }) {
         </aside>
       </div>
 
-      {convidar && (
+      {convidar && podeConvidar && grupo.inviteToken && (
         <ConvidarAmigos
           groupId={id}
           groupName={grupo.name}

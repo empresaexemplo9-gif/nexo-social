@@ -40,7 +40,15 @@ END $$;
 --      pelo link direto no grupo;
 --   9. a sala sincronizada é só dos membros e guarda o relógio do servidor;
 --  10. o dono não abandona o grupo (apaga-o), e só autor ou dono apagam publicação;
---  11. quem não participa não convida.
+--  11. quem não participa não convida;
+--  12. grupo fechado: só o dono convida e só ele vê o link; aberto: todo membro;
+--  13. só o dono muda o grupo (tipo, nome, imagem);
+--  14. fotos e álbuns só para membros; foto só entra em publicação própria e em
+--      álbum do mesmo grupo; apagar álbum mantém as fotos, apagar a publicação
+--      apaga as fotos dela;
+--  15. Storage: foto de perfil só na própria pasta, imagem do grupo só pelo
+--      dono, fotos do grupo só entre membros;
+--  16. ninguém aponta a foto de perfil para a pasta de outra pessoa.
 
 \set ON_ERROR_STOP on
 \pset pager off
@@ -214,7 +222,7 @@ SELECT assert(
   '7. quem convidou fica sabendo');
 
 -- --- 8) Link de convite -----------------------------------------------------
-SELECT invite_token AS token FROM community_groups WHERE id = 'b0000000-0000-0000-0000-000000000001' \gset
+SELECT token FROM community_group_links WHERE group_id = 'b0000000-0000-0000-0000-000000000001' \gset
 
 BEGIN;
   SET LOCAL ROLE anon;
@@ -308,6 +316,222 @@ BEGIN;
     IF SQLERRM LIKE 'FALHOU%' THEN RAISE; END IF;
     RAISE NOTICE 'ok   11. quem não participa do grupo não convida';
   END $$;
+COMMIT;
+
+-- --- 12) Fechado × aberto -------------------------------------------------
+-- Clube do livro é fechado (o padrão). Beto é membro, mas não é o dono.
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  SELECT assert(
+    (SELECT privacy FROM community_groups WHERE id = 'b0000000-0000-0000-0000-000000000001') = 'fechado',
+    '12. grupo nasce fechado (controle de quem cria)');
+  SELECT assert((SELECT count(*) FROM community_group_links) = 0, '12. fechado: membro não vê o link de convite');
+  DO $$
+  BEGIN
+    PERFORM invite_to_group('b0000000-0000-0000-0000-000000000001', ARRAY['88888888-8888-8888-8888-888888888888'::uuid]);
+    RAISE EXCEPTION 'FALHOU: membro convidou em grupo fechado';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FALHOU%' THEN RAISE; END IF;
+    RAISE NOTICE 'ok   12. fechado: membro não convida (%)', SQLERRM;
+  END $$;
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  SELECT assert((SELECT count(*) FROM community_group_links) = 1, '12. fechado: o dono vê o link');
+  UPDATE community_groups SET privacy = 'aberto' WHERE id = 'b0000000-0000-0000-0000-000000000001';
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  SELECT assert((SELECT count(*) FROM community_group_links) = 1, '12. aberto: membro vê o link');
+  SELECT assert(
+    (SELECT resultado FROM invite_to_group('b0000000-0000-0000-0000-000000000001', ARRAY['88888888-8888-8888-8888-888888888888'::uuid])) = 'convidado',
+    '12. aberto: membro convida');
+  UPDATE community_group_links SET token = replace(gen_random_uuid()::text, '-', '');
+COMMIT;
+SELECT assert(
+  (SELECT token FROM community_group_links WHERE group_id = 'b0000000-0000-0000-0000-000000000001') = :'token',
+  '12. só o dono troca o link');
+
+-- --- 13) Só o dono muda o grupo --------------------------------------------
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  UPDATE community_groups SET privacy = 'fechado', name = 'Tomado',
+         image_path = 'grupos/b0000000-0000-0000-0000-000000000001/x.jpg'
+   WHERE id = 'b0000000-0000-0000-0000-000000000001';
+COMMIT;
+SELECT assert(
+  (SELECT name = 'Clube do livro' AND privacy = 'aberto' AND image_path IS NULL
+     FROM community_groups WHERE id = 'b0000000-0000-0000-0000-000000000001'),
+  '13. membro não muda tipo, nome nem imagem do grupo');
+DO $$
+BEGIN
+  UPDATE community_groups SET image_path = 'grupos/outro/x.jpg' WHERE id = 'b0000000-0000-0000-0000-000000000001';
+  RAISE EXCEPTION 'FALHOU: imagem fora da pasta do grupo';
+EXCEPTION WHEN check_violation THEN
+  RAISE NOTICE 'ok   13. a imagem do grupo fica sempre na pasta dele';
+END $$;
+
+-- --- 14) Fotos e álbuns -----------------------------------------------------
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  INSERT INTO community_albums (id, group_id, created_by, title)
+  VALUES ('c0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', :'beto', 'Encontro de setembro');
+  INSERT INTO community_posts (id, group_id, author_id, kind)
+  VALUES ('d0000000-0000-0000-0000-000000000001', 'b0000000-0000-0000-0000-000000000001', :'beto', 'foto');
+  INSERT INTO community_photos (group_id, post_id, album_id, uploader_id, storage_path, thumb_path, width, height)
+  VALUES ('b0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001',
+          'c0000000-0000-0000-0000-000000000001', :'beto',
+          'grupos/b0000000-0000-0000-0000-000000000001/f1.jpg', 'grupos/b0000000-0000-0000-0000-000000000001/f1_p.jpg', 2048, 1536),
+         ('b0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001',
+          'c0000000-0000-0000-0000-000000000001', :'beto',
+          'grupos/b0000000-0000-0000-0000-000000000001/f2.jpg', NULL, 800, 600);
+COMMIT;
+SELECT assert((SELECT count(*) FROM community_photos WHERE album_id = 'c0000000-0000-0000-0000-000000000001') = 2,
+              '14. membro cria álbum e publica fotos nele, sem precisar de texto');
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = '{"sub":"88888888-8888-8888-8888-888888888888","email":"dani@exemplo.com","role":"authenticated"}';
+  SELECT assert((SELECT count(*) FROM community_photos) = 0 AND (SELECT count(*) FROM community_albums) = 0,
+                '14. quem não é membro não vê fotos nem álbuns (convite pendente não basta)');
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  DO $$
+  BEGIN
+    -- Ana tentando pendurar uma foto na publicação do Beto.
+    INSERT INTO community_photos (group_id, post_id, uploader_id, storage_path)
+    VALUES ('b0000000-0000-0000-0000-000000000001', 'd0000000-0000-0000-0000-000000000001',
+            '55555555-5555-5555-5555-555555555555', 'grupos/b0000000-0000-0000-0000-000000000001/f3.jpg');
+    RAISE EXCEPTION 'FALHOU: foto em publicação de outra pessoa';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'ok   14. foto só entra em publicação de quem a envia';
+  END $$;
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  DELETE FROM community_albums WHERE id = 'c0000000-0000-0000-0000-000000000001';
+COMMIT;
+SELECT assert(
+  (SELECT count(*) FROM community_photos WHERE post_id = 'd0000000-0000-0000-0000-000000000001' AND album_id IS NULL) = 2,
+  '14. apagar o álbum mantém as fotos no grupo');
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  DELETE FROM community_posts WHERE id = 'd0000000-0000-0000-0000-000000000001';
+COMMIT;
+SELECT assert((SELECT count(*) FROM community_photos) = 0, '14. apagar a publicação (aqui pelo dono do grupo) apaga as fotos dela');
+
+-- --- 15) Storage --------------------------------------------------------------
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  INSERT INTO storage.objects (bucket_id, name, owner_id)
+  VALUES ('perfis', 'usuarios/66666666-6666-6666-6666-666666666666/eu.jpg', '66666666-6666-6666-6666-666666666666'),
+         ('comunidade', 'grupos/b0000000-0000-0000-0000-000000000001/f9.jpg', '66666666-6666-6666-6666-666666666666');
+  SELECT assert((SELECT count(*) FROM storage.objects WHERE bucket_id = 'comunidade') = 1, '15. membro envia e abre fotos do grupo');
+  DO $$
+  BEGIN
+    INSERT INTO storage.objects (bucket_id, name) VALUES ('perfis', 'usuarios/55555555-5555-5555-5555-555555555555/falsa.jpg');
+    RAISE EXCEPTION 'FALHOU: enviou foto de perfil na pasta de outra pessoa';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'ok   15. foto de perfil só na própria pasta';
+  END $$;
+  DO $$
+  BEGIN
+    INSERT INTO storage.objects (bucket_id, name) VALUES ('perfis', 'grupos/b0000000-0000-0000-0000-000000000001/capa.jpg');
+    RAISE EXCEPTION 'FALHOU: membro trocou a imagem do grupo';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'ok   15. só o dono envia a imagem do grupo';
+  END $$;
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  INSERT INTO storage.objects (bucket_id, name, owner_id)
+  VALUES ('perfis', 'grupos/b0000000-0000-0000-0000-000000000001/capa.jpg', '55555555-5555-5555-5555-555555555555');
+  SELECT assert(TRUE, '15. o dono envia a imagem do grupo');
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = '{"sub":"88888888-8888-8888-8888-888888888888","email":"dani@exemplo.com","role":"authenticated"}';
+  SELECT assert((SELECT count(*) FROM storage.objects WHERE bucket_id = 'comunidade') = 0, '15. quem não é membro não abre as fotos do grupo');
+  DO $$
+  BEGIN
+    INSERT INTO storage.objects (bucket_id, name) VALUES ('comunidade', 'grupos/b0000000-0000-0000-0000-000000000001/intruso.jpg');
+    RAISE EXCEPTION 'FALHOU: não membro enviou foto ao grupo';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'ok   15. quem não é membro não envia fotos ao grupo';
+  END $$;
+  DO $$
+  BEGIN
+    INSERT INTO storage.objects (bucket_id, name) VALUES ('comunidade', 'grupos/nao-e-uuid/x.jpg');
+    RAISE EXCEPTION 'FALHOU: pasta inválida aceita';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'ok   15. pasta que não é de grupo é recusada (sem erro de conversão)';
+  END $$;
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  DELETE FROM storage.objects WHERE bucket_id = 'comunidade';
+COMMIT;
+SELECT assert((SELECT count(*) FROM storage.objects WHERE bucket_id = 'comunidade') = 0, '15. o dono do grupo apaga fotos do grupo');
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  DELETE FROM storage.objects WHERE bucket_id = 'perfis' AND name LIKE 'usuarios/%';
+COMMIT;
+SELECT assert((SELECT count(*) FROM storage.objects WHERE bucket_id = 'perfis' AND name LIKE 'usuarios/%') = 1,
+              '15. ninguém apaga a foto de perfil de outra pessoa');
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  DELETE FROM storage.objects WHERE bucket_id = 'perfis' AND name LIKE 'grupos/%';
+COMMIT;
+SELECT assert((SELECT count(*) FROM storage.objects WHERE bucket_id = 'perfis' AND name LIKE 'grupos/%') = 0,
+              '15. o dono troca (apaga) a imagem do grupo');
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  DELETE FROM storage.objects WHERE bucket_id = 'perfis' AND name LIKE 'usuarios/%';
+COMMIT;
+SELECT assert((SELECT count(*) FROM storage.objects WHERE bucket_id = 'perfis' AND name LIKE 'usuarios/%') = 0,
+              '15. cada um apaga a própria foto de perfil');
+
+-- --- 16) Foto de perfil só da própria pasta ---------------------------------
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  UPDATE profiles SET avatar_path = 'usuarios/66666666-6666-6666-6666-666666666666/eu.jpg' WHERE id = :'beto';
+  UPDATE profiles SET avatar_path = 'usuarios/55555555-5555-5555-5555-555555555555/ana.jpg' WHERE id = :'beto';
+COMMIT;
+SELECT assert(
+  (SELECT avatar_path FROM profiles WHERE id = :'beto') = 'usuarios/66666666-6666-6666-6666-666666666666/eu.jpg',
+  '16. foto de perfil só aponta para a própria pasta');
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  SELECT assert(
+    (SELECT avatar_path FROM community_group_members('b0000000-0000-0000-0000-000000000001') WHERE user_id = '66666666-6666-6666-6666-666666666666')
+      = 'usuarios/66666666-6666-6666-6666-666666666666/eu.jpg',
+    '16. a foto de perfil aparece para os colegas de grupo');
 COMMIT;
 
 \echo ''

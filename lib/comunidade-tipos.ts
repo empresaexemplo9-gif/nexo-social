@@ -1,17 +1,21 @@
 // Tipos e utilidades da Comunidade usados no servidor E no navegador (sem
 // 'server-only'): grupos, membros, mural e a sala sincronizada.
 
-export type TipoPost = 'recado' | 'livro' | 'musica' | 'clipe' | 'filme' | 'link';
+export type TipoPost = 'recado' | 'foto' | 'livro' | 'musica' | 'clipe' | 'filme' | 'link';
+
+/** Fechado: só o dono convida. Aberto: qualquer membro convida. */
+export type Privacidade = 'aberto' | 'fechado';
 
 export const TIPOS_POST: {
   id: TipoPost;
   rotulo: string;
-  icone: 'chat' | 'book' | 'music' | 'video' | 'film' | 'link';
+  icone: 'chat' | 'image' | 'book' | 'music' | 'video' | 'film' | 'link';
   titulo?: string;
   subtitulo?: string;
   url?: string;
 }[] = [
   { id: 'recado', rotulo: 'Recado', icone: 'chat' },
+  { id: 'foto', rotulo: 'Fotos', icone: 'image' },
   { id: 'livro', rotulo: 'Livro', icone: 'book', titulo: 'Título do livro', subtitulo: 'Autor(a)', url: 'Link (opcional)' },
   { id: 'musica', rotulo: 'Música', icone: 'music', titulo: 'Nome da música', subtitulo: 'Artista', url: 'Link do YouTube (opcional)' },
   { id: 'clipe', rotulo: 'Clipe / vídeo', icone: 'video', titulo: 'Nome do clipe ou vídeo', subtitulo: 'Artista ou canal', url: 'Link do YouTube (opcional)' },
@@ -25,6 +29,9 @@ export interface GrupoResumo {
   id: string;
   name: string;
   description: string | null;
+  privacy: Privacidade;
+  /** Caminho no bucket público "perfis" (ver urlPublica). */
+  imagePath: string | null;
   ownerId: string;
   ownerName: string;
   myRole: 'dono' | 'membro';
@@ -41,6 +48,7 @@ export interface GrupoResumo {
 export interface Membro {
   userId: string;
   name: string;
+  avatarPath: string | null;
   role: 'dono' | 'membro';
   status: 'ativo' | 'convidado';
   invitedByName: string | null;
@@ -58,7 +66,37 @@ export interface Post {
   createdAt: string;
   authorId: string;
   authorName: string;
+  authorAvatar: string | null;
   podeApagar: boolean;
+  /** Só nas publicações do tipo 'foto'. */
+  fotos: Foto[];
+}
+
+export interface Foto {
+  id: string;
+  postId: string;
+  albumId: string | null;
+  /** Links assinados (o bucket é privado) — valem algumas horas. */
+  url: string | null;
+  thumbUrl: string | null;
+  width: number | null;
+  height: number | null;
+  uploaderId: string;
+  uploaderName: string;
+  createdAt: string;
+  podeApagar: boolean;
+}
+
+export interface Album {
+  id: string;
+  title: string;
+  description: string | null;
+  createdBy: string;
+  createdByName: string;
+  photoCount: number;
+  coverUrl: string | null;
+  createdAt: string;
+  podeEditar: boolean;
 }
 
 /** A sala: o que toca para o grupo inteiro, e em que segundo. */

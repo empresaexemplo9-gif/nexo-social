@@ -25,6 +25,10 @@ export async function GET() {
     .eq('id', user.id)
     .maybeSingle();
 
+  // Consulta à parte: a coluna só existe depois da migração da Comunidade, e
+  // sem ela o resto de /api/me precisa continuar respondendo.
+  const { data: foto } = await sb.from('profiles').select('avatar_path').eq('id', user.id).maybeSingle();
+
   let tenant: { id: string; name: string; slug: string; account_type: string } | null = null;
   if (profile?.tenant_id) {
     const { data } = await sb
@@ -37,7 +41,7 @@ export async function GET() {
 
   return NextResponse.json({
     user: { id: user.id, email: user.email },
-    profile: profile ?? null,
+    profile: profile ? { ...profile, avatar_path: foto?.avatar_path ?? null } : null,
     tenant,
     // Falso aqui significa conta sem tenant: o app chama ensure_my_profile.
     provisionado: Boolean(profile?.tenant_id),

@@ -2,18 +2,21 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Icon from '../icons';
+import Avatar from '../Avatar';
 import { supabase } from '@/lib/supabase';
 import { formatEventDateLong } from '@/lib/datetime';
-import { TIPOS_POST, youtubeIdDe, type Post, type TipoPost } from '@/lib/comunidade-tipos';
+import { TIPOS_POST, youtubeIdDe, type Album, type Foto, type Post, type TipoPost } from '@/lib/comunidade-tipos';
 import { tocarParaOGrupo } from './SalaSincronizada';
+import EnviarFotos from './EnviarFotos';
+import { GradeDoPost, Lightbox } from './Galeria';
 
 const campo =
   'w-full rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-600 focus:outline-none';
 
 const VAZIO = { title: '', subtitle: '', url: '', body: '' };
 
-/** O que o grupo compartilha: livros, músicas, clipes, filmes, links e recados. */
-export default function Mural({ groupId }: { groupId: string }) {
+/** O que o grupo compartilha: fotos, livros, músicas, clipes, filmes, links e recados. */
+export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMudarFotos?: () => void }) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [fim, setFim] = useState(true);
   const [carregando, setCarregando] = useState(true);
@@ -22,6 +25,8 @@ export default function Mural({ groupId }: { groupId: string }) {
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
   const [tocando, setTocando] = useState<string | null>(null);
+  const [albuns, setAlbuns] = useState<Album[]>([]);
+  const [aberta, setAberta] = useState<{ fotos: Foto[]; i: number } | null>(null);
 
   const carregar = useCallback(
     async (antes?: string) => {
@@ -55,6 +60,15 @@ export default function Mural({ groupId }: { groupId: string }) {
     };
   }, [groupId, carregar]);
 
+  // Álbuns para escolher onde as fotos entram (lidos ao abrir "Fotos").
+  useEffect(() => {
+    if (tipo !== 'foto') return;
+    fetch(`/api/comunidade/grupos/${groupId}/albuns`)
+      .then((r) => (r.ok ? r.json() : { albuns: [] }))
+      .then((j) => setAlbuns(j.albuns || []))
+      .catch(() => undefined);
+  }, [tipo, groupId]);
+
   const def = TIPOS_POST.find((t) => t.id === tipo)!;
 
   const publicar = async (e: React.FormEvent) => {
@@ -79,11 +93,25 @@ export default function Mural({ groupId }: { groupId: string }) {
   };
 
   const apagar = async (p: Post) => {
-    if (!window.confirm('Apagar esta publicação do mural?')) return;
+    const aviso = p.fotos.length
+      ? `Apagar esta publicação? ${p.fotos.length === 1 ? 'A foto dela também será apagada' : `As ${p.fotos.length} fotos dela também serão apagadas`} (inclusive dos álbuns).`
+      : 'Apagar esta publicação do mural?';
+    if (!window.confirm(aviso)) return;
     const res = await fetch(`/api/comunidade/grupos/${groupId}/posts?postId=${p.id}`, { method: 'DELETE' });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) return setErro(json.error || 'Falha ao apagar.');
     setPosts((prev) => prev.filter((x) => x.id !== p.id));
+    if (p.fotos.length) aoMudarFotos?.();
+  };
+
+  const apagarFoto = async (f: Foto) => {
+    const res = await fetch(`/api/comunidade/grupos/${groupId}/fotos?fotoId=${f.id}`, { method: 'DELETE' });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return setErro(json.error || 'Falha ao apagar a foto.');
+    const tirar = (lista: Foto[]) => lista.filter((x) => x.id !== f.id);
+    setPosts((prev) => prev.map((p) => ({ ...p, fotos: tirar(p.fotos) })).filter((p) => p.kind !== 'foto' || p.fotos.length || p.body));
+    setAberta((a) => (a ? { ...a, fotos: tirar(a.fotos) } : a));
+    aoMudarFotos?.();
   };
 
   /** Toca a música/clipe na sala do grupo; sem link, procura no YouTube pelo título. */
@@ -112,7 +140,7 @@ export default function Mural({ groupId }: { groupId: string }) {
 
   return (
     <section className="space-y-4" aria-label="Mural do grupo">
-      <form onSubmit={publicar} className="card-soft space-y-3 p-5">
+      <div className="card-soft space-y-3 p-5">
         <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
           <Icon name="compartilhar" size={16} className="text-emerald-400" /> Compartilhar com o grupo
         </h2>
@@ -133,6 +161,17 @@ export default function Mural({ groupId }: { groupId: string }) {
           ))}
         </div>
 
+        {tipo === 'foto' ? (
+          <EnviarFotos
+            groupId={groupId}
+            albuns={albuns}
+            onEnviado={() => {
+              carregar();
+              aoMudarFotos?.();
+            }}
+          />
+        ) : (
+        <form onSubmit={publicar} className="space-y-3">
         {def.titulo && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
@@ -190,7 +229,9 @@ export default function Mural({ groupId }: { groupId: string }) {
         >
           <Icon name="send" size={15} /> {enviando ? 'Publicando…' : 'Publicar'}
         </button>
-      </form>
+        </form>
+        )}
+      </div>
 
       {erro && <p className="rounded-2xl border border-clay-800/60 bg-clay-950/25 p-3 text-xs text-clay-200">{erro}</p>}
 
@@ -208,8 +249,11 @@ export default function Mural({ groupId }: { groupId: string }) {
             return (
               <li key={p.id} className="card-soft p-5">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-300">
-                    <Icon name={t.icone} size={18} />
+                  <span className="relative shrink-0">
+                    <Avatar nome={p.authorName} path={p.authorAvatar} tamanho={40} />
+                    <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-zinc-900 bg-emerald-500 text-zinc-950">
+                      <Icon name={t.icone} size={10} />
+                    </span>
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] text-zinc-500">
@@ -219,6 +263,7 @@ export default function Mural({ groupId }: { groupId: string }) {
                     {p.title && <h3 className="mt-0.5 text-base font-semibold text-zinc-50">{p.title}</h3>}
                     {p.subtitle && <p className="text-xs text-zinc-400">{p.subtitle}</p>}
                     {p.body && <p className="mt-1.5 whitespace-pre-wrap text-sm text-zinc-200">{p.body}</p>}
+                    {p.fotos.length > 0 && <GradeDoPost fotos={p.fotos} onAbrir={(i) => setAberta({ fotos: p.fotos, i })} />}
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {tocavel && (
                         <button
@@ -257,6 +302,9 @@ export default function Mural({ groupId }: { groupId: string }) {
             );
           })}
         </ul>
+      )}
+      {aberta && (
+        <Lightbox fotos={aberta.fotos} inicio={aberta.i} onFechar={() => setAberta(null)} onApagar={apagarFoto} />
       )}
       {!fim && (
         <button

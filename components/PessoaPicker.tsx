@@ -2,11 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Icon from './icons';
+import Avatar from './Avatar';
 
 export interface Pessoa {
   id: string;
   name: string;
   emailHint: string | null;
+  avatarPath?: string | null;
   proximo: boolean;
 }
 
@@ -103,8 +105,9 @@ export default function PessoaPicker({
         {value.map((p) => (
           <span
             key={p.id}
-            className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 py-1 pl-2.5 pr-1 text-xs font-medium text-emerald-300"
+            className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 py-0.5 pl-0.5 pr-1 text-xs font-medium text-emerald-300"
           >
+            <Avatar nome={p.name} path={p.avatarPath} tamanho={22} />
             {p.name}
             <button
               type="button"
@@ -168,9 +171,7 @@ export default function PessoaPicker({
                   onClick={() => escolher(p)}
                   className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition hover:bg-zinc-800/60"
                 >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-xs font-bold uppercase text-emerald-300">
-                    {p.name.slice(0, 1)}
-                  </span>
+                  <Avatar nome={p.name} path={p.avatarPath} tamanho={32} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-zinc-100">{p.name}</span>
                     {p.emailHint && <span className="block truncate text-[11px] text-zinc-500">{p.emailHint}</span>}

@@ -5,7 +5,9 @@ import { redirect } from 'next/navigation';
 import { Selo } from '@/components/Logo';
 import Icon from '@/components/icons';
 import EntrarNoGrupo from '@/components/comunidade/EntrarNoGrupo';
+import Avatar from '@/components/Avatar';
 import { createServerSupabase } from '@/lib/supabase-server';
+import { urlPublica } from '@/lib/imagens-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +15,7 @@ interface Previa {
   group_id: string;
   name: string;
   description: string | null;
+  image_path: string | null;
   owner_name: string;
   member_count: number;
   already_member: boolean;
@@ -32,7 +35,14 @@ export async function generateMetadata({ params }: { params: { token: string } }
   const description = grupo
     ? `${grupo.owner_name} e mais ${Math.max(0, grupo.member_count - 1)} pessoa(s) compartilham livros, músicas e filmes e ouvem e assistem juntos.`
     : 'Grupos para compartilhar livros, músicas e filmes na nexo.social.';
-  return { title, description, openGraph: { title, description }, robots: { index: false } };
+  // A imagem do grupo vira a prévia do link no WhatsApp e no Telegram.
+  const imagem = urlPublica(grupo?.image_path);
+  return {
+    title,
+    description,
+    openGraph: { title, description, ...(imagem ? { images: [{ url: imagem, width: 800, height: 800 }] } : {}) },
+    robots: { index: false },
+  };
 }
 
 /**
@@ -70,6 +80,7 @@ export default async function ConvitePage({ params }: { params: { token: string 
         ) : (
           <>
             <div className="space-y-2">
+              {grupo.image_path && <Avatar nome={grupo.name} path={grupo.image_path} tamanho={80} quadrado className="mx-auto" />}
               <p className="text-sm text-zinc-400">
                 <span className="font-medium text-zinc-200">{grupo.owner_name}</span> convidou você para o grupo
               </p>
