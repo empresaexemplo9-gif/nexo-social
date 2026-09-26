@@ -114,18 +114,11 @@ export default function BarraDoPlayer() {
           </button>
         </div>
 
-        {/* Atribuição e caminho de volta ao Spotify, como pedem as regras da
-            plataforma deles. */}
-        {faixa.id && (
-          <a
-            href={`https://open.spotify.com/track/${faixa.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden items-center gap-1.5 rounded-lg border border-zinc-800 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 transition hover:border-emerald-400/40 hover:text-emerald-300 md:inline-flex"
-          >
-            <Icon name="headphones" size={13} /> Spotify
-          </a>
-        )}
+        {/* Crédito ao Spotify, de onde vem a música — sem levar para fora:
+            tudo toca aqui dentro. */}
+        <span className="hidden items-center gap-1.5 rounded-lg border border-zinc-800 px-2.5 py-1.5 text-[11px] font-medium text-zinc-500 md:inline-flex">
+          <Icon name="headphones" size={13} /> via Spotify
+        </span>
         <button
           type="button"
           onClick={fechar}

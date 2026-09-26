@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Icon from '../icons';
 import PessoaPicker, { type Pessoa } from '../PessoaPicker';
 import { caminhoDoConvite } from '@/lib/comunidade-tipos';
@@ -104,7 +105,8 @@ export default function ConvidarAmigos({
     },
   ];
 
-  return (
+  // Direto no <body>: fora de qualquer espaçamento ou empilhamento da página.
+  return createPortal(
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label="Convidar amigos">
       <button type="button" className="absolute inset-0 bg-zinc-950/70 backdrop-blur-sm" onClick={onFechar} aria-label="Fechar" />
       <div
@@ -187,6 +189,7 @@ export default function ConvidarAmigos({
           )}
         </section>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

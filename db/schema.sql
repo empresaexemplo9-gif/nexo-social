@@ -1668,6 +1668,105 @@ CREATE POLICY nexo_comunidade_delete ON storage.objects FOR DELETE TO authentica
     AND (owner_id = auth.uid()::text OR is_group_owner_folder((storage.foldername(name))[2]))
   );
 
+-- --- Chamadas de áudio e vídeo (WebRTC) -------------------------------------
+-- A voz e a imagem vão direto de aparelho para aparelho (WebRTC, cifradas de
+-- ponta a ponta); o servidor não vê nem grava nada. O Supabase Realtime só
+-- apresenta um aparelho ao outro (a "sinalização") por canais PRIVADOS, e é
+-- aqui que se decide quem entra em cada canal:
+--   grupo:<id>:sala                  presença na sala de música do grupo
+--   grupo:<id>:chamada               chamada do grupo — qualquer membro
+--   grupo:<id>:dupla:<a>:<b>         chamada a dois (a < b) — só essas duas
+--                                    pessoas, e as duas precisam ser membros
+CREATE OR REPLACE FUNCTION can_use_group_topic(p_topic TEXT)
+RETURNS BOOLEAN LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v TEXT[] := string_to_array(COALESCE(p_topic, ''), ':');
+  v_eu TEXT := auth.uid()::text;
+BEGIN
+  IF v_eu IS NULL OR COALESCE(array_length(v, 1), 0) < 3 OR v[1] <> 'grupo' OR NOT is_group_member_folder(v[2]) THEN
+    RETURN FALSE;
+  END IF;
+  IF array_length(v, 1) = 3 AND v[3] IN ('sala', 'chamada') THEN
+    RETURN TRUE;
+  END IF;
+  IF array_length(v, 1) = 5 AND v[3] = 'dupla' AND v[4] < v[5] AND v_eu IN (v[4], v[5]) THEN
+    RETURN EXISTS (
+      SELECT 1 FROM community_members
+      WHERE group_id::text = v[2]
+        AND user_id::text = CASE WHEN v[4] = v_eu THEN v[5] ELSE v[4] END
+        AND status = 'ativo'
+    );
+  END IF;
+  RETURN FALSE;
+END;
+$$;
+
+DO $$
+BEGIN
+  IF to_regclass('realtime.messages') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS nexo_grupo_topicos_select ON realtime.messages';
+    EXECUTE 'CREATE POLICY nexo_grupo_topicos_select ON realtime.messages FOR SELECT TO authenticated
+               USING (public.can_use_group_topic((SELECT realtime.topic())))';
+    EXECUTE 'DROP POLICY IF EXISTS nexo_grupo_topicos_insert ON realtime.messages';
+    EXECUTE 'CREATE POLICY nexo_grupo_topicos_insert ON realtime.messages FOR INSERT TO authenticated
+               WITH CHECK (public.can_use_group_topic((SELECT realtime.topic())))';
+  END IF;
+END $$;
+
+-- Quem liga avisa: no grupo, todos os membros; a dois, só a outra pessoa. A
+-- notificação chega na hora (Realtime) e o app toca como telefone. O mesmo
+-- toque não se repete antes de 2 minutos — reabrir a chamada não vira spam.
+CREATE OR REPLACE FUNCTION start_group_call(p_group UUID, p_target UUID DEFAULT NULL, p_video BOOLEAN DEFAULT TRUE)
+RETURNS INT LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_eu UUID := auth.uid();
+  v_nome TEXT;
+  v_grupo TEXT;
+  v_tipo TEXT := CASE WHEN p_video THEN 'de vídeo' ELSE 'de voz' END;
+  v_n INT;
+BEGIN
+  IF v_eu IS NULL OR NOT is_group_member(p_group) THEN
+    RAISE EXCEPTION 'Só quem participa do grupo pode fazer chamadas nele.';
+  END IF;
+  IF p_target IS NOT NULL AND (
+    p_target = v_eu
+    OR NOT EXISTS (SELECT 1 FROM community_members WHERE group_id = p_group AND user_id = p_target AND status = 'ativo')
+  ) THEN
+    RAISE EXCEPTION 'Essa pessoa não está no grupo.';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM notifications n
+    WHERE n.type = 'chamada' AND n.actor_id = v_eu AND n.group_id = p_group
+      AND n.created_at > NOW() - INTERVAL '2 minutes'
+      AND CASE WHEN p_target IS NULL THEN n.link LIKE '%chamada=grupo%'
+               ELSE n.user_id = p_target AND n.link NOT LIKE '%chamada=grupo%' END
+  ) THEN
+    RETURN 0;
+  END IF;
+
+  v_nome := display_name(v_eu);
+  SELECT name INTO v_grupo FROM community_groups WHERE id = p_group;
+
+  INSERT INTO notifications (user_id, type, title, body, link, group_id, actor_id)
+  SELECT m.user_id,
+         'chamada',
+         CASE WHEN p_target IS NULL THEN 'Chamada ' || v_tipo || ' no grupo' ELSE 'Chamada ' || v_tipo END,
+         CASE WHEN p_target IS NULL
+              THEN v_nome || ' começou uma chamada ' || v_tipo || ' em "' || v_grupo || '". Toque para entrar.'
+              ELSE v_nome || ' está te ligando (grupo "' || v_grupo || '").' END,
+         '/comunidade/' || p_group::text || '?chamada=' || CASE WHEN p_target IS NULL THEN 'grupo' ELSE v_eu::text END
+           || CASE WHEN p_video THEN '' ELSE '&voz=1' END,
+         p_group,
+         v_eu
+  FROM community_members m
+  WHERE m.group_id = p_group AND m.status = 'ativo' AND m.user_id <> v_eu
+    AND (p_target IS NULL OR m.user_id = p_target);
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  RETURN v_n;
+END;
+$$;
+
 -- --- Permissão de execução (ver a nota em "Permissão de execução" acima) ----
 REVOKE ALL ON FUNCTION display_name(UUID)               FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION mask_email(TEXT)                 FROM PUBLIC, anon, authenticated;
@@ -1690,6 +1789,8 @@ GRANT EXECUTE ON FUNCTION respond_group_invite(UUID, BOOLEAN) TO authenticated;
 GRANT EXECUTE ON FUNCTION join_group_by_token(TEXT)        TO authenticated;
 GRANT EXECUTE ON FUNCTION my_community_groups()            TO authenticated;
 GRANT EXECUTE ON FUNCTION community_group_members(UUID)    TO authenticated;
+REVOKE ALL ON FUNCTION start_group_call(UUID, UUID, BOOLEAN) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION start_group_call(UUID, UUID, BOOLEAN) TO authenticated;
 
 -- A prévia do convite abre para quem ainda não tem conta: é ela que mostra o
 -- grupo na página do link antes do cadastro.

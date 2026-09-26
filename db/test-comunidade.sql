@@ -48,7 +48,11 @@ END $$;
 --      apaga as fotos dela;
 --  15. Storage: foto de perfil só na própria pasta, imagem do grupo só pelo
 --      dono, fotos do grupo só entre membros;
---  16. ninguém aponta a foto de perfil para a pasta de outra pessoa.
+--  16. ninguém aponta a foto de perfil para a pasta de outra pessoa;
+--  17. canais privados das chamadas: a do grupo só para membros; a dupla só
+--      para as duas pessoas (e as duas precisam ser membros);
+--  18. quem liga avisa os membros (ou só a outra pessoa, a dois), sem repetir
+--      o toque em sequência.
 
 \set ON_ERROR_STOP on
 \pset pager off
@@ -532,6 +536,98 @@ BEGIN;
     (SELECT avatar_path FROM community_group_members('b0000000-0000-0000-0000-000000000001') WHERE user_id = '66666666-6666-6666-6666-666666666666')
       = 'usuarios/66666666-6666-6666-6666-666666666666/eu.jpg',
     '16. a foto de perfil aparece para os colegas de grupo');
+COMMIT;
+
+-- --- 17) Canais privados das chamadas ---------------------------------------
+\set dani '88888888-8888-8888-8888-888888888888'
+\set jwt_dani '{"sub":"88888888-8888-8888-8888-888888888888","email":"dani@exemplo.com","role":"authenticated"}'
+\set t_grupo 'grupo:b0000000-0000-0000-0000-000000000001:chamada'
+\set t_dupla 'grupo:b0000000-0000-0000-0000-000000000001:dupla:55555555-5555-5555-5555-555555555555:66666666-6666-6666-6666-666666666666'
+
+-- Dani ainda está só convidada.
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_dani';
+  SET LOCAL "realtime.topic" = :'t_grupo';
+  DO $$
+  BEGIN
+    INSERT INTO realtime.messages (topic, event) VALUES (realtime.topic(), 'sinal');
+    RAISE EXCEPTION 'FALHOU: convidada entrou no canal da chamada';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'ok   17. quem não é membro não entra no canal da chamada do grupo';
+  END $$;
+  SELECT assert(respond_group_invite('b0000000-0000-0000-0000-000000000001', TRUE) = 'ativo', '17. (Dani aceita o convite)');
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_dani';
+  SET LOCAL "realtime.topic" = :'t_grupo';
+  INSERT INTO realtime.messages (topic, event) VALUES (realtime.topic(), 'sinal');
+  SELECT assert((SELECT count(*) FROM realtime.messages) >= 1, '17. membro entra, envia e recebe no canal da chamada do grupo');
+  SET LOCAL "realtime.topic" = :'t_dupla';
+  SELECT assert((SELECT count(*) FROM realtime.messages) = 0, '17. terceira pessoa não escuta a chamada a dois');
+  DO $$
+  BEGIN
+    INSERT INTO realtime.messages (topic, event) VALUES (realtime.topic(), 'sinal');
+    RAISE EXCEPTION 'FALHOU: terceira pessoa entrou na chamada a dois';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'ok   17. terceira pessoa não entra na chamada a dois';
+  END $$;
+COMMIT;
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  SET LOCAL "realtime.topic" = :'t_dupla';
+  INSERT INTO realtime.messages (topic, event) VALUES (realtime.topic(), 'sinal');
+  SELECT assert(TRUE, '17. as duas pessoas da dupla entram');
+  SELECT assert(
+    NOT can_use_group_topic('grupo:b0000000-0000-0000-0000-000000000001:dupla:66666666-6666-6666-6666-666666666666:55555555-5555-5555-5555-555555555555'),
+    '17. dupla fora de ordem é recusada (um só canal por par)');
+  SELECT assert(
+    NOT can_use_group_topic('grupo:b0000000-0000-0000-0000-000000000001:dupla:55555555-5555-5555-5555-555555555555:77777777-7777-7777-7777-777777777777'),
+    '17. dupla com quem saiu do grupo é recusada');
+  SELECT assert(NOT can_use_group_topic('grupo:b0000000-0000-0000-0000-000000000001:qualquer'), '17. canal desconhecido é recusado');
+  SELECT assert(NOT can_use_group_topic('grupo:nao-e-grupo:chamada'), '17. grupo inválido é recusado');
+  SELECT assert(can_use_group_topic('grupo:b0000000-0000-0000-0000-000000000001:sala'), '17. membro entra na presença da sala');
+COMMIT;
+
+-- --- 18) Aviso de chamada ------------------------------------------------------
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_beto';
+  SELECT assert(start_group_call('b0000000-0000-0000-0000-000000000001') = 2, '18. chamada do grupo avisa os outros membros');
+  SELECT assert(start_group_call('b0000000-0000-0000-0000-000000000001') = 0, '18. reabrir logo em seguida não toca de novo');
+COMMIT;
+SELECT assert(
+  (SELECT count(*) FROM notifications WHERE type = 'chamada' AND user_id = :'dani'
+     AND link = '/comunidade/b0000000-0000-0000-0000-000000000001?chamada=grupo'
+     AND body LIKE 'Beto Lima começou uma chamada de vídeo em "Clube do livro"%') = 1,
+  '18. o aviso leva direto para a chamada do grupo');
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_ana';
+  SELECT assert(start_group_call('b0000000-0000-0000-0000-000000000001', :'beto', FALSE) = 1, '18. chamada a dois avisa só a outra pessoa');
+COMMIT;
+SELECT assert(
+  (SELECT count(*) FROM notifications WHERE type = 'chamada' AND user_id = :'beto' AND actor_id = :'ana'
+     AND link = '/comunidade/b0000000-0000-0000-0000-000000000001?chamada=55555555-5555-5555-5555-555555555555&voz=1'
+     AND title = 'Chamada de voz') = 1,
+  '18. o aviso a dois diz quem liga e se é de voz');
+
+BEGIN;
+  SET LOCAL ROLE authenticated;
+  SET LOCAL "request.jwt.claims" = :'jwt_caio';
+  DO $$
+  BEGIN
+    PERFORM start_group_call('b0000000-0000-0000-0000-000000000001');
+    RAISE EXCEPTION 'FALHOU: ex-membro ligou para o grupo';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE 'FALHOU%' THEN RAISE; END IF;
+    RAISE NOTICE 'ok   18. quem não é membro não liga para o grupo';
+  END $$;
 COMMIT;
 
 \echo ''

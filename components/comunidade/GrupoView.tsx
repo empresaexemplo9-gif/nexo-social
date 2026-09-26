@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '../icons';
 import Avatar from '../Avatar';
 import { responderConvite } from '@/lib/convites';
@@ -13,6 +13,8 @@ import SalaSincronizada from './SalaSincronizada';
 import Mural from './Mural';
 import FotosEAlbuns from './FotosEAlbuns';
 import { SeloDoTipo } from './EscolherTipo';
+import Chamada, { usePresencaDaChamada } from './Chamada';
+import type { ModoChamada } from '@/lib/chamada';
 
 interface Detalhe {
   meuId: string;
@@ -62,6 +64,14 @@ export default function GrupoView({ id }: { id: string }) {
   // Fotos mudaram numa aba: a outra recarrega quando for aberta.
   const [versaoFotos, setVersaoFotos] = useState(0);
   const seletorDeImagem = useRef<HTMLInputElement>(null);
+  // Chamada aberta nesta tela, e chamada chegando (veio do aviso ou do sino).
+  const [chamada, setChamada] = useState<{ modo: ModoChamada; comVideo: boolean } | null>(null);
+  const [chegando, setChegando] = useState<{ modo: ModoChamada; comVideo: boolean } | null>(null);
+  const naChamadaDoGrupo = usePresencaDaChamada(id, estado === 'ok' && !chamada);
+  // O aviso de chamada pode chegar com a pessoa já nesta página: a URL muda
+  // sem recriar a tela, então acompanhamos a URL.
+  const busca = useSearchParams();
+  const pedidoDeChamada = busca?.get('chamada') ?? null;
 
   const carregar = useCallback(async () => {
     try {
@@ -95,6 +105,27 @@ export default function GrupoView({ id }: { id: string }) {
       window.history.replaceState(null, '', window.location.pathname);
     }
   }, [estado]);
+
+  // Veio de um aviso de chamada: ?chamada=grupo ou ?chamada=<quem ligou>.
+  // Com &atender=1 (botão Atender do toque) já entra; senão, pergunta.
+  useEffect(() => {
+    if (estado !== 'ok' || !d) return;
+    const params = new URLSearchParams(window.location.search);
+    const alvo = params.get('chamada');
+    if (!alvo) return;
+    const comVideo = params.get('voz') !== '1';
+    const modo: ModoChamada | null =
+      alvo === 'grupo' ? { tipo: 'grupo' } : d.membros.some((m) => m.userId === alvo && m.status === 'ativo') ? { tipo: 'dupla', outroId: alvo } : null;
+    params.delete('chamada');
+    params.delete('voz');
+    const atender = params.get('atender') === '1';
+    params.delete('atender');
+    window.history.replaceState(null, '', `${window.location.pathname}${params.toString() ? `?${params}` : ''}`);
+    if (!modo) return;
+    if (atender) setChamada({ modo, comVideo });
+    else setChegando({ modo, comVideo });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [estado, d, pedidoDeChamada]);
 
   const acao = async (url: string, method: string, body?: unknown) => {
     setOcupado(true);
@@ -210,6 +241,20 @@ export default function GrupoView({ id }: { id: string }) {
     if (!window.confirm('Gerar um novo link de convite? O link antigo para de funcionar na hora.')) return;
     const json = await acao(`/api/comunidade/grupos/${id}`, 'PATCH', { novoLink: true });
     if (json) setD({ ...d, grupo: { ...grupo, inviteToken: json.inviteToken } });
+  };
+
+  /** Liga: avisa quem precisa (o banco não repete o toque) e abre a chamada. */
+  const ligar = (modo: ModoChamada, comVideo: boolean) => {
+    const ninguemNaChamada = modo.tipo === 'grupo' && naChamadaDoGrupo.length === 0;
+    if (modo.tipo === 'dupla' || ninguemNaChamada) {
+      void fetch(`/api/comunidade/grupos/${id}/chamada`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ para: modo.tipo === 'dupla' ? modo.outroId : null, video: comVideo }),
+      }).catch(() => undefined);
+    }
+    setChegando(null);
+    setChamada({ modo, comVideo });
   };
 
   const trocarTipo = async () => {
@@ -329,6 +374,21 @@ export default function GrupoView({ id }: { id: string }) {
           )}
         </div>
         </div>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <button
+            onClick={() => ligar({ tipo: 'grupo' }, true)}
+            className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
+            title="Chamada de vídeo com o grupo"
+          >
+            <Icon name="video" size={16} /> Vídeo
+          </button>
+          <button
+            onClick={() => ligar({ tipo: 'grupo' }, false)}
+            className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
+            title="Chamada de voz com o grupo"
+          >
+            <Icon name="phone" size={16} /> Voz
+          </button>
         {podeConvidar ? (
           <button
             onClick={() => setConvidar(true)}
@@ -341,7 +401,63 @@ export default function GrupoView({ id }: { id: string }) {
             <Icon name="lock" size={14} className="mt-0.5 shrink-0" /> Grupo fechado: só {nomeDoDono} convida pessoas.
           </p>
         )}
+        </div>
       </div>
+
+      {/* Chamada chegando (veio do sino ou do link do aviso) */}
+      {chegando && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-emerald-500/50 bg-emerald-500/10 p-4">
+          <p className="flex items-center gap-2 text-sm text-zinc-100">
+            <Icon name={chegando.comVideo ? 'video' : 'phone'} size={18} className="text-emerald-400" />
+            {chegando.modo.tipo === 'dupla'
+              ? `${nomes[chegando.modo.outroId] ?? 'Alguém'} está te ligando.`
+              : 'Tem uma chamada acontecendo no grupo.'}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => ligar(chegando.modo, true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+            >
+              <Icon name="video" size={16} /> Atender com vídeo
+            </button>
+            <button
+              onClick={() => ligar(chegando.modo, false)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100"
+            >
+              <Icon name="phone" size={16} /> Só voz
+            </button>
+            <button onClick={() => setChegando(null)} className="rounded-xl px-3 py-2 text-sm text-zinc-400 hover:text-clay-300">
+              Agora não
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Chamada do grupo em andamento, para quem ainda não entrou */}
+      {!chegando && naChamadaDoGrupo.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-emerald-500/40 bg-emerald-500/5 p-4">
+          <p className="flex min-w-0 items-center gap-2 text-sm text-zinc-100">
+            <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-emerald-400" />
+            <span className="truncate">
+              Chamada em andamento com {naChamadaDoGrupo.map((p) => (p.userId === meuId ? 'você (em outro aparelho)' : p.nome)).join(', ')}
+            </span>
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => ligar({ tipo: 'grupo' }, true)}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+            >
+              <Icon name="video" size={16} /> Entrar
+            </button>
+            <button
+              onClick={() => ligar({ tipo: 'grupo' }, false)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100"
+            >
+              <Icon name="phone" size={16} /> Só voz
+            </button>
+          </div>
+        </div>
+      )}
 
       {erro && <p className="rounded-2xl border border-clay-800/60 bg-clay-950/25 p-3 text-xs text-clay-200">{erro}</p>}
 
@@ -400,6 +516,26 @@ export default function GrupoView({ id }: { id: string }) {
                       {m.role === 'dono' ? 'criou o grupo' : m.status === 'convidado' ? `convite pendente${m.invitedByName ? ` · de ${m.invitedByName}` : ''}` : 'membro'}
                     </span>
                   </span>
+                  {m.userId !== meuId && m.status === 'ativo' && (
+                    <span className="flex shrink-0 items-center">
+                      <button
+                        onClick={() => ligar({ tipo: 'dupla', outroId: m.userId }, true)}
+                        className="rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
+                        aria-label={`Chamada de vídeo com ${m.name}`}
+                        title={`Chamada de vídeo com ${m.name}`}
+                      >
+                        <Icon name="video" size={15} />
+                      </button>
+                      <button
+                        onClick={() => ligar({ tipo: 'dupla', outroId: m.userId }, false)}
+                        className="rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
+                        aria-label={`Ligar para ${m.name}`}
+                        title={`Ligar para ${m.name} (voz)`}
+                      >
+                        <Icon name="phone" size={15} />
+                      </button>
+                    </span>
+                  )}
                   {dono && m.userId !== meuId && (
                     <button
                       onClick={() => remover(m)}
@@ -466,6 +602,21 @@ export default function GrupoView({ id }: { id: string }) {
           </section>
         </aside>
       </div>
+
+      {chamada && (
+        <Chamada
+          // Outra chamada (outro canal) é outra tela: recria em vez de reaproveitar.
+          key={chamada.modo.tipo === 'dupla' ? `dupla:${chamada.modo.outroId}` : 'grupo'}
+          groupId={id}
+          titulo={chamada.modo.tipo === 'dupla' ? `Chamada com ${nomes[chamada.modo.outroId] ?? 'alguém'}` : `Chamada · ${grupo.name}`}
+          meuId={meuId}
+          meuNome={meuNome}
+          modo={chamada.modo}
+          comVideo={chamada.comVideo}
+          pessoas={Object.fromEntries(membros.map((m) => [m.userId, { name: m.name, avatarPath: m.avatarPath }]))}
+          onSair={() => setChamada(null)}
+        />
+      )}
 
       {convidar && podeConvidar && grupo.inviteToken && (
         <ConvidarAmigos

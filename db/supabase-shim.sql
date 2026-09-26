@@ -84,3 +84,23 @@ $$;
 GRANT USAGE ON SCHEMA storage TO anon, authenticated, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
 GRANT SELECT ON storage.buckets TO anon, authenticated, service_role;
+
+-- Realtime mínimo: a tabela onde o Supabase confere a autorização dos canais
+-- privados e realtime.topic(), que ele preenche com o canal pedido.
+CREATE SCHEMA IF NOT EXISTS realtime;
+CREATE TABLE IF NOT EXISTS realtime.messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  topic TEXT NOT NULL,
+  extension TEXT NOT NULL DEFAULT 'broadcast',
+  payload JSONB,
+  event TEXT,
+  private BOOLEAN DEFAULT TRUE,
+  inserted_at TIMESTAMP DEFAULT NOW()
+);
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION realtime.topic() RETURNS TEXT
+LANGUAGE sql STABLE AS $$
+  SELECT NULLIF(current_setting('realtime.topic', TRUE), '')::text;
+$$;
+GRANT USAGE ON SCHEMA realtime TO anon, authenticated, service_role;
+GRANT SELECT, INSERT ON realtime.messages TO anon, authenticated, service_role;

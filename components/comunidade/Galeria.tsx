@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Icon from '../icons';
 import { formatEventDateLong } from '@/lib/datetime';
 import type { Album, Foto } from '@/lib/comunidade-tipos';
@@ -115,7 +116,8 @@ export function Lightbox({
   }, [fotos.length, onFechar]);
   if (!f) return null;
 
-  return (
+  // Direto no <body>: fora de qualquer espaçamento ou empilhamento da página.
+  return createPortal(
     <div className="fixed inset-0 z-[80] flex flex-col bg-[#0b0b0c] text-zinc-100" role="dialog" aria-modal="true" aria-label="Foto">
       <div className="flex items-center justify-between gap-3 px-4 py-3 text-[#f6f2ea]" style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
         <p className="min-w-0 truncate text-xs opacity-80">
@@ -218,6 +220,7 @@ export function Lightbox({
           </button>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -47,11 +47,14 @@ export function ticketLinks(event: EventItem): PlatformLink[] {
   ];
 }
 
-/** Música e vídeo relacionados ao evento. */
+/**
+ * Música e vídeo relacionados ao evento. O Spotify não entra aqui: ele toca
+ * dentro da plataforma (trilha do perfil, com "Entrar com Spotify").
+ */
 export function mediaLinks(event: EventItem): PlatformLink[] {
   const term = mediaQuery(event);
   return [
-    { kind: 'musica', icon: 'headphones', label: 'Spotify', url: `https://open.spotify.com/search/${q(term)}` },
+    { kind: 'musica', icon: 'headphones', label: 'Ouvir aqui (Spotify)', url: '/#trilha' },
     { kind: 'musica', icon: 'music', label: 'YouTube Music', url: `https://music.youtube.com/search?q=${q(term)}` },
     { kind: 'musica', icon: 'music', label: 'Deezer', url: `https://www.deezer.com/search/${q(term)}` },
     { kind: 'video', icon: 'video', label: 'YouTube', url: `https://www.youtube.com/results?search_query=${q(term)}` },
@@ -63,7 +66,7 @@ export function eventPlatformLinks(event: EventItem): PlatformLink[] {
   const links = [...ticketLinks(event)];
   // Música e vídeo fazem mais sentido para shows/festivais e cultura.
   if (event.topic === 'musica' || event.topic === 'cultura') links.push(...mediaLinks(event));
-  else links.push(mediaLinks(event)[3]); // ao menos o vídeo
+  else links.push(...mediaLinks(event).filter((l) => l.kind === 'video')); // ao menos o vídeo
   return links;
 }
 
@@ -76,7 +79,7 @@ export function topicPlatformLinks(topic: Topic, city?: string | null): Platform
     { kind: 'video', icon: 'video', label: `${base} no YouTube`, url: `https://www.youtube.com/results?search_query=${q(base)}` },
   ];
   if (topic.slug === 'musica') {
-    links.push({ kind: 'musica', icon: 'headphones', label: 'Playlists no Spotify', url: `https://open.spotify.com/search/${q(base)}` });
+    links.push({ kind: 'musica', icon: 'headphones', label: 'Sua trilha (Spotify aqui dentro)', url: '/#trilha' });
   }
   return links;
 }

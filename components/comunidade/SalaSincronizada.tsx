@@ -362,17 +362,24 @@ export default function SalaSincronizada({
   useEffect(() => {
     const sb = supabase;
     if (!sb) return;
-    const canal = sb.channel(`presenca:${groupId}`, { config: { presence: { key: meuId } } });
-    canal
-      .on('presence', { event: 'sync' }, () => {
-        const estado = canal.presenceState() as Record<string, { nome?: string }[]>;
+    // Canal privado: o banco só deixa entrar quem é membro (can_use_group_topic).
+    let canal: ReturnType<typeof sb.channel> | null = null;
+    let vivo = true;
+    (async () => {
+      await sb.realtime.setAuth().catch(() => undefined);
+      if (!vivo) return;
+      const c = sb.channel(`grupo:${groupId}:sala`, { config: { private: true, presence: { key: meuId } } });
+      canal = c;
+      c.on('presence', { event: 'sync' }, () => {
+        const estado = c.presenceState() as Record<string, { nome?: string }[]>;
         setPresentes(Object.entries(estado).map(([id, metas]) => ({ id, nome: metas[0]?.nome || 'Alguém' })));
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') canal.track({ nome: meuNome });
+      }).subscribe((status) => {
+        if (status === 'SUBSCRIBED') void c.track({ nome: meuNome });
       });
+    })();
     return () => {
-      sb.removeChannel(canal);
+      vivo = false;
+      if (canal) void sb.removeChannel(canal);
     };
   }, [groupId, meuId, meuNome]);
 
