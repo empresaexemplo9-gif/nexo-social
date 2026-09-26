@@ -23,6 +23,8 @@ export default function TopicGrid({ events }: Props) {
   const { prefs } = usePreferences();
   const { coords } = useGeolocation();
   const [open, setOpen] = useState<CategorySlug | null>(null);
+  // Os temas seguidos ficam à vista; os outros, a um toque.
+  const [verOutros, setVerOutros] = useState(false);
 
   const origin = coords ?? cityCoords(prefs.city);
 
@@ -50,9 +52,13 @@ export default function TopicGrid({ events }: Props) {
     [prefs.interests],
   );
 
+  const seguidos = ordered.filter((t) => prefs.interests.includes(t.slug));
+  const visiveis = seguidos.length === 0 || verOutros ? ordered : seguidos;
+
   return (
+    <div className="space-y-4">
     <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-      {ordered.map((topic) => {
+      {visiveis.map((topic) => {
         const recs = byTopic.get(topic.slug) ?? [];
         const isOpen = open === topic.slug;
         const following = prefs.interests.includes(topic.slug);
@@ -127,17 +133,36 @@ export default function TopicGrid({ events }: Props) {
                     ))}
                   </ul>
                 )}
-                <Link
-                  href={`/tema/${topic.slug}`}
-                  className={`mt-3 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${topic.accent.bg} ${topic.accent.text} hover:opacity-80`}
-                >
-                  Ver tudo de {topic.label} <Icon name="arrowRight" size={14} />
-                </Link>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href={`/tema/${topic.slug}`}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${topic.accent.bg} ${topic.accent.text} hover:opacity-80`}
+                  >
+                    Ver tudo de {topic.label} <Icon name="arrowRight" size={14} />
+                  </Link>
+                  <Link
+                    href={`/shorts?filtro=tema:${topic.slug}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-clay-500 hover:text-clay-300"
+                  >
+                    <Icon name="shorts" size={14} /> Shorts
+                  </Link>
+                </div>
               </div>
             )}
           </div>
         );
       })}
+    </div>
+    {seguidos.length > 0 && seguidos.length < ordered.length && (
+      <button
+        type="button"
+        onClick={() => setVerOutros((v) => !v)}
+        className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-zinc-700 px-4 py-2 text-xs font-medium text-zinc-400 transition hover:border-clay-500 hover:text-clay-300"
+      >
+        <Icon name={verOutros ? 'close' : 'plus'} size={13} />
+        {verOutros ? 'Só os que eu sigo' : `Outros temas (${ordered.length - seguidos.length})`}
+      </button>
+    )}
     </div>
   );
 }

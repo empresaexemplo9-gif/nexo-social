@@ -37,6 +37,18 @@ export const WIDGETS_FIXOS: Record<string, TipoDeWidget> = {
     icone: 'film',
     tamanhoPadrao: 'metade',
   },
+  shorts: {
+    titulo: 'Shorts para você',
+    descricao: 'Vídeos curtos dos seus temas e hobbies.',
+    icone: 'shorts',
+    tamanhoPadrao: 'inteira',
+  },
+  gratis: {
+    titulo: 'Assistir, ler e ouvir de graça',
+    descricao: 'Filmes, livros e audiolivros liberados, tocando aqui.',
+    icone: 'play',
+    tamanhoPadrao: 'inteira',
+  },
   nichos: {
     titulo: 'Seus nichos',
     descricao: 'Os temas com as indicações de cada um.',

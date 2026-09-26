@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon, { type IconName } from './icons';
-import { usePreferences, type Frequency, type MusicMix } from '@/lib/preferences';
+import { usePreferences, type EstiloIndicacao, type Frequency, type IdiomaIndicacao, type MusicMix } from '@/lib/preferences';
 import { CITIES, TOPICS, getTopic, type CategorySlug } from '@/lib/data';
 import { BOOK_GENRES, FILM_GENRES, HOBBIES, MUSIC_GENRES, type GenreOption } from '@/lib/taxonomy';
 import { haversineKm } from '@/lib/geo';
@@ -32,6 +32,17 @@ const MIXES: { value: MusicMix; label: string; hint: string }[] = [
   { value: 'misturar', label: 'Misturar novas e antigas', hint: 'Lançamentos junto com faixas de outras épocas.' },
   { value: 'famosas', label: 'Só as mais famosas', hint: 'As conhecidas do estilo, sem lançamentos.' },
   { value: 'lancamentos', label: 'Só lançamentos', hint: 'O que saiu do ano passado para cá.' },
+];
+
+// O mesmo filtro para filmes, livros, audiolivros e vídeos (página Descobrir).
+const ESTILOS: { value: EstiloIndicacao; label: string; hint: string }[] = [
+  { value: 'misturar', label: 'Misturar', hint: 'Alguns clássicos e muita coisa fora do óbvio.' },
+  { value: 'classicos', label: 'Os clássicos', hint: 'Os mais vistos, lidos e ouvidos de cada gênero.' },
+  { value: 'descobertas', label: 'Só descobertas', hint: 'Deixa de fora o topo — só o que pouca gente viu.' },
+];
+const IDIOMAS: { value: IdiomaIndicacao; label: string; hint: string }[] = [
+  { value: 'pt', label: 'Em português primeiro', hint: 'O que houver em português vem antes; o resto completa.' },
+  { value: 'todos', label: 'Qualquer idioma', hint: 'Sem preferência de idioma.' },
 ];
 
 type SecaoId = 'temas' | 'detalhes' | 'musica' | 'cinema' | 'livros' | 'hobbies' | 'regiao' | 'ritmo';
@@ -144,6 +155,8 @@ export default function Questionnaire() {
   const [city, setCity] = useState<string | null>(prefs.city);
   const [radiusKm, setRadiusKm] = useState<number>(prefs.radiusKm);
   const [frequency, setFrequency] = useState<Frequency>(prefs.frequency);
+  const [estiloIndicacao, setEstiloIndicacao] = useState<EstiloIndicacao>(prefs.estiloIndicacao ?? 'misturar');
+  const [idiomaIndicacao, setIdiomaIndicacao] = useState<IdiomaIndicacao>(prefs.idiomaIndicacao ?? 'pt');
   const [detecting, setDetecting] = useState(false);
   const [detectMsg, setDetectMsg] = useState('');
   const [estado, setEstado] = useState<Estado>({ tipo: 'parado' });
@@ -165,6 +178,8 @@ export default function Questionnaire() {
     setCity(prefs.city);
     setRadiusKm(prefs.radiusKm);
     setFrequency(prefs.frequency);
+    setEstiloIndicacao(prefs.estiloIndicacao ?? 'misturar');
+    setIdiomaIndicacao(prefs.idiomaIndicacao ?? 'pt');
   }, [ready, prefs]);
 
   const mexeu = () => {
@@ -273,6 +288,8 @@ export default function Questionnaire() {
       city,
       radiusKm,
       frequency,
+      estiloIndicacao,
+      idiomaIndicacao,
     });
     if (!res.ok) {
       setEstado({
@@ -297,6 +314,7 @@ export default function Questionnaire() {
     ['Música', musicGenres.map((g) => MUSIC_GENRES.find((x) => x.id === g)?.label).filter(Boolean).join(', ')],
     ['Jeito de ouvir', `${MIXES.find((m) => m.value === musicMix)?.label} · ${musicHits ? 'com os hits' : 'sem os hits'}`],
     ['Cinema', filmGenres.map((g) => FILM_GENRES.find((x) => x.id === g)?.label).filter(Boolean).join(', ')],
+    ['Indicações', `${ESTILOS.find((e) => e.value === estiloIndicacao)?.label} · ${idiomaIndicacao === 'pt' ? 'português primeiro' : 'qualquer idioma'}`],
     ['Livros', bookGenres.map((g) => BOOK_GENRES.find((x) => x.id === g)?.label).filter(Boolean).join(', ')],
     ['Hobbies', hobbies.map((h) => HOBBIES.find((x) => x.id === h)?.label).filter(Boolean).join(', ')],
     ['Região', city ? `${city} · ${radiusKm} km` : ''],
@@ -513,6 +531,61 @@ export default function Questionnaire() {
           <Secao id="livros" numero={5} titulo="O que você gosta de ler?" apoio="Livros, clubes de leitura e feiras." feito={respondidas.livros}>
             <Chips options={BOOK_GENRES} selected={bookGenres} onToggle={(id) => toggle(bookGenres, setBookGenres, id)} />
           </Secao>
+        </div>
+
+        {/* Filtro das indicações de filmes, livros, audiolivros e vídeos —
+            o equivalente ao "jeito de ouvir" da música. */}
+        <div className="card-soft grid grid-cols-1 gap-5 p-6 xl:grid-cols-2">
+          <fieldset>
+            <legend className="text-sm font-semibold text-zinc-100">Filmes, livros e vídeos: clássicos ou descobertas?</legend>
+            <p className="mt-0.5 text-xs text-zinc-400">Vale para tudo o que a plataforma indica fora da música.</p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {ESTILOS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  aria-pressed={estiloIndicacao === o.value}
+                  onClick={() => {
+                    mexeu();
+                    setEstiloIndicacao(o.value);
+                  }}
+                  className={`rounded-xl border p-3.5 text-left transition ${
+                    estiloIndicacao === o.value
+                      ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
+                      : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-zinc-50">{o.label}</span>
+                  <span className="mt-1 block text-xs text-zinc-400">{o.hint}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend className="text-sm font-semibold text-zinc-100">Em que idioma?</legend>
+            <p className="mt-0.5 text-xs text-zinc-400">Filmes, livros e audiolivros gratuitos são muitas vezes em inglês.</p>
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {IDIOMAS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  aria-pressed={idiomaIndicacao === o.value}
+                  onClick={() => {
+                    mexeu();
+                    setIdiomaIndicacao(o.value);
+                  }}
+                  className={`rounded-xl border p-3.5 text-left transition ${
+                    idiomaIndicacao === o.value
+                      ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
+                      : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
+                  }`}
+                >
+                  <span className="block text-sm font-semibold text-zinc-50">{o.label}</span>
+                  <span className="mt-1 block text-xs text-zinc-400">{o.hint}</span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
         </div>
 
         <Secao id="hobbies" numero={6} titulo="O que você gosta de fazer?" apoio="Seus hobbies ajudam a sugerir oficinas e encontros." feito={respondidas.hobbies}>

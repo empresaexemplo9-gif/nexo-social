@@ -107,6 +107,26 @@ tem esse limite.
   dos resultados no banco, senão a cota acaba rápido.
 - **Variável:** `YOUTUBE_API_KEY`.
 
+#### O que a chave liga
+- **Shorts** (`/shorts` e o widget da home): busca por interesse — tema, hobby,
+  estilo musical, gênero de filme e de livro — em vídeo curto, no Brasil.
+  Sem a chave, o feed usa os RSS públicos dos canais curados em `lib/shorts.ts`
+  (a playlist só de Shorts de cada canal), sem custo de cota.
+- **Descobrir** (`/descobrir`): completa filmes, audiolivros em português e
+  tutoriais de hobby quando os acervos abertos trazem pouco. Sem a chave,
+  aparece "Ver mais no YouTube" com a busca pronta.
+- Custo: 100 unidades por busca, com cache de 12–24h por termo.
+
+### Acervos abertos (sem chave) — assistir, ler e ouvir aqui dentro
+- **Internet Archive** (`archive.org/advancedsearch.php`): filmes em domínio
+  público (coleções curadas) e audiolivros do LibriVox (`librivoxaudio`),
+  tocando pelo player `archive.org/embed/<id>`.
+- **Gutendex / Projeto Gutenberg**: livros em domínio público, abertos no
+  leitor da plataforma (`/api/leitor` baixa o texto e divide em capítulos).
+- O filtro de indicação (clássicos, descobertas ou misturar; português primeiro
+  ou qualquer idioma) fica no perfil: colunas `estilo_indicacao` e
+  `idioma_indicacao` de `user_preferences`.
+
 ### 7. Ticketmaster Discovery API — eventos reais
 A melhor opção gratuita para **importar eventos automaticamente**.
 

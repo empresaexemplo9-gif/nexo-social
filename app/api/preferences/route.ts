@@ -5,13 +5,14 @@ import { normalizarWidgets } from '@/lib/widgets';
 export const dynamic = 'force-dynamic';
 
 const MIXES = ['misturar', 'famosas', 'lancamentos'];
+const ESTILOS = ['misturar', 'classicos', 'descobertas'];
 
 /**
  * Colunas que podem ainda não existir no banco (vieram depois): se o upsert
  * falhar por causa de uma delas, salva o resto em vez de perder o questionário
  * inteiro — e avisa nos logs para rodar o db/schema.sql.
  */
-const COLUNAS_OPCIONAIS = ['completed_at', 'music_hits', 'music_mix', 'home_widgets'];
+const COLUNAS_OPCIONAIS = ['completed_at', 'music_hits', 'music_mix', 'home_widgets', 'estilo_indicacao', 'idioma_indicacao'];
 
 /** Linha do banco → formato usado pelo aplicativo (camelCase). */
 function toClient(row: Record<string, any>) {
@@ -31,6 +32,8 @@ function toClient(row: Record<string, any>) {
     radiusKm: Number.isFinite(row.radius_km) ? Number(row.radius_km) : 50,
     frequency: row.frequency ?? 'semanal',
     homeWidgets: normalizarWidgets(row.home_widgets),
+    estiloIndicacao: ESTILOS.includes(row.estilo_indicacao) ? row.estilo_indicacao : 'misturar',
+    idiomaIndicacao: row.idioma_indicacao === 'todos' ? 'todos' : 'pt',
     // Contas anteriores à coluna completed_at têm interesses mas não têm data.
     // Sem esta herança elas voltariam a ver "responda o questionário".
     completedAt: row.completed_at ?? (interests.length > 0 ? (row.updated_at ?? row.created_at ?? null) : null),
@@ -94,6 +97,8 @@ export async function PUT(request: Request) {
   if (typeof b.musicHits === 'boolean') row.music_hits = b.musicHits;
   if (typeof b.musicMix === 'string' && MIXES.includes(b.musicMix)) row.music_mix = b.musicMix;
   if ('homeWidgets' in b) row.home_widgets = normalizarWidgets(b.homeWidgets);
+  if (typeof b.estiloIndicacao === 'string' && ESTILOS.includes(b.estiloIndicacao)) row.estilo_indicacao = b.estiloIndicacao;
+  if (b.idiomaIndicacao === 'pt' || b.idiomaIndicacao === 'todos') row.idioma_indicacao = b.idiomaIndicacao;
 
   // A conclusão do questionário fica na conta — é ela que impede a plataforma
   // de pedir o questionário de novo em outro aparelho. `null` limpa (é o que

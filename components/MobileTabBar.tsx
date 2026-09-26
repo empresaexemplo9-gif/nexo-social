@@ -14,10 +14,10 @@ interface Aba {
 
 const ABAS: Aba[] = [
   { href: '/', label: 'Início', icon: 'sparkles' },
+  { href: '/descobrir', label: 'Descobrir', icon: 'grade' },
+  { href: '/shorts', label: 'Shorts', icon: 'shorts' },
   { href: '/agenda', label: 'Agenda', icon: 'calendarCheck' },
   { href: '/esporte', label: 'Esporte', icon: 'trophy' },
-  { href: '/livros', label: 'Livros', icon: 'library' },
-  { href: '/conta', label: 'Conta', icon: 'user' },
 ];
 
 /**

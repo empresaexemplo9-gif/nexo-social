@@ -9,6 +9,7 @@ import MobileTabBar from '@/components/MobileTabBar';
 import PWARegister from '@/components/PWARegister';
 import TechBackdrop from '@/components/TechBackdrop';
 import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
+import { MidiaProvider } from '@/components/midia/MidiaProvider';
 
 // Barlow Condensed: títulos firmes e condensados, como nos cartazes.
 const display = Barlow_Condensed({
@@ -120,8 +121,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AgendaProvider>
             <ReadingProvider>
               <SpotifyProvider>
-                {children}
-                <MobileTabBar />
+                <MidiaProvider>
+                  {children}
+                  <MobileTabBar />
+                </MidiaProvider>
               </SpotifyProvider>
             </ReadingProvider>
           </AgendaProvider>

@@ -26,6 +26,11 @@ export type Frequency = 'diaria' | 'semanal' | 'mensal';
 /** Como a pessoa quer a trilha: misturar novas e antigas, só hits ou só lançamentos. */
 export type MusicMix = 'misturar' | 'famosas' | 'lancamentos';
 
+/** Filmes, livros, audiolivros e vídeos: os clássicos, as descobertas ou os dois. */
+export type EstiloIndicacao = 'misturar' | 'classicos' | 'descobertas';
+/** Só em português ou em qualquer idioma (o português vem primeiro). */
+export type IdiomaIndicacao = 'pt' | 'todos';
+
 export interface UserPreferences {
   interests: CategorySlug[];
   /** Subtemas escolhidos dentro de cada tema (afina a indicação). */
@@ -50,6 +55,9 @@ export interface UserPreferences {
   completedAt: string | null;
   /** Widgets da home, na ordem da tela; `null` = arranjo padrão. */
   homeWidgets: WidgetDaHome[] | null;
+  /** Filtro das indicações de filmes, livros, audiolivros e vídeos. */
+  estiloIndicacao: EstiloIndicacao;
+  idiomaIndicacao: IdiomaIndicacao;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -68,6 +76,8 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   frequency: 'semanal',
   completedAt: null,
   homeWidgets: null,
+  estiloIndicacao: 'misturar',
+  idiomaIndicacao: 'pt',
 };
 
 const STORAGE_KEY = 'nexo:prefs:v1';

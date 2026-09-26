@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import Icon from './icons';
 import { MESES_CURTOS, summarizeYear, useReading, type ReadingEntry, type ReadingStatus } from '@/lib/reading';
 import { usePreferences } from '@/lib/preferences';
+import GratisDoTitulo from './midia/GratisDoTitulo';
 
 const STATUS_LABEL: Record<ReadingStatus, string> = {
   'quero-ler': 'Quero ler',
@@ -94,6 +95,10 @@ function EntryRow({ entry }: { entry: ReadingEntry }) {
           >
             <Icon name="trash" size={12} /> Remover
           </button>
+          {/* Versão gratuita para ler ou ouvir aqui dentro */}
+          <div className="w-full">
+            <GratisDoTitulo titulo={entry.title} autor={entry.author} />
+          </div>
         </div>
       )}
     </li>

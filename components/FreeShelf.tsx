@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Icon from './icons';
+import { useMidia } from './midia/MidiaProvider';
 import { useReading } from '@/lib/reading';
 import type { AudioBook, FreeBook, Shelf } from '@/lib/freebooks';
 
@@ -26,7 +27,10 @@ function faltam(iso: string): string {
 
 function BookCard({ book }: { book: FreeBook }) {
   const { find, add } = useReading();
+  const { abrir } = useMidia();
   const registrado = find(book.source, book.id);
+  // Obras do Gutenberg abrem no leitor da plataforma.
+  const gutenbergId = book.source === 'gutenberg' ? Number(book.id.replace('gutenberg-', '')) || null : null;
 
   return (
     <article className="flex gap-4 rounded-3xl border border-zinc-800/80 bg-zinc-900/50 p-4 transition hover:border-zinc-700">
@@ -58,6 +62,24 @@ function BookCard({ book }: { book: FreeBook }) {
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          {gutenbergId && (
+            <button
+              type="button"
+              onClick={() =>
+                abrir({
+                  midia: { tipo: 'livro', gutenberg: gutenbergId },
+                  titulo: book.title,
+                  autor: book.author,
+                  capa: book.cover,
+                  fonte: 'Projeto Gutenberg',
+                  link: book.url,
+                })
+              }
+              className="inline-flex items-center gap-1 rounded-xl bg-emerald-400 px-2.5 py-1 text-[11px] font-semibold text-zinc-950 transition hover:bg-emerald-300"
+            >
+              <Icon name="book" size={11} /> Ler aqui
+            </button>
+          )}
           {book.formats.slice(0, 3).map((f) => (
             <a
               key={f.label}

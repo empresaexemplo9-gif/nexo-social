@@ -18,6 +18,11 @@ export type IconName =
   | 'sunrise'
   | 'ticket'
   | 'play'
+  | 'grade'
+  | 'shorts'
+  | 'volume'
+  | 'mudo'
+  | 'compartilhar'
   | 'pause'
   | 'skipNext'
   | 'skipPrev'
@@ -135,6 +140,40 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   play: <path d="M8 5.5v13l11-6.5-11-6.5Z" />,
+  grade: (
+    <>
+      <rect x="4" y="4" width="7" height="7" rx="1.8" />
+      <rect x="13" y="4" width="7" height="7" rx="1.8" />
+      <rect x="4" y="13" width="7" height="7" rx="1.8" />
+      <rect x="13" y="13" width="7" height="7" rx="1.8" />
+    </>
+  ),
+  shorts: (
+    <>
+      <rect x="6.5" y="2.8" width="11" height="18.4" rx="3" />
+      <path d="m10.6 9.4 4 2.6-4 2.6Z" />
+    </>
+  ),
+  volume: (
+    <>
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" />
+      <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" />
+    </>
+  ),
+  mudo: (
+    <>
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4Z" />
+      <path d="m16 9.5 5 5M21 9.5l-5 5" />
+    </>
+  ),
+  compartilhar: (
+    <>
+      <circle cx="17.5" cy="5.5" r="2.5" />
+      <circle cx="6.5" cy="12" r="2.5" />
+      <circle cx="17.5" cy="18.5" r="2.5" />
+      <path d="m8.7 10.8 6.6-4M8.7 13.2l6.6 4" />
+    </>
+  ),
   pause: <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />,
   skipNext: <path d="M5.5 5.5v13l9-6.5-9-6.5ZM16 5.5h2.5v13H16z" />,
   skipPrev: <path d="M18.5 5.5v13l-9-6.5 9-6.5ZM8 5.5H5.5v13H8z" />,

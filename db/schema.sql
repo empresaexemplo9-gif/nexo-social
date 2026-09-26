@@ -829,3 +829,21 @@ END $$;
 -- ordem e o tamanho. Lista de {id, tamanho}; NULL = arranjo padrão.
 -- ---------------------------------------------------------------------------
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS home_widgets JSONB;
+
+-- ---------------------------------------------------------------------------
+-- Filtro das indicações de filmes, livros, audiolivros e vídeos (lib/gratis.ts):
+-- os clássicos, as descobertas ou os dois; e se só em português.
+-- ---------------------------------------------------------------------------
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS estilo_indicacao TEXT NOT NULL DEFAULT 'misturar';
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS idioma_indicacao TEXT NOT NULL DEFAULT 'pt';
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_preferences_estilo_indicacao_check') THEN
+    ALTER TABLE user_preferences
+      ADD CONSTRAINT user_preferences_estilo_indicacao_check CHECK (estilo_indicacao IN ('misturar', 'classicos', 'descobertas'));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'user_preferences_idioma_indicacao_check') THEN
+    ALTER TABLE user_preferences
+      ADD CONSTRAINT user_preferences_idioma_indicacao_check CHECK (idioma_indicacao IN ('pt', 'todos'));
+  END IF;
+END $$;

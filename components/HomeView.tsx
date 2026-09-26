@@ -12,6 +12,7 @@ import InstallApp from '@/components/InstallApp';
 import AgendaTimeline from '@/components/AgendaTimeline';
 import MontarHome from '@/components/home/MontarHome';
 import EventosDoTema from '@/components/home/EventosDoTema';
+import { GratisWidget, ShortsWidget } from '@/components/home/WidgetsDeMidia';
 import { usePreferences } from '@/lib/preferences';
 import { getTopic, type ContentItem, type EventItem } from '@/lib/data';
 import { widgetDeTema } from '@/lib/widgets';
@@ -38,6 +39,10 @@ export default function HomeView({ events }: Props) {
           return <TrilhaWidget />;
         case 'assistir-ler':
           return <AssistirLerWidget />;
+        case 'shorts':
+          return <ShortsWidget />;
+        case 'gratis':
+          return <GratisWidget />;
         case 'nichos':
           return <NichosWidget events={events} />;
         case 'ao-vivo':

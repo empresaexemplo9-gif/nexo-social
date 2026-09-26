@@ -24,10 +24,12 @@ const CHAVE_LATERAL = 'nexo:lateral';
 
 const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'Início', icon: 'sparkles' },
+  { href: '/descobrir', label: 'Descobrir de graça', icon: 'grade' },
+  { href: '/shorts', label: 'Shorts', icon: 'shorts' },
   { href: '/agenda', label: 'Compromissos', icon: 'calendarCheck' },
-  { href: '/bom-dia', label: 'Bom Dia', icon: 'sunrise' },
   { href: '/esporte', label: 'Esporte ao vivo', icon: 'trophy' },
   { href: '/livros', label: 'Livros que li esse ano', icon: 'library' },
+  { href: '/bom-dia', label: 'Bom Dia', icon: 'sunrise' },
   { href: '/questionario', label: 'Questionário', icon: 'compass' },
   { href: '/busca', label: 'Buscar', icon: 'search' },
 ];
