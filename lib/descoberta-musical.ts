@@ -21,6 +21,8 @@ export interface Faixa {
   album: string;
   image: string | null;
   ano: number | null;
+  /** Duração da faixa inteira (ms) — o player compara para saber se tocou só a prévia. */
+  duracaoMs: number | null;
   url: string;
   embedUrl: string;
 }

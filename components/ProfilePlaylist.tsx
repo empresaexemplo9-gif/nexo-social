@@ -6,6 +6,7 @@ import Icon from './icons';
 import { usePreferences } from '@/lib/preferences';
 import { MUSIC_GENRES, genreLabel } from '@/lib/taxonomy';
 import { useSpotify } from './spotify/SpotifyProvider';
+import PlayerEmbutido from './spotify/PlayerEmbutido';
 
 interface Faixa {
   id: string;
@@ -14,6 +15,8 @@ interface Faixa {
   album: string;
   image: string | null;
   ano: number | null;
+  /** Duração da faixa inteira (ms). */
+  duracaoMs?: number | null;
   url: string;
   embedUrl: string;
 }
@@ -262,7 +265,12 @@ export default function ProfilePlaylist() {
   const [ativo, setAtivo] = useState<string | null>(null);
   const [rodada, setRodada] = useState(0);
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' });
-  const [tocando, setTocando] = useState<Faixa | null>(null);
+  // Fila do player embutido: a lista clicada, tocando em sequência.
+  const [fila, setFila] = useState<{ faixas: Faixa[]; i: number } | null>(null);
+  // Cada clique (ou avanço da fila) é um pedido novo ao player.
+  const [pedidos, setPedidos] = useState(0);
+  // Duração do que o player carregou: ~30 s quando o Spotify só libera a prévia.
+  const [duracaoNoPlayer, setDuracaoNoPlayer] = useState(0);
   // Troca de aba não refaz a busca: cada gênero/rodada é pedido uma vez.
   const guardadas = useRef(new Map<string, Trilha>());
   const spotify = useSpotify();
@@ -310,7 +318,7 @@ export default function ProfilePlaylist() {
 
   useEffect(() => {
     if (!ready || !ativo) return;
-    setTocando(null);
+    setFila(null);
     void carregar(ativo, rodada);
   }, [ready, ativo, rodada, carregar]);
 
@@ -334,21 +342,47 @@ export default function ProfilePlaylist() {
   }
 
   const trilha = estado.tipo === 'ok' ? estado.trilha : null;
+  const tocando = fila ? fila.faixas[fila.i] : null;
+  const proximaDaFila = fila && fila.i < fila.faixas.length - 1 ? fila.faixas[fila.i + 1] : null;
   const tocandoId = aqui ? (spotify.reproducao?.faixa.id ?? null) : (tocando?.id ?? null);
   const linkApp = trilha?.playlist?.url ?? trilha?.listas.find((l) => l.faixas.length)?.faixas[0]?.url ?? null;
 
-  /** Com Premium, toca a lista inteira a partir da faixa; sem, abre a prévia. */
+  /**
+   * Toca a lista a partir da faixa clicada — pelo player da plataforma com
+   * Premium; senão, pelo player embutido, que segue sozinho para a próxima.
+   */
   const tocarFaixa = (lista: Lista, f: Faixa) => {
-    if (!aqui) {
-      setTocando(f);
+    if (aqui) {
+      void spotify.tocar({ uris: lista.faixas.map((x) => `spotify:track:${x.id}`), inicio: `spotify:track:${f.id}` });
       return;
     }
-    void spotify.tocar({ uris: lista.faixas.map((x) => `spotify:track:${x.id}`), inicio: `spotify:track:${f.id}` });
+    setFila({ faixas: lista.faixas, i: Math.max(0, lista.faixas.indexOf(f)) });
+    setDuracaoNoPlayer(0);
+    setPedidos((n) => n + 1);
   };
+  const avancar = () => {
+    if (!proximaDaFila) return;
+    setFila((f) => (f ? { ...f, i: f.i + 1 } : f));
+    setDuracaoNoPlayer(0);
+    setPedidos((n) => n + 1);
+  };
+  const voltarParaPlaylist = () => {
+    setFila(null);
+    setDuracaoNoPlayer(0);
+    setPedidos((n) => n + 1);
+  };
+
   const embed = tocando
-    ? { src: tocando.embedUrl, altura: 152, titulo: tocando.name }
+    ? { uri: `spotify:track:${tocando.id}`, tocar: true, titulo: tocando.name }
     : trilha?.playlist
-      ? { src: trilha.playlist.embedUrl, altura: 380, titulo: trilha.playlist.name }
+      ? { uri: `spotify:playlist:${trilha.playlist.id}`, tocar: false, titulo: trilha.playlist.name }
+      : null;
+  // Prévia: o Spotify entregou bem menos que a faixa inteira.
+  const tipoDaReproducao =
+    tocando && duracaoNoPlayer > 0
+      ? (tocando.duracaoMs ? duracaoNoPlayer < tocando.duracaoMs - 5000 : duracaoNoPlayer <= 31_000)
+        ? 'previa'
+        : 'completa'
       : null;
 
   return (
@@ -429,28 +463,51 @@ export default function ProfilePlaylist() {
             </div>
           ) : !aqui && embed ? (
             <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60">
-              <iframe
-                key={embed.src}
-                src={`${embed.src}?utm_source=nexo-social`}
-                width="100%"
-                height={embed.altura}
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-                loading="lazy"
-                title={embed.titulo}
-                className="block"
+              <PlayerEmbutido
+                pedido={{ uri: embed.uri, tocar: embed.tocar, n: `${embed.uri}#${pedidos}` }}
+                titulo={embed.titulo}
+                onDuracao={setDuracaoNoPlayer}
+                onFim={avancar}
               />
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-800 px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-zinc-800 px-4 py-3">
                 {tocando ? (
                   <>
-                    <p className="text-xs text-zinc-400">
-                      <span className="text-zinc-200">{tocando.name}</span> · {tocando.artist}
-                    </p>
-                    {trilha.playlist && (
-                      <button type="button" onClick={() => setTocando(null)} className="text-xs font-medium text-emerald-400 hover:text-emerald-300">
-                        Voltar para a playlist
-                      </button>
-                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="flex flex-wrap items-center gap-2 text-xs text-zinc-400">
+                        <span className="text-zinc-200">{tocando.name}</span> · {tocando.artist}
+                        {tipoDaReproducao === 'previa' && (
+                          <span className="rounded-md border border-clay-500/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-clay-300">
+                            Prévia de 30 s
+                          </span>
+                        )}
+                        {tipoDaReproducao === 'completa' && (
+                          <span className="rounded-md border border-emerald-400/40 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+                            Completa
+                          </span>
+                        )}
+                      </p>
+                      {proximaDaFila && (
+                        <p className="mt-1 truncate text-[11px] text-zinc-500">
+                          Depois: {proximaDaFila.name} · {proximaDaFila.artist}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4">
+                      {proximaDaFila && (
+                        <button
+                          type="button"
+                          onClick={avancar}
+                          className="inline-flex items-center gap-1 text-xs font-medium text-zinc-300 hover:text-emerald-300"
+                        >
+                          <Icon name="skipNext" size={13} /> Próxima
+                        </button>
+                      )}
+                      {trilha.playlist && (
+                        <button type="button" onClick={voltarParaPlaylist} className="text-xs font-medium text-emerald-400 hover:text-emerald-300">
+                          Voltar para a playlist
+                        </button>
+                      )}
+                    </div>
                   </>
                 ) : (
                   trilha.playlist && (

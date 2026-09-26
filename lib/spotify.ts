@@ -87,6 +87,7 @@ function paraFaixa(t: any): Faixa {
     album: t.album?.name ?? '',
     image: t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
     ano: Number.isFinite(ano) && ano > 0 ? ano : null,
+    duracaoMs: typeof t.duration_ms === 'number' ? t.duration_ms : null,
     url: t.external_urls?.spotify ?? `https://open.spotify.com/track/${t.id}`,
     embedUrl: `https://open.spotify.com/embed/track/${t.id}`,
   };
