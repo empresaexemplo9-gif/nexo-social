@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { explicarErroYoutube, isYoutubeConfigured, liveEmbedUrl, resolveChannelId, searchVideo } from '@/lib/youtube';
+import { explicarErroYoutube, isYoutubeConfigured, resolveChannelId, searchVideo } from '@/lib/youtube';
+import { aoVivoDoCanal, canalPorHandle, videosDoCanal } from '@/lib/youtube-aberto';
 
 export const revalidate = 3600;
 
 /**
- * GET /api/video?q=<termo>      → vídeo para tocar embutido
- * GET /api/video?canal=@handle  → transmissão ao vivo do canal, embutida
- *
- * Sem YOUTUBE_API_KEY responde 503 com `configurado: false`; a interface então
- * mostra o link externo em vez do player.
+ * GET /api/video?q=<termo>      → vídeo para tocar embutido (precisa da chave)
+ * GET /api/video?canal=@handle  → transmissão ao vivo do canal, embutida; fora
+ *                                 do ar, os vídeos recentes dele (sem chave)
  */
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
@@ -19,24 +18,37 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Informe q ou canal.' }, { status: 400 });
   }
 
+  // Ao vivo de um canal: primeiro pela página pública (sem chave e sem cota);
+  // a API só entra se a página não responder.
+  if (canal) {
+    const live = await aoVivoDoCanal(canal);
+    if (live) {
+      return NextResponse.json({
+        configurado: true,
+        encontrado: true,
+        aoVivo: true,
+        title: live.titulo,
+        embedUrl: `https://www.youtube.com/embed/${live.id}?rel=0`,
+      });
+    }
+    // Fora do ar agora: mostra o que o canal publicou por último.
+    const channelId = (await canalPorHandle(canal)) ?? (isYoutubeConfigured() ? await resolveChannelId(canal).catch(() => null) : null);
+    const recentes = channelId ? (await videosDoCanal(channelId, 'longos', 1800)).slice(0, 8) : [];
+    return NextResponse.json({ configurado: true, encontrado: false, aoVivo: false, channelId, recentes });
+  }
+
   if (!isYoutubeConfigured()) {
     return NextResponse.json(
       {
         configurado: false,
         error: 'YouTube não configurado.',
-        hint: 'Crie uma chave gratuita no Google Cloud (YouTube Data API v3) e adicione YOUTUBE_API_KEY na Vercel. Sem ela, os vídeos abrem no YouTube em vez de tocar aqui.',
+        hint: 'Esta busca precisa da YOUTUBE_API_KEY na Vercel (é gratuita). Sem ela, o vídeo abre no YouTube.',
       },
       { status: 503 },
     );
   }
 
   try {
-    if (canal) {
-      const channelId = await resolveChannelId(canal);
-      if (!channelId) return NextResponse.json({ configurado: true, encontrado: false }, { status: 404 });
-      return NextResponse.json({ configurado: true, encontrado: true, channelId, embedUrl: liveEmbedUrl(channelId) });
-    }
-
     const video = await searchVideo(q);
     if (!video) return NextResponse.json({ configurado: true, encontrado: false }, { status: 404 });
     return NextResponse.json({ configurado: true, encontrado: true, ...video });

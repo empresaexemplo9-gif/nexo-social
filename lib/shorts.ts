@@ -13,6 +13,7 @@ import 'server-only';
 import { diaDeHoje, embaralhar, sorteador } from './descoberta-musical';
 import { isYoutubeConfigured, searchVideos } from './youtube';
 import { decodificarEntidades } from './midia';
+import { canalPorHandle, videosDoCanal } from './youtube-aberto';
 import { FILM_GENRES, HOBBIES, MUSIC_GENRES, BOOK_GENRES, genreLabel } from './taxonomy';
 import { getTopic } from './data';
 
@@ -122,63 +123,14 @@ async function porBusca(chave: string, termo: string): Promise<Short[]> {
   }));
 }
 
-/** @handle → id do canal (UC…), lido da página pública do canal. Cache de 30 dias. */
-async function idDoCanal(handle: string): Promise<string | null> {
-  try {
-    const res = await fetch(`https://www.youtube.com/${handle.startsWith('@') ? handle : `@${handle}`}`, {
-      next: { revalidate: 2592000 },
-      signal: AbortSignal.timeout(10000),
-      headers: { 'Accept-Language': 'pt-BR,pt;q=0.9', 'User-Agent': 'Mozilla/5.0 (compatible; nexo-social/1.0)' },
-    });
-    if (!res.ok) return null;
-    const html = await res.text();
-    return (
-      html.match(/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/)?.[1] ??
-      html.match(/"externalId":"(UC[\w-]{22})"/)?.[1] ??
-      html.match(/"channelId":"(UC[\w-]{22})"/)?.[1] ??
-      null
-    );
-  } catch {
-    return null;
-  }
-}
-
-/** Entradas de um feed RSS do YouTube. Exportado para teste. */
-export function lerFeed(xml: string, chave: string, soShorts: boolean): Short[] {
-  const saida: Short[] = [];
-  for (const bruto of xml.split(/<entry>/).slice(1)) {
-    const e = bruto.split('</entry>')[0];
-    const id = e.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/)?.[1];
-    if (!id) continue;
-    const link = e.match(/<link[^>]*rel="alternate"[^>]*href="([^"]+)"/)?.[1] ?? '';
-    if (soShorts && !link.includes('/shorts/')) continue;
-    saida.push({
-      id,
-      titulo: decodificarEntidades(e.match(/<title>([\s\S]*?)<\/title>/)?.[1]?.trim() ?? ''),
-      canal: decodificarEntidades(e.match(/<author>\s*<name>([\s\S]*?)<\/name>/)?.[1]?.trim() ?? ''),
-      capa: `https://i.ytimg.com/vi/${id}/hqdefault.jpg`,
-      de: chave,
-    });
-  }
-  return saida;
-}
-
 async function porCanais(chave: string): Promise<Short[]> {
   const handles = CANAIS[chave] ?? [];
   const listas = await Promise.all(
     handles.map(async (h) => {
-      const canal = await idDoCanal(h);
+      const canal = await canalPorHandle(h);
       if (!canal) return [];
-      const opcoes = { next: { revalidate: 21600 }, signal: AbortSignal.timeout(10000) } as const;
-      // Playlist só de Shorts do canal; sem ela, o feed do canal filtrando /shorts/.
-      const soShorts = await fetch(`https://www.youtube.com/feeds/videos.xml?playlist_id=UUSH${canal.slice(2)}`, opcoes)
-        .then((r) => (r.ok ? r.text() : ''))
-        .catch(() => '');
-      if (soShorts) return lerFeed(soShorts, chave, false);
-      const tudo = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${canal}`, opcoes)
-        .then((r) => (r.ok ? r.text() : ''))
-        .catch(() => '');
-      return tudo ? lerFeed(tudo, chave, true) : [];
+      const videos = await videosDoCanal(canal, 'shorts', 21600);
+      return videos.map((v) => ({ id: v.id, titulo: v.titulo, canal: v.canal, capa: v.capa, de: chave }));
     }),
   );
   return listas.flat();

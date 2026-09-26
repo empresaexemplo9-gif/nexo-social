@@ -12,6 +12,23 @@ interface Board extends SportsBoard {
   modalidades: SportDef[];
   transmissoes: Broadcaster[];
   lendas: Legend[];
+  youtubeConfigurado?: boolean;
+}
+
+/** Vídeos que tocam sem chave do YouTube (ver /api/esporte/videos). */
+interface Videos {
+  aoVivo: { id: string; titulo: string; canal: string; handle: string }[];
+  destaques: { id: string; titulo: string; canal: string; publicado: string | null; capa: string }[];
+}
+
+/** "há 3 h", "há 2 dias" — idade de um vídeo publicado. */
+function haQuanto(iso: string | null): string {
+  if (!iso) return '';
+  const h = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 3600000));
+  if (h < 1) return 'agora há pouco';
+  if (h < 24) return `há ${h} h`;
+  const d = Math.round(h / 24);
+  return d === 1 ? 'ontem' : `há ${d} dias`;
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -95,6 +112,20 @@ function MatchCard({ match, onPlay }: { match: Match; onPlay: (req: PlayRequest)
             <Icon name="ticket" size={11} /> Ingressos
           </a>
         )}
+        {aoVivo && (
+          <button
+            type="button"
+            onClick={() =>
+              (document.getElementById('ao-vivo-canais') ?? document.getElementById('onde-assistir'))?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              })
+            }
+            className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500 hover:text-white"
+          >
+            <Icon name="broadcast" size={11} /> Onde assistir
+          </button>
+        )}
         {match.highlightUrl && youtubeEmbed(match.highlightUrl) && (
           <button
             onClick={() => onPlay({ titulo: `${match.home} x ${match.away}`, url: match.highlightUrl!, externo: match.highlightUrl! })}
@@ -132,6 +163,20 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
   const [erro, setErro] = useState('');
   const [tocando, setTocando] = useState<PlayRequest | null>(null);
   const [aba, setAba] = useState<'agora' | 'proximos' | 'resultados'>('agora');
+  const [videos, setVideos] = useState<Videos | null>(null);
+
+  // Ao vivo agora e melhores momentos: vêm à parte, sem depender do placar.
+  useEffect(() => {
+    let vivo = true;
+    setVideos(null);
+    fetch(`/api/esporte/videos?modalidade=${sport}`)
+      .then((r) => (r.ok ? r.json() : { aoVivo: [], destaques: [] }))
+      .then((j) => vivo && setVideos(j))
+      .catch(() => vivo && setVideos({ aoVivo: [], destaques: [] }));
+    return () => {
+      vivo = false;
+    };
+  }, [sport]);
 
   const load = useCallback(async (s: SportId) => {
     setState('loading');
@@ -202,6 +247,35 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
           <div id="player-esporte" className="scroll-mt-24">
             {tocando && <InlinePlayer req={tocando} onClose={() => setTocando(null)} />}
           </div>
+
+          {/* Ao vivo agora nos canais oficiais gratuitos */}
+          {videos && videos.aoVivo.length > 0 && (
+            <section id="ao-vivo-canais" className="scroll-mt-24 space-y-3">
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-50">
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" /> Ao vivo agora, de graça
+              </h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {videos.aoVivo.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => play({ titulo: v.titulo || `${v.canal} — ao vivo`, url: `https://www.youtube.com/watch?v=${v.id}` })}
+                    className="card-soft levanta group flex items-center gap-3 overflow-hidden p-3 text-left"
+                  >
+                    <span className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-lg bg-black">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`https://i.ytimg.com/vi/${v.id}/hqdefault_live.jpg`} alt="" className="h-full w-full object-cover" />
+                      <span className="absolute left-1.5 top-1.5 rounded bg-red-600 px-1.5 py-0.5 text-[9px] font-bold text-white">AO VIVO</span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-2 text-xs font-semibold text-zinc-50 group-hover:text-emerald-400">{v.titulo || 'Transmissão ao vivo'}</span>
+                      <span className="mt-1 block truncate text-[11px] text-zinc-500">{v.canal}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Partidas */}
           <section className="space-y-4">
@@ -278,6 +352,55 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
             )}
           </section>
 
+          {/* Melhores momentos recentes dos canais oficiais (sem chave) */}
+          <section className="space-y-4">
+            <div>
+              <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-50">
+                <Icon name="play" size={17} className="text-emerald-400" /> Melhores momentos
+              </h3>
+              <p className="mt-0.5 text-sm text-zinc-400">Publicados pelos canais oficiais das ligas — toque para assistir aqui.</p>
+            </div>
+            {videos === null ? (
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="aspect-[4/3] animate-pulse rounded-2xl bg-zinc-800/60" />
+                ))}
+              </div>
+            ) : videos.destaques.length === 0 ? (
+              <p className="rounded-2xl border border-dashed border-zinc-800 p-5 text-center text-sm text-zinc-500">
+                Nenhum vídeo novo dos canais oficiais desta modalidade agora.
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {videos.destaques.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    onClick={() => play({ titulo: v.titulo, url: `https://www.youtube.com/watch?v=${v.id}` })}
+                    className="card-soft levanta group overflow-hidden text-left"
+                  >
+                    <span className="relative block aspect-video bg-zinc-800">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={v.capa} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/25 text-white opacity-90 transition group-hover:bg-black/10">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900/90 text-emerald-400 transition group-hover:bg-clay-500 group-hover:text-zinc-900">
+                          <Icon name="play" size={18} />
+                        </span>
+                      </span>
+                    </span>
+                    <span className="block p-3">
+                      <span className="line-clamp-2 text-xs font-semibold leading-snug text-zinc-50">{v.titulo}</span>
+                      <span className="mt-1 block truncate text-[11px] text-zinc-500">
+                        {v.canal}
+                        {v.publicado ? ` · ${haQuanto(v.publicado)}` : ''}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* Replays com melhores momentos */}
           {board.replays.length > 0 && (
             <section className="space-y-4">
@@ -316,7 +439,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
           )}
 
           {/* Transmissões gratuitas */}
-          <section className="space-y-4">
+          <section id="onde-assistir" className="scroll-mt-24 space-y-4">
             <div>
               <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-50">
                 <Icon name="broadcast" size={17} className="text-clay-300" /> Onde assistir de graça
@@ -381,7 +504,11 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                 <button
                   key={l.id}
                   onClick={() =>
-                    play({ titulo: `${l.name} — melhores momentos`, busca: l.query, externo: youtubeSearch(l.query) })
+                    // Sem chave do YouTube não há como achar o vídeo para
+                    // tocar aqui: abre a busca pronta no YouTube.
+                    board.youtubeConfigurado === false
+                      ? window.open(youtubeSearch(l.query), '_blank', 'noopener,noreferrer')
+                      : play({ titulo: `${l.name} — melhores momentos`, busca: l.query, externo: youtubeSearch(l.query) })
                   }
                   className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 text-left transition hover:border-clay-700/60"
                 >
