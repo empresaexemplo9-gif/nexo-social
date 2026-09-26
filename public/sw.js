@@ -15,12 +15,12 @@
 // Suba a versão quando um arquivo sem hash no nome mudar de conteúdo (ícones,
 // logo.svg): o cache antigo é apagado na ativação e o novo é baixado.
 // v4: selo NEXO • SOCIAL • CULTURA • NOVIDADE e tema claro.
-const VERSAO = 'nexo-v4';
+const VERSAO = 'nexo-v5';
 const SHELL = `${VERSAO}-shell`;
 const ESTATICO = `${VERSAO}-estatico`;
 const OFFLINE = '/offline';
 
-const PRE_CACHE = [OFFLINE, '/icon-192.png', '/icon-512.png', '/logo.svg'];
+const PRE_CACHE = [OFFLINE, '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png', '/logo.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

@@ -75,12 +75,14 @@ export const metadata: Metadata = {
     title: 'nexo.social — sua agenda pessoal',
     description: 'Sua agenda pessoal de eventos e conteúdos, perto de você.',
   },
+  // O mesmo selo do app instalado, na aba do navegador e na Tela de Início do iPhone.
   icons: {
     icon: [
-      { url: '/logo.svg', type: 'image/svg+xml' },
-      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-32.png?v=selo-2', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-48.png?v=selo-2', sizes: '48x48', type: 'image/png' },
+      { url: '/icon-192.png?v=selo-2', sizes: '192x192', type: 'image/png' },
     ],
-    apple: '/apple-touch-icon.png',
+    apple: { url: '/apple-touch-icon.png?v=selo-2', sizes: '180x180', type: 'image/png' },
   },
   appleWebApp: {
     // Faz o iOS abrir em tela cheia, sem a barra do Safari, quando adicionado
