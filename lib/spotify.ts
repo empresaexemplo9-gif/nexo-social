@@ -5,8 +5,9 @@ import 'server-only';
 // LIMITE IMPORTANTE: Client Credentials acessa apenas o catálogo público — não
 // cria playlist dentro da conta do usuário (isso exigiria login do usuário com
 // escopo playlist-modify). Por isso montamos a trilha do perfil a partir de
-// buscas no catálogo e reproduzimos por meio do player embutido do Spotify,
-// que no plano gratuito toca com anúncios.
+// buscas no catálogo. Sem login, o player embutido do Spotify toca prévias de
+// 30 s; quem entra com o Spotify Premium ouve completo pelo player da
+// plataforma — ver lib/spotify-conta.ts.
 //
 // LIMITE DE 2026: apps no modo de desenvolvimento perderam recomendações,
 // artistas relacionados, "mais tocadas do artista", buscas em lote e o campo

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Icon, { type IconName } from './icons';
@@ -45,6 +45,23 @@ export default function MobileTabBar() {
     setPlat(detectar());
   }, []);
 
+  // Altura real da barra (varia entre iOS e Android e com a área segura), para
+  // o player do Spotify parar logo acima dela — ver .barra-player no CSS.
+  const nav = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = nav.current;
+    if (!el) return;
+    const raiz = document.documentElement;
+    const medir = () => raiz.style.setProperty('--altura-abas', `${el.offsetHeight}px`);
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(el);
+    return () => {
+      obs.disconnect();
+      raiz.style.removeProperty('--altura-abas');
+    };
+  }, [plat]);
+
   // Pré-carrega os destinos: no celular a diferença é perceptível.
   useEffect(() => {
     ABAS.forEach((a) => router.prefetch(a.href));
@@ -70,6 +87,7 @@ export default function MobileTabBar() {
       />
 
       <nav
+        ref={nav}
         aria-label="Navegação principal"
         // iOS usa barra translúcida com desfoque; o Material 3 usa barra
         // opaca. Deixar as duas translúcidas fazia o conteúdo vazar por baixo

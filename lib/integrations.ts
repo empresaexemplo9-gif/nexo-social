@@ -73,7 +73,8 @@ export const PROVIDERS: ProviderDef[] = [
     kind: 'musica',
     envVars: ['SPOTIFY_CLIENT_ID', 'SPOTIFY_CLIENT_SECRET'],
     docsUrl: 'https://developer.spotify.com/dashboard',
-    purpose: 'Artistas e playlists ligados aos temas e eventos.',
+    purpose: 'Artistas e playlists ligados aos temas e eventos; "Entrar com Spotify" para ouvir completo (Premium).',
+    caveat: 'Login de usuários: cadastre https://SEU-DOMINIO/api/spotify/retorno como Redirect URI. No modo de desenvolvimento, só 5 contas cadastradas no painel conseguem entrar.',
   },
   {
     id: 'lastfm',

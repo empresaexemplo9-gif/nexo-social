@@ -46,8 +46,9 @@ Amplia as "cidades próximas" das 29 atuais para os **5.570 municípios**.
 Melhor fonte para ligar um evento de música a faixas/artistas.
 
 1. Acesse **developer.spotify.com/dashboard** e entre com sua conta Spotify.
-2. **Create app** → dê um nome e descrição, marque **Web API**.
-   Em *Redirect URI* pode usar `https://nexo-social-two.vercel.app/callback`.
+2. **Create app** → dê um nome e descrição, marque **Web API** e **Web Playback SDK**.
+   Em *Redirect URI* cadastre `https://nexo-social-two.vercel.app/api/spotify/retorno`
+   (e o de cada domínio próprio que o site usar — precisa ser idêntico).
 3. Copie o **Client ID** e o **Client Secret**.
 4. No servidor, troque-os por um token (fluxo *Client Credentials*):
    `POST https://accounts.spotify.com/api/token` com `grant_type=client_credentials`
@@ -56,6 +57,30 @@ Melhor fonte para ligar um evento de música a faixas/artistas.
 - **Custo:** gratuito. O *Client Credentials* acessa catálogo público (busca,
   artistas, playlists) — não acessa dados de usuários.
 - **Variáveis:** `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` (só no servidor).
+  Opcional: `SPOTIFY_REDIRECT_URI`, para fixar o endereço de retorno do login
+  (útil em previews da Vercel, cujo domínio muda a cada deploy).
+
+#### Ouvir completo: "Entrar com Spotify"
+Sem conta, o player embutido do Spotify toca só prévias de 30 s — é regra do
+Spotify. Por isso a trilha oferece dois caminhos:
+
+- **Conta grátis:** o botão "Ouvir no app do Spotify" abre a playlist/faixa no
+  app (ou no site) do Spotify, que toca completo, com anúncios.
+- **Premium:** "Entrar com Spotify" faz o login (fluxo *Authorization Code*,
+  rotas em `app/api/spotify/`) e o **Web Playback SDK** toca as faixas completas
+  dentro da nexo.social, sem anúncios, com a barra do player seguindo entre as
+  páginas. O Spotify não libera esse player para contas grátis.
+
+A sessão da pessoa fica num cookie httpOnly cifrado (sem banco); o navegador só
+recebe o token de acesso de ~1 h, renovado pelo servidor.
+
+**Limite do modo de desenvolvimento do Spotify (desde fev/2026):** o dono do app
+precisa ter Premium e só **5 contas** cadastradas em *User Management* no painel
+conseguem entrar. Liberar para todos exige o *Extended Quota Mode*, que o
+Spotify só aceita de empresas com 250 mil usuários ativos por mês. Enquanto
+isso, quem não está na lista vê o aviso "conta ainda não liberada" e continua
+com as prévias e o botão do app. A busca de músicas (Client Credentials) não
+tem esse limite.
 
 ### 5. Last.fm — artistas parecidos (melhora a recomendação)
 Ótimo para "quem gosta de X também gosta de Y", alimentando o algoritmo.

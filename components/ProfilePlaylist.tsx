@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Icon from './icons';
 import { usePreferences } from '@/lib/preferences';
 import { MUSIC_GENRES, genreLabel } from '@/lib/taxonomy';
+import { useSpotify } from './spotify/SpotifyProvider';
 
 interface Faixa {
   id: string;
@@ -113,8 +114,8 @@ function ListaDeFaixas({
                 href={f.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                title="Abrir no Spotify"
-                aria-label={`Abrir ${f.name} no Spotify`}
+                title="Ouvir completa no app do Spotify"
+                aria-label={`Ouvir ${f.name} completa no app do Spotify`}
                 className="flex w-9 shrink-0 items-center justify-center rounded-xl border border-zinc-800/80 bg-zinc-900/60 text-zinc-500 transition hover:border-emerald-400/40 hover:text-emerald-300"
               >
                 <Icon name="external" size={13} />
@@ -127,12 +128,130 @@ function ListaDeFaixas({
   );
 }
 
+const BOTAO_PRIMARIO =
+  'inline-flex items-center gap-1.5 rounded-lg bg-emerald-400 px-3 py-1.5 text-xs font-semibold text-zinc-950 shadow-glow transition hover:bg-emerald-300';
+const BOTAO_SECUNDARIO =
+  'inline-flex items-center gap-1.5 rounded-lg border border-zinc-700 px-3 py-1.5 text-xs font-medium text-zinc-200 transition hover:border-emerald-400/50 hover:text-emerald-300';
+
+/**
+ * Como ouvir completo — o que o Spotify permite em cada caso:
+ * sem conta, só prévias; conta grátis, completas no app do Spotify (com
+ * anúncios); Premium, completas aqui dentro (sem anúncios), entrando com o
+ * Spotify.
+ */
+function PainelSpotify({ linkApp }: { linkApp: string | null }) {
+  const { status, nome, entrar, sair } = useSpotify();
+  const voltarAqui = () => entrar(`${window.location.pathname}${window.location.search}#trilha`);
+  const quem = nome ? <span className="text-zinc-100">{nome}</span> : 'sua conta';
+  const noApp = linkApp && (
+    <a href={linkApp} target="_blank" rel="noopener noreferrer" className={BOTAO_PRIMARIO}>
+      Ouvir completo no app do Spotify <Icon name="external" size={13} />
+    </a>
+  );
+  const botaoSair = (
+    <button type="button" onClick={() => void sair()} className="text-xs font-medium text-zinc-400 transition hover:text-zinc-100">
+      Sair do Spotify
+    </button>
+  );
+
+  if (status === 'conectando') {
+    return (
+      <p className="flex items-center gap-2 text-xs text-zinc-400" aria-live="polite">
+        <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" /> Ligando o player do Spotify…
+      </p>
+    );
+  }
+
+  if (status === 'pronto') {
+    return (
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-4 py-3">
+        <p className="flex-1 text-xs text-zinc-300">
+          <Icon name="headphones" size={14} className="-mt-0.5 mr-1.5 inline text-emerald-400" />
+          Conectado como {quem} · Premium — as faixas tocam completas aqui, sem anúncios.
+        </p>
+        {botaoSair}
+      </div>
+    );
+  }
+
+  if (status === 'sem-premium' || status === 'sem-suporte') {
+    return (
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-clay-500/30 bg-clay-500/5 px-4 py-3">
+        <p className="min-w-[14rem] flex-1 text-xs leading-relaxed text-zinc-300">
+          {status === 'sem-premium' ? (
+            <>
+              Conectado como {quem}, no plano grátis. O Spotify só toca completo dentro de outros sites para
+              Premium — aqui seguem as prévias; completo, com anúncios, no app do Spotify.
+            </>
+          ) : (
+            <>
+              Conectado como {quem}, mas este navegador não consegue tocar o Spotify por dentro (comum no celular).
+              Ouça completo no app do Spotify.
+            </>
+          )}
+        </p>
+        <div className="flex items-center gap-4">
+          {noApp}
+          {botaoSair}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-zinc-300">
+        <span className="font-semibold text-zinc-100">Aqui tocam prévias de 30 s.</span> Para ouvir as faixas completas:
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={voltarAqui}
+          className="flex items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-left transition hover:border-emerald-400/70 hover:bg-emerald-400/15"
+        >
+          <Icon name="headphones" size={18} className="shrink-0 text-emerald-300" />
+          <span>
+            <span className="block text-sm font-semibold text-emerald-200">Entrar com Spotify</span>
+            <span className="block text-[11px] text-zinc-400">Premium: completas aqui, sem anúncios</span>
+          </span>
+        </button>
+        {linkApp && (
+          <a
+            href={linkApp}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3 transition hover:border-emerald-400/40"
+          >
+            <Icon name="external" size={18} className="shrink-0 text-zinc-400" />
+            <span>
+              <span className="block text-sm font-semibold text-zinc-100">Ouvir no app do Spotify</span>
+              <span className="block text-[11px] text-zinc-400">Conta grátis: completas, com anúncios</span>
+            </span>
+          </a>
+        )}
+      </div>
+      <p className="text-[11px] text-zinc-500">
+        Sem conta, o Spotify libera só as prévias. A conta grátis não pede cartão —{' '}
+        <a
+          href="https://www.spotify.com/br-pt/signup"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-emerald-400 hover:text-emerald-300"
+        >
+          criar conta no Spotify
+        </a>
+        .
+      </p>
+    </div>
+  );
+}
+
 /**
  * Trilha do perfil — só com os gêneros que a pessoa escolheu, e fugindo dos
  * hits: uma playlist de descoberta, lançamentos recentes e faixas de artistas
  * fora do topo. A seleção de cada gênero muda todo dia; "Outras descobertas"
- * troca na hora. O player embutido toca de graça (com anúncios no plano
- * gratuito do Spotify).
+ * troca na hora. Quem entra com o Spotify Premium ouve completo aqui dentro;
+ * os demais ouvem as prévias do player embutido ou vão ao app do Spotify.
  */
 export default function ProfilePlaylist() {
   const { prefs, ready } = usePreferences();
@@ -146,6 +265,9 @@ export default function ProfilePlaylist() {
   const [tocando, setTocando] = useState<Faixa | null>(null);
   // Troca de aba não refaz a busca: cada gênero/rodada é pedido uma vez.
   const guardadas = useRef(new Map<string, Trilha>());
+  const spotify = useSpotify();
+  // Premium conectado: toca pelo player da plataforma, completo.
+  const aqui = spotify.status === 'pronto';
 
   useEffect(() => {
     if (!generos.length) return;
@@ -212,6 +334,17 @@ export default function ProfilePlaylist() {
   }
 
   const trilha = estado.tipo === 'ok' ? estado.trilha : null;
+  const tocandoId = aqui ? (spotify.reproducao?.faixa.id ?? null) : (tocando?.id ?? null);
+  const linkApp = trilha?.playlist?.url ?? trilha?.listas.find((l) => l.faixas.length)?.faixas[0]?.url ?? null;
+
+  /** Com Premium, toca a lista inteira a partir da faixa; sem, abre a prévia. */
+  const tocarFaixa = (lista: Lista, f: Faixa) => {
+    if (!aqui) {
+      setTocando(f);
+      return;
+    }
+    void spotify.tocar({ uris: lista.faixas.map((x) => `spotify:track:${x.id}`), inicio: `spotify:track:${f.id}` });
+  };
   const embed = tocando
     ? { src: tocando.embedUrl, altura: 152, titulo: tocando.name }
     : trilha?.playlist
@@ -274,7 +407,27 @@ export default function ProfilePlaylist() {
 
       {trilha && (
         <>
-          {embed ? (
+          <PainelSpotify linkApp={linkApp} />
+
+          {aqui && trilha.playlist ? (
+            <div className="card-soft flex flex-wrap items-center gap-3 p-4">
+              <div className="min-w-[12rem] flex-1">
+                <p className="rotulo-hud">Playlist do dia</p>
+                <p className="mt-1 truncate text-sm font-medium text-zinc-50">{trilha.playlist.name}</p>
+                <p className="text-xs text-zinc-400">por {trilha.playlist.owner}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void spotify.tocar({ contexto: `spotify:playlist:${trilha.playlist!.id}` })}
+                className={BOTAO_PRIMARIO}
+              >
+                <Icon name="play" size={13} /> Tocar a playlist
+              </button>
+              <a href={trilha.playlist.url} target="_blank" rel="noopener noreferrer" className={BOTAO_SECUNDARIO}>
+                Abrir no Spotify <Icon name="external" size={13} />
+              </a>
+            </div>
+          ) : !aqui && embed ? (
             <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/60">
               <iframe
                 key={embed.src}
@@ -330,8 +483,8 @@ export default function ProfilePlaylist() {
               titulo={l.titulo}
               apoio={l.apoio}
               faixas={l.faixas}
-              tocando={tocando?.id ?? null}
-              onTocar={setTocando}
+              tocando={tocandoId}
+              onTocar={(f) => tocarFaixa(l, f)}
             />
           ))}
 
@@ -344,7 +497,8 @@ export default function ProfilePlaylist() {
 
           <p className="flex items-start gap-2 text-[11px] leading-relaxed text-zinc-500">
             <Icon name="alert" size={13} className="mt-0.5 shrink-0" />
-            Reprodução pelo player oficial do Spotify: no plano gratuito, toca com anúncios. Com Premium, sem anúncios.
+            Reprodução pelo Spotify: sem conta, prévias de 30 s; com conta grátis, completas no app do Spotify, com
+            anúncios; com Premium, completas aqui, sem anúncios.
           </p>
         </>
       )}

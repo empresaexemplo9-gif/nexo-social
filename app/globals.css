@@ -126,6 +126,60 @@ html[data-lateral='recolhida'] .barra-lateral .item-menu {
   padding-right: 0;
 }
 
+/* ---------------------------------------------------------------------------
+   Barra do player do Spotify (components/spotify/BarraDoPlayer.tsx)
+   Fica acima da barra de abas do celular, ao lado da barra lateral no desktop,
+   e empurra o fim da página para o último item não ficar escondido.
+   -------------------------------------------------------------------------*/
+.barra-player {
+  bottom: 0;
+}
+body:has(.barra-player) {
+  padding-bottom: 4.5rem;
+}
+@media (max-width: 767px) {
+  /* --altura-abas é medida pela própria barra (components/MobileTabBar.tsx). */
+  body:has(#espacador-barra) .barra-player {
+    bottom: var(--altura-abas, calc(4rem + env(safe-area-inset-bottom)));
+  }
+  /* A barra de salvar do questionário sobe junto. */
+  body:has(.barra-player) .sobe-com-player {
+    margin-bottom: 4.5rem;
+  }
+}
+@media (min-width: 1024px) {
+  body:has(.barra-lateral) .barra-player {
+    left: 15.5rem;
+    transition: left 0.2s ease;
+  }
+  html[data-lateral='recolhida'] body:has(.barra-lateral) .barra-player {
+    left: 4.75rem;
+  }
+}
+
+/* Progresso fino, no tom neon — o range nativo fica grosso e cinza. */
+.barra-player .progresso {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 0;
+}
+.barra-player .progresso::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #1fd0f2;
+  box-shadow: 0 0 10px rgba(31, 208, 242, 0.8);
+}
+.barra-player .progresso::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 9999px;
+  background: #1fd0f2;
+}
+
 /* Linhas de varredura finas sobre superfícies grandes (a antiga "textura de
    papel" virou tela de monitor). */
 .texture-grain {

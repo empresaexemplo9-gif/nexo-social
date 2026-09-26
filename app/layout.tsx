@@ -8,6 +8,7 @@ import { ReadingProvider } from '@/lib/reading';
 import MobileTabBar from '@/components/MobileTabBar';
 import PWARegister from '@/components/PWARegister';
 import TechBackdrop from '@/components/TechBackdrop';
+import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
 
 // Chakra Petch: cortes retos e angulares, cara de painel — usada nos títulos.
 const display = Chakra_Petch({
@@ -110,8 +111,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <PreferencesProvider>
           <AgendaProvider>
             <ReadingProvider>
-              {children}
-              <MobileTabBar />
+              <SpotifyProvider>
+                {children}
+                <MobileTabBar />
+              </SpotifyProvider>
             </ReadingProvider>
           </AgendaProvider>
         </PreferencesProvider>

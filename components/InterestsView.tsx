@@ -168,7 +168,7 @@ export default function InterestsView({ events }: { events: EventItem[] }) {
 
       {/* Trilha (Spotify) ao lado de filmes e livros — a largura toda trabalha */}
       <div className="grid grid-cols-1 gap-10 xl:grid-cols-12 xl:gap-8">
-        <section className="space-y-4 xl:col-span-7">
+        <section id="trilha" className="space-y-4 xl:col-span-7">
           <SectionHeader
             label="Áudio"
             title="Sua trilha"

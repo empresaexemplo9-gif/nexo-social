@@ -615,7 +615,7 @@ export default function Questionnaire() {
       </div>
 
       {/* Barra de salvar no celular, acima da barra de abas */}
-      <div className="fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 space-y-2 px-4 md:bottom-4 lg:hidden">
+      <div className="sobe-com-player fixed inset-x-0 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 space-y-2 px-4 md:bottom-4 lg:hidden">
         {/* O aviso fica junto do botão: no fim da página ninguém o veria. */}
         {aviso && <div className="rounded-xl bg-zinc-950/95 backdrop-blur-xl">{aviso}</div>}
         <div className="flex items-center gap-3 rounded-2xl border border-emerald-400/20 bg-zinc-950/90 p-3 shadow-neon backdrop-blur-xl">

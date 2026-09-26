@@ -18,6 +18,9 @@ export type IconName =
   | 'sunrise'
   | 'ticket'
   | 'play'
+  | 'pause'
+  | 'skipNext'
+  | 'skipPrev'
   | 'headphones'
   | 'video'
   | 'sparkles'
@@ -132,6 +135,9 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   play: <path d="M8 5.5v13l11-6.5-11-6.5Z" />,
+  pause: <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />,
+  skipNext: <path d="M5.5 5.5v13l9-6.5-9-6.5ZM16 5.5h2.5v13H16z" />,
+  skipPrev: <path d="M18.5 5.5v13l-9-6.5 9-6.5ZM8 5.5H5.5v13H8z" />,
   headphones: (
     <>
       <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
@@ -306,7 +312,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
   ),
 };
 
-const FILLED: IconName[] = ['play', 'bookmarkFilled', 'sparkles', 'starFilled'];
+const FILLED: IconName[] = ['play', 'pause', 'skipNext', 'skipPrev', 'bookmarkFilled', 'sparkles', 'starFilled'];
 
 export function Icon({ name, size = 20, className = '', ...rest }: Props) {
   const filled = FILLED.includes(name);
