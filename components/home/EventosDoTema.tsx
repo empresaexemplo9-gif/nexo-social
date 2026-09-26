@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import EventCard from '../EventCard';
+import Icon from '../icons';
 import { SectionHeader } from '../InterestsView';
 import { getTopic, type CategorySlug, type EventItem } from '@/lib/data';
 
@@ -42,6 +43,14 @@ export default function EventosDoTema({ tema, events }: { tema: CategorySlug; ev
         <p className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 text-sm text-zinc-400">
           Nenhum evento de {t.label} na agenda agora — assim que aparecer, ele vem para cá.
         </p>
+      )}
+      {tema === 'moda' && (
+        <Link
+          href="/tema/moda#ingressos"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-clay-500/50 px-3.5 py-2 text-xs font-semibold text-clay-400 transition hover:bg-clay-500 hover:text-zinc-900"
+        >
+          <Icon name="ticket" size={14} /> Onde comprar ingressos de moda (SPFW, Rio Fashion Week, Casa de Criadores…)
+        </Link>
       )}
     </section>
   );

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import EventList from '@/components/EventList';
 import BuscarMaisEventos from '@/components/BuscarMaisEventos';
+import OndeComprarModa from '@/components/OndeComprarModa';
 import SportsHub from '@/components/SportsHub';
 import HeritageShelf from '@/components/HeritageShelf';
 import ClipsShelf from '@/components/ClipsShelf';
@@ -138,7 +139,7 @@ export default function TopicView({ slug, contents, events }: Props) {
             </p>
           </div>
           <EventList topic={slug} events={events} emptyLabel={`Nenhum evento de ${topic.label} com ingresso à venda agora.`} />
-          <BuscarMaisEventos tema={topic.label} />
+          {slug === 'moda' ? <OndeComprarModa /> : <BuscarMaisEventos tema={topic.label} />}
         </section>
 
         <section className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-8 text-center">

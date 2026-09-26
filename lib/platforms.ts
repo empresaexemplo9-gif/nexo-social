@@ -30,6 +30,15 @@ function mediaQuery(event: EventItem): string {
 /** Plataformas de ingresso/divulgação — busca pelo evento na cidade. */
 export function ticketLinks(event: EventItem): PlatformLink[] {
   const term = `${event.title} ${event.city}`;
+  // Moda vende pela Sympla e, nas semanas de moda, pela Eventim.
+  if (event.topic === 'moda') {
+    return [
+      { kind: 'ingresso', icon: 'ticket', label: 'Sympla', url: `https://www.sympla.com.br/eventos?s=${q(term)}` },
+      { kind: 'ingresso', icon: 'ticket', label: 'Eventim', url: `https://www.eventim.com.br/search/?affiliate=BR1&searchterm=${q(event.title)}` },
+      { kind: 'ingresso', icon: 'ticket', label: 'Eventbrite', url: `https://www.eventbrite.com.br/d/brazil/${q(event.title)}/` },
+      { kind: 'ingresso', icon: 'mapPin', label: 'Onde comprar ingressos de moda', url: '/tema/moda#ingressos' },
+    ];
+  }
   return [
     { kind: 'ingresso', icon: 'ticket', label: 'Sympla', url: `https://www.sympla.com.br/eventos?s=${q(term)}` },
     { kind: 'ingresso', icon: 'ticket', label: 'Eventbrite', url: `https://www.eventbrite.com.br/d/brazil/${q(event.city)}/?q=${q(event.title)}` },

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Icon from '../icons';
 import { getTopic } from '@/lib/data';
 import { PAUTA, slugDaPauta, FORMATOS } from '@/lib/revista-pauta';
+import { eventoDeModaDaMateria, proximaValida } from '@/lib/ingressos-moda';
 import type { Imagem, Materia, Secao } from '@/lib/revista';
 
 function Figura({ img, larga = false }: { img: Imagem; larga?: boolean }) {
@@ -97,6 +98,7 @@ export default function MateriaView({ m }: { m: Materia }) {
   const mais = (PAUTA[m.tema] ?? []).filter((x) => slugDaPauta(x.verbete) !== m.slug).slice(0, 4);
   const [img1, img2, img3] = m.imagens;
   const metade = Math.ceil(m.secoes.length / 2);
+  const ingresso = m.tema === 'moda' ? eventoDeModaDaMateria(m.slug) : null;
 
   return (
     <article className="pb-16">
@@ -222,6 +224,24 @@ export default function MateriaView({ m }: { m: Materia }) {
 
         {/* Coluna lateral */}
         <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
+          {ingresso && (
+            <div className="rounded-3xl bg-clay-500 p-5 text-zinc-900 shadow-warm">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em]">Quer ir?</p>
+              {proximaValida(ingresso) && <p className="mt-2 text-sm font-semibold">{ingresso.proxima!.texto}</p>}
+              <p className="mt-2 text-sm leading-relaxed">{ingresso.comoFunciona}</p>
+              <a
+                href={ingresso.ingresso.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-zinc-50 transition hover:bg-zinc-800"
+              >
+                <Icon name="ticket" size={14} /> Ingressos — {ingresso.ingresso.rotulo}
+              </a>
+              <Link href="/tema/moda#ingressos" className="mt-3 block text-xs font-semibold underline decoration-dotted">
+                Outros eventos de moda e onde comprar
+              </Link>
+            </div>
+          )}
           {m.formato !== 'linha-do-tempo' && m.linhaDoTempo.length >= 3 && m.formato !== 'dossie' && (
             <div className="card-soft p-5">
               <p className="rotulo-hud">Marcos</p>

@@ -120,8 +120,7 @@ export default function EventView({ event, related }: Props) {
                         <a
                           key={l.label}
                           href={l.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          {...(l.url.startsWith('/') ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
                           className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-200 transition hover:-translate-y-0.5 hover:border-clay-500 hover:text-clay-300"
                         >
                           <Icon name={l.icon} size={14} /> {l.label}
