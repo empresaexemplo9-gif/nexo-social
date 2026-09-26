@@ -50,3 +50,57 @@ DO $$ BEGIN
 GRANT USAGE ON SCHEMA public, auth TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO anon, authenticated, service_role;
+
+-- Storage mínimo (buckets, objetos com RLS e storage.foldername), como no
+-- Supabase, para testar as políticas das imagens.
+CREATE SCHEMA IF NOT EXISTS storage;
+CREATE TABLE IF NOT EXISTS storage.buckets (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  public BOOLEAN DEFAULT FALSE,
+  file_size_limit BIGINT,
+  allowed_mime_types TEXT[],
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS storage.objects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  bucket_id TEXT REFERENCES storage.buckets(id),
+  name TEXT,
+  owner UUID,
+  owner_id TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (bucket_id, name)
+);
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION storage.foldername(name TEXT) RETURNS TEXT[]
+LANGUAGE plpgsql IMMUTABLE AS $$
+DECLARE
+  _parts TEXT[];
+BEGIN
+  SELECT string_to_array(name, '/') INTO _parts;
+  RETURN _parts[1:array_length(_parts, 1) - 1];
+END;
+$$;
+GRANT USAGE ON SCHEMA storage TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON storage.objects TO anon, authenticated, service_role;
+GRANT SELECT ON storage.buckets TO anon, authenticated, service_role;
+
+-- Realtime mínimo: a tabela onde o Supabase confere a autorização dos canais
+-- privados e realtime.topic(), que ele preenche com o canal pedido.
+CREATE SCHEMA IF NOT EXISTS realtime;
+CREATE TABLE IF NOT EXISTS realtime.messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  topic TEXT NOT NULL,
+  extension TEXT NOT NULL DEFAULT 'broadcast',
+  payload JSONB,
+  event TEXT,
+  private BOOLEAN DEFAULT TRUE,
+  inserted_at TIMESTAMP DEFAULT NOW()
+);
+ALTER TABLE realtime.messages ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION realtime.topic() RETURNS TEXT
+LANGUAGE sql STABLE AS $$
+  SELECT NULLIF(current_setting('realtime.topic', TRUE), '')::text;
+$$;
+GRANT USAGE ON SCHEMA realtime TO anon, authenticated, service_role;
+GRANT SELECT, INSERT ON realtime.messages TO anon, authenticated, service_role;

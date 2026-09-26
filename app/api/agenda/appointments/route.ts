@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/api-helpers';
-import { findUserByEmail, listAppointments, notify } from '@/lib/social';
+import { isUuid, listAppointments } from '@/lib/social';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,13 @@ export async function GET() {
   }
 }
 
-/** Cria um compromisso, marcando participantes por e-mail. */
+/**
+ * Cria um compromisso e convida pessoas DA PLATAFORMA (pelo id da conta,
+ * escolhida pelo nome no seletor). Nada sai por e-mail: o convite vai para a
+ * agenda e para as notificações de cada convidado — o gatilho
+ * notify_appointment_invite do banco cria a notificação — e fica pendente
+ * até ele responder positivo (concordo) ou negativo (não concordo).
+ */
 export async function POST(request: Request) {
   const { sb, user } = await getSession();
   if (!sb) return NextResponse.json({ error: 'Supabase não configurado.' }, { status: 503 });
@@ -26,7 +32,11 @@ export async function POST(request: Request) {
   const b = await request.json().catch(() => null);
   const title = String(b?.title || '').trim();
   const startsAt = String(b?.startsAt || '').trim();
-  const emails: string[] = Array.isArray(b?.participants) ? b.participants : [];
+  const ids: string[] = Array.from(
+    new Set<string>((Array.isArray(b?.participantIds) ? b.participantIds : []).filter(isUuid)),
+  )
+    .filter((id) => id !== user.id)
+    .slice(0, 50);
 
   if (!title) return NextResponse.json({ error: 'Informe o título do compromisso.' }, { status: 400 });
   if (!startsAt || Number.isNaN(new Date(startsAt).getTime())) {
@@ -43,7 +53,7 @@ export async function POST(request: Request) {
       ends_at: b?.endsAt ? new Date(b.endsAt).toISOString() : null,
       location: b?.location || null,
       city: b?.city || null,
-      is_group: emails.length > 0,
+      is_group: ids.length > 0,
     })
     .select()
     .maybeSingle();
@@ -52,49 +62,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error?.message || 'Falha ao criar o compromisso.' }, { status: 500 });
   }
 
-  // Resolve os convidados e registra a participação como "pendente".
-  const invited: { id: string; email: string }[] = [];
-  const notFound: string[] = [];
-  for (const raw of emails.slice(0, 25)) {
-    const email = String(raw || '').trim().toLowerCase();
-    if (!email || email === user.email?.toLowerCase()) continue;
-    const { user: found } = await findUserByEmail(sb, email);
-    if (found) invited.push({ id: found.id, email: found.email });
-    else notFound.push(email);
-  }
-
-  if (invited.length) {
+  if (ids.length) {
     const { error: pErr } = await sb
       .from('appointment_participants')
-      .insert(invited.map((i) => ({ appointment_id: appt.id, user_id: i.id, status: 'pendente' })));
+      .insert(ids.map((id) => ({ appointment_id: appt.id, user_id: id, status: 'pendente' })));
     if (pErr) {
       return NextResponse.json(
-        { error: `Compromisso criado, mas falhou ao marcar participantes: ${pErr.message}`, appointment: appt },
+        { error: `Compromisso criado, mas falhou ao convidar as pessoas: ${pErr.message}`, appointment: appt },
         { status: 207 },
       );
     }
-
-    await notify(
-      invited.map((i) => ({
-        userId: i.id,
-        type: 'convite',
-        title: 'Você foi marcado em um compromisso',
-        body: `${user.email} marcou você em "${title}".`,
-        link: '/agenda',
-        appointmentId: appt.id,
-        actorId: user.id,
-      })),
-    );
   }
 
-  return NextResponse.json({
-    ok: true,
-    appointment: appt,
-    invited: invited.map((i) => i.email),
-    // Aponta claramente quem não pôde ser marcado e por quê.
-    notFound,
-    warning: notFound.length
-      ? `Sem conta na plataforma: ${notFound.join(', ')}. Peça para se cadastrarem e marque novamente.`
-      : undefined,
-  });
+  return NextResponse.json({ ok: true, appointment: appt, invited: ids.length });
 }

@@ -3,7 +3,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Icon from './icons';
+import PessoaPicker, { type Pessoa } from './PessoaPicker';
 import { formatEventDateLong, relativeLabel } from '@/lib/datetime';
+import { EVENTO_CONVITES, avisarConvites } from '@/lib/convites';
 
 type Tab = 'compromissos' | 'recados' | 'contatos';
 type ParticipantStatus = 'pendente' | 'confirmado' | 'recusado';
@@ -53,6 +55,63 @@ const STATUS_STYLE: Record<ParticipantStatus, string> = {
   recusado: 'bg-clay-950/70 text-clay-300',
 };
 
+const STATUS_LABEL: Record<ParticipantStatus, string> = {
+  pendente: 'aguardando resposta',
+  confirmado: 'concordou',
+  recusado: 'não concordou',
+};
+
+const STATUS_ICON: Record<ParticipantStatus, 'clock' | 'thumbUp' | 'thumbDown'> = {
+  pendente: 'clock',
+  confirmado: 'thumbUp',
+  recusado: 'thumbDown',
+};
+
+/** Positivo (concordo) e negativo (não concordo): a resposta do convidado. */
+function BotoesResposta({
+  status,
+  busy,
+  onResponder,
+  grande = false,
+}: {
+  status: ParticipantStatus | null;
+  busy: boolean;
+  onResponder: (s: 'confirmado' | 'recusado') => void;
+  grande?: boolean;
+}) {
+  const tam = grande ? 'px-4 py-2.5 text-sm' : 'px-3 py-2 text-xs';
+  return (
+    <div className="flex shrink-0 gap-2">
+      <button
+        type="button"
+        onClick={() => onResponder('confirmado')}
+        disabled={busy || status === 'confirmado'}
+        aria-pressed={status === 'confirmado'}
+        className={`inline-flex items-center gap-1.5 rounded-xl font-semibold transition disabled:cursor-default ${tam} ${
+          status === 'confirmado'
+            ? 'border border-emerald-700 bg-emerald-950/40 text-emerald-300'
+            : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400 disabled:opacity-60'
+        }`}
+      >
+        <Icon name="thumbUp" size={grande ? 16 : 14} /> {status === 'confirmado' ? 'Você concordou' : 'Concordo'}
+      </button>
+      <button
+        type="button"
+        onClick={() => onResponder('recusado')}
+        disabled={busy || status === 'recusado'}
+        aria-pressed={status === 'recusado'}
+        className={`inline-flex items-center gap-1.5 rounded-xl font-semibold transition disabled:cursor-default ${tam} ${
+          status === 'recusado'
+            ? 'border border-clay-700 bg-clay-950/40 text-clay-300'
+            : 'border border-zinc-700 text-zinc-300 hover:border-clay-600 hover:text-clay-300 disabled:opacity-60'
+        }`}
+      >
+        <Icon name="thumbDown" size={grande ? 16 : 14} /> {status === 'recusado' ? 'Você não concordou' : 'Não concordo'}
+      </button>
+    </div>
+  );
+}
+
 function Feedback({ error, info }: { error?: string; info?: string }) {
   if (!error && !info) return null;
   return (
@@ -79,7 +138,8 @@ export default function AgendaWorkspace() {
   const [busy, setBusy] = useState(false);
 
   // formulário de compromisso
-  const [form, setForm] = useState({ title: '', startsAt: '', location: '', description: '', participants: '' });
+  const [form, setForm] = useState({ title: '', startsAt: '', location: '', description: '' });
+  const [convidados, setConvidados] = useState<Pessoa[]>([]);
   // recado
   const [msg, setMsg] = useState({ email: '', body: '' });
   // contato
@@ -113,6 +173,9 @@ export default function AgendaWorkspace() {
 
   useEffect(() => {
     loadAll();
+    // Respondeu pelo sino: a agenda aberta acompanha.
+    window.addEventListener(EVENTO_CONVITES, loadAll);
+    return () => window.removeEventListener(EVENTO_CONVITES, loadAll);
   }, [loadAll]);
 
   const post = async (url: string, body: unknown, method = 'POST') => {
@@ -139,17 +202,24 @@ export default function AgendaWorkspace() {
 
   const createAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
-    const emails = form.participants.split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean);
     const json = await post('/api/agenda/appointments', {
       title: form.title,
       startsAt: form.startsAt,
       location: form.location,
       description: form.description,
-      participants: emails,
+      participantIds: convidados.map((p) => p.id),
     });
     if (json) {
-      if (!json.warning) setInfo(emails.length ? `Compromisso criado e ${json.invited?.length ?? 0} pessoa(s) marcada(s).` : 'Compromisso criado.');
-      setForm({ title: '', startsAt: '', location: '', description: '', participants: '' });
+      const n = json.invited ?? 0;
+      // 207: o compromisso nasceu, mas o convite não foi gravado.
+      if (json.error) setError(json.error);
+      else setInfo(
+        n
+          ? `Compromisso criado. O convite já está na agenda e nas notificações de ${n === 1 ? convidados[0]?.name ?? '1 pessoa' : `${n} pessoas`} — é só responder positivo ou negativo.`
+          : 'Compromisso criado.',
+      );
+      setForm({ title: '', startsAt: '', location: '', description: '' });
+      setConvidados([]);
       loadAll();
     }
   };
@@ -157,8 +227,9 @@ export default function AgendaWorkspace() {
   const respond = async (appointmentId: string, status: 'confirmado' | 'recusado') => {
     const json = await post('/api/agenda/rsvp', { appointmentId, status });
     if (json) {
-      setInfo(status === 'confirmado' ? 'Presença confirmada.' : 'Compromisso desmarcado.');
-      loadAll();
+      setInfo(status === 'confirmado' ? 'Você concordou com o compromisso.' : 'Você não concordou com o compromisso.');
+      // Recarrega esta agenda e o sino (os dois ouvem o aviso).
+      avisarConvites();
     }
   };
 
@@ -201,6 +272,7 @@ export default function AgendaWorkspace() {
   }
 
   const pendingInvites = appointments.filter((a) => a.role === 'convidado' && a.myStatus === 'pendente');
+  const agendados = appointments.filter((a) => !(a.role === 'convidado' && a.myStatus === 'pendente'));
 
   return (
     <div className="space-y-6">
@@ -246,6 +318,40 @@ export default function AgendaWorkspace() {
       {/* ------------------------------- COMPROMISSOS */}
       {tab === 'compromissos' && (
         <div className="space-y-6">
+          {/* Convites aguardando resposta: ficam aqui até a pessoa responder */}
+          {pendingInvites.length > 0 && (
+            <section className="space-y-3 rounded-3xl border border-clay-700/60 bg-clay-950/15 p-5" aria-label="Convites aguardando sua resposta">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
+                <Icon name="calendarCheck" size={16} className="text-clay-400" />
+                {pendingInvites.length === 1 ? 'Um convite aguardando sua resposta' : `${pendingInvites.length} convites aguardando sua resposta`}
+              </h3>
+              <ul className="space-y-3">
+                {pendingInvites.map((a) => (
+                  <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-4">
+                    <div className="min-w-0">
+                      <p className="text-[11px] text-zinc-500">
+                        <span className="font-medium text-zinc-300">{a.ownerName ?? 'Alguém'}</span> convidou você
+                      </p>
+                      <h4 className="mt-0.5 text-base font-semibold text-zinc-50">{a.title}</h4>
+                      <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-zinc-400">
+                        <span className="inline-flex items-center gap-1">
+                          <Icon name="clock" size={12} /> {formatEventDateLong(a.startsAt)}
+                        </span>
+                        {a.location && (
+                          <span className="inline-flex items-center gap-1">
+                            <Icon name="mapPin" size={12} /> {a.location}
+                          </span>
+                        )}
+                      </p>
+                      {a.description && <p className="mt-1.5 text-xs leading-relaxed text-zinc-300">{a.description}</p>}
+                    </div>
+                    <BotoesResposta status={a.myStatus} busy={busy} onResponder={(s) => respond(a.id, s)} grande />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           {/* Novo compromisso */}
           <form onSubmit={createAppointment} className="card-soft space-y-3 p-5">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
@@ -281,14 +387,24 @@ export default function AgendaWorkspace() {
               className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-600 focus:outline-none"
             />
             <div>
-              <input
-                placeholder="Marcar pessoas: e-mails separados por vírgula"
-                value={form.participants}
-                onChange={(e) => setForm({ ...form, participants: e.target.value })}
-                className="w-full rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-600 focus:outline-none"
+              <PessoaPicker
+                value={convidados}
+                onChange={setConvidados}
+                placeholder="Convidar pessoas da plataforma: digite o nome"
+                semResultado={
+                  <p>
+                    Quem ainda não usa a nexo.social pode ser chamado pelo{' '}
+                    <Link href="/comunidade" className="font-medium text-emerald-400 underline">
+                      Convidar amigos
+                    </Link>{' '}
+                    da Comunidade.
+                  </p>
+                }
               />
               <p className="mt-1.5 text-[11px] text-zinc-500">
-                Quem for marcado recebe uma notificação e só precisa <strong>confirmar</strong> ou <strong>desmarcar</strong>.
+                Nada é enviado por e-mail: o convite aparece na <strong>agenda</strong> e nas <strong>notificações</strong> de
+                cada pessoa, e fica lá até ela responder <strong>positivo</strong> (concordo) ou <strong>negativo</strong> (não
+                concordo).
               </p>
             </div>
             <button
@@ -300,15 +416,15 @@ export default function AgendaWorkspace() {
             </button>
           </form>
 
-          {/* Lista */}
-          {appointments.length === 0 ? (
+          {/* Lista (os convites sem resposta já estão no quadro de cima) */}
+          {agendados.length === 0 ? (
             <p className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 text-center text-sm text-zinc-400">
-              Nenhum compromisso ainda. Crie o primeiro acima.
+              {pendingInvites.length ? 'Responda os convites acima para eles entrarem na sua agenda.' : 'Nenhum compromisso ainda. Crie o primeiro acima.'}
             </p>
           ) : (
             <ul className="space-y-3">
-              {appointments.map((a) => (
-                <li key={a.id} className="card-soft p-5">
+              {agendados.map((a) => (
+                <li key={a.id} className={`card-soft p-5 ${a.myStatus === 'recusado' ? 'opacity-70' : ''}`}>
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2 text-[11px]">
@@ -332,28 +448,9 @@ export default function AgendaWorkspace() {
                       {a.description && <p className="mt-2 text-xs leading-relaxed text-zinc-300">{a.description}</p>}
                     </div>
 
-                    {/* Ações: convidado confirma/desmarca; dono exclui */}
+                    {/* Ações: convidado responde (e pode mudar de ideia); dono exclui */}
                     {a.role === 'convidado' ? (
-                      <div className="flex shrink-0 gap-2">
-                        <button
-                          onClick={() => respond(a.id, 'confirmado')}
-                          disabled={busy || a.myStatus === 'confirmado'}
-                          className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                            a.myStatus === 'confirmado'
-                              ? 'border border-emerald-700 text-emerald-400'
-                              : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400'
-                          } disabled:opacity-60`}
-                        >
-                          <Icon name="check" size={14} /> {a.myStatus === 'confirmado' ? 'Confirmado' : 'Confirmar'}
-                        </button>
-                        <button
-                          onClick={() => respond(a.id, 'recusado')}
-                          disabled={busy || a.myStatus === 'recusado'}
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-clay-600 hover:text-clay-300 disabled:opacity-60"
-                        >
-                          <Icon name="close" size={14} /> {a.myStatus === 'recusado' ? 'Desmarcado' : 'Desmarcar'}
-                        </button>
-                      </div>
+                      <BotoesResposta status={a.myStatus} busy={busy} onResponder={(s) => respond(a.id, s)} />
                     ) : (
                       <button
                         onClick={() => removeAppointment(a.id)}
@@ -367,16 +464,28 @@ export default function AgendaWorkspace() {
 
                   {/* Participantes e suas respostas */}
                   {a.participants.length > 0 && (
-                    <div className="mt-4 flex flex-wrap gap-1.5 border-t border-zinc-800/70 pt-3">
-                      {a.participants.map((p) => (
-                        <span
-                          key={p.userId}
-                          className={`rounded-full px-2.5 py-1 text-[11px] ${STATUS_STYLE[p.status]}`}
-                          title={p.email ?? undefined}
-                        >
-                          {p.name || p.email} · {p.status}
-                        </span>
-                      ))}
+                    <div className="mt-4 space-y-2 border-t border-zinc-800/70 pt-3">
+                      {a.role === 'dono' && (
+                        <p className="text-[11px] text-zinc-500">
+                          {(['confirmado', 'recusado', 'pendente'] as ParticipantStatus[])
+                            .map((st) => [st, a.participants.filter((p) => p.status === st).length] as const)
+                            .filter(([, n]) => n > 0)
+                            .map(([st, n]) => `${n} ${n === 1 ? STATUS_LABEL[st] : STATUS_LABEL[st].replace('concordou', 'concordaram')}`)
+                            .join(' · ')}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {a.participants.map((p) => (
+                          <span
+                            key={p.userId}
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] ${STATUS_STYLE[p.status]}`}
+                            title={`${p.email ?? ''} · ${STATUS_LABEL[p.status]}`}
+                          >
+                            <Icon name={STATUS_ICON[p.status]} size={12} />
+                            {p.name || p.email}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </li>

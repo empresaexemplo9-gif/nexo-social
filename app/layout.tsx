@@ -7,6 +7,7 @@ import { AgendaProvider } from '@/lib/agenda';
 import { ReadingProvider } from '@/lib/reading';
 import MobileTabBar from '@/components/MobileTabBar';
 import PWARegister from '@/components/PWARegister';
+import AvisoDeChamada from '@/components/AvisoDeChamada';
 import TechBackdrop from '@/components/TechBackdrop';
 import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
 import { MidiaProvider } from '@/components/midia/MidiaProvider';
@@ -126,6 +127,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <MidiaProvider>
                   {children}
                   <MobileTabBar />
+                  <AvisoDeChamada />
                 </MidiaProvider>
               </SpotifyProvider>
             </ReadingProvider>

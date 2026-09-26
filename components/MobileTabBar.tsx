@@ -17,6 +17,7 @@ const ABAS: Aba[] = [
   { href: '/descobrir', label: 'Descobrir', icon: 'grade' },
   { href: '/shorts', label: 'Shorts', icon: 'shorts' },
   { href: '/agenda', label: 'Agenda', icon: 'calendarCheck' },
+  { href: '/comunidade', label: 'Comunidade', icon: 'users' },
   { href: '/esporte', label: 'Esporte', icon: 'trophy' },
 ];
 
@@ -114,13 +115,13 @@ export default function MobileTabBar() {
                       // A pílula do ativo é convenção do Material (Android).
                       // No iOS o padrão é só a cor mudar.
                       !ios && ativo
-                        ? 'flex h-8 w-16 items-center justify-center rounded-full bg-emerald-500/15'
-                        : 'flex h-8 w-16 items-center justify-center'
+                        ? 'flex h-8 w-14 items-center justify-center rounded-full bg-emerald-500/15'
+                        : 'flex h-8 w-14 items-center justify-center'
                     }
                   >
                     <Icon name={aba.icon} size={ios ? 23 : 22} />
                   </span>
-                  <span className={ios ? 'text-[10px] font-medium leading-none' : 'text-[11px] leading-none'}>
+                  <span className={ios ? 'text-[10px] font-medium leading-none' : 'text-[10.5px] leading-none'}>
                     {aba.label}
                   </span>
                 </Link>

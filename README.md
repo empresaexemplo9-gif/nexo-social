@@ -8,6 +8,11 @@ Plataforma de curadoria **personalizada** de conteúdo e **eventos por proximida
 - **Personalização por perfil** — o questionário (`/questionario`) define os interesses; a home ordena conteúdos e eventos de acordo.
 - **Eventos por proximidade** — geolocalização do smartphone/iPhone (`navigator.geolocation`) + fórmula de Haversine, com _fallback_ pela cidade do perfil.
 - **Multi-tenant** — cadastro de conta **pessoal** ou **organização**; cada conta é um tenant isolado por RLS.
+- **Compromissos dentro da plataforma** — em `/agenda`, quem cria escolhe as pessoas pelo nome (nada de e-mail). O convite fica na agenda e nas notificações de cada convidado até ele responder **positivo** (concordo) ou **negativo** (não concordo).
+- **Comunidade** — em `/comunidade`, qualquer conta cria grupos ilimitados para compartilhar **fotos**, livros, músicas, clipes, filmes e links, organizar **álbuns**, e tem uma **sala sincronizada** para ouvir músicas e assistir a clipes juntos, no mesmo segundo. O controle do grupo é de quem cria (edita, troca a **imagem do grupo**, remove pessoas, apaga). Grupo **fechado**: só o dono convida; **aberto**: todo membro convida. **Convidar amigos** chama quem já tem conta (pelas notificações) e manda o link do grupo para quem ainda não tem (WhatsApp, Telegram, SMS, e-mail ou copiar): a pessoa cria o acesso e já entra no grupo.
+- **Foto de perfil** — em `/conta`; aparece nos grupos, no mural e ao convidar.
+- **Chamadas de áudio e vídeo** — em cada grupo: chamada com o grupo todo ou a dois (pelos membros), de vídeo ou de voz, até 8 pessoas. Só WebRTC do navegador, sem serviço de chamada de terceiros: a mídia vai direto entre os aparelhos, cifrada de ponta a ponta, e o Supabase Realtime (canal privado, só membros) apenas apresenta um aparelho ao outro. Qualidade: câmera em 1080p/30, Opus a 48 kHz com cancelamento de eco, teto de envio ajustado ao tamanho da chamada. Quem é chamado recebe o toque em qualquer página, com Atender/Recusar.
+- **Música pelo Spotify, só aqui dentro** — "Entrar com Spotify" e ouvir na plataforma (Premium: faixas completas; sem entrar ou conta grátis: prévias de 30 s). Não há botão que leve para ouvir no app ou no site do Spotify.
 - **Admin da plataforma** — `/admin` é exclusivo de `thiagohccarvalho00@gmail.com` (protegido no middleware **e** no servidor).
 - **Backend completo** — API REST em Route Handlers, sessões via cookies (`@supabase/ssr`), seed idempotente e políticas RLS.
 
@@ -46,6 +51,24 @@ Abra http://localhost:3000.
 | `GET` | `/api/events?topic=&lat=&lng=` | Eventos (ordenados por proximidade se lat/lng) | Público |
 | `POST` | `/api/newsletter` | Inscrição na newsletter | Público |
 | `GET` / `PUT` | `/api/preferences` | Preferências do questionário | Autenticado |
+| `GET` | `/api/pessoas?q=` | Pessoas da plataforma para convidar (pelo nome) | Autenticado |
+| `GET` / `POST` | `/api/agenda/appointments` | Compromissos; cria convidando por `participantIds` | Autenticado |
+| `POST` | `/api/agenda/rsvp` | Resposta ao convite: `confirmado` (positivo) ou `recusado` (negativo) | Autenticado |
+| `GET` / `PATCH` | `/api/agenda/notifications` | Notificações (convites sem resposta ficam pendentes) | Autenticado |
+| `GET` / `POST` | `/api/comunidade/grupos` | Meus grupos e convites; cria grupo | Autenticado |
+| `GET` / `PATCH` / `DELETE` | `/api/comunidade/grupos/[id]` | Grupo, membros e sala; editar, novo link, apagar (dono) | Membro |
+| `POST` | `/api/comunidade/grupos/[id]/convites` | Convida contas da plataforma | Membro |
+| `POST` | `/api/comunidade/grupos/[id]/resposta` | Aceita ou recusa o convite do grupo | Convidado |
+| `DELETE` | `/api/comunidade/grupos/[id]/membros` | Sair do grupo / remover alguém (dono) | Membro |
+| `GET` / `POST` / `DELETE` | `/api/comunidade/grupos/[id]/posts` | Mural do grupo (inclusive publicações de fotos) | Membro |
+| `GET` / `PATCH` / `DELETE` | `/api/comunidade/grupos/[id]/fotos` | Fotos do grupo (links assinados), mover para álbum, apagar | Membro |
+| `GET` / `POST` | `/api/comunidade/grupos/[id]/albuns` | Álbuns do grupo; cria álbum | Membro |
+| `PATCH` / `DELETE` | `/api/comunidade/grupos/[id]/albuns/[albumId]` | Renomeia ou apaga o álbum (as fotos ficam) | Quem criou / dono |
+| `PUT` / `DELETE` | `/api/me/foto` | Foto de perfil | Autenticado |
+| `GET` / `PUT` | `/api/comunidade/grupos/[id]/sala` | Sala sincronizada (o que toca e em que segundo) | Membro |
+| `POST` | `/api/comunidade/entrar` | Entra no grupo pelo link de convite | Autenticado |
+| `POST` | `/api/comunidade/grupos/[id]/chamada` | Avisa a chamada (grupo, ou `para` numa chamada a dois) | Membro |
+| `GET` | `/api/chamada/ice` | Servidores STUN/TURN das chamadas | Autenticado |
 | `POST` | `/api/admin/contents` | Cadastra conteúdo | Admin |
 | `POST` | `/api/admin/events` | Cadastra evento | Admin |
 | `POST` | `/api/admin/bom-dia` | Publica curadoria Bom Dia | Admin |
@@ -70,4 +93,8 @@ foi descontinuada e a do Sympla é restrita ao organizador).
 - `lib/repo.ts` — leitura de dados (Supabase → tipos do app, com _fallback_).
 - `lib/supabase*.ts` — clientes de navegador, servidor (cookies) e service role.
 - `middleware.ts` — renovação de sessão + proteção de `/admin` e `/conta`.
-- `db/` — `schema.sql` e `seed.sql`.
+- `db/` — `schema.sql` e `seed.sql`; `test-multitenant.sql` e `test-comunidade.sql` testam as regras num Postgres local (nunca no Supabase).
+
+> **Comunidade e convites:** depois de atualizar o código, rode de novo o **`db/schema.sql`** no SQL Editor. Ele cria as tabelas `community_*`, os gatilhos que geram as notificações de convite e resposta (sem depender da service role) e liga o Realtime em `notifications`, `community_sessions` e `community_posts`. Também cria no Storage os buckets **`perfis`** (público: fotos de perfil e imagens dos grupos) e **`comunidade`** (privado: fotos do mural e dos álbuns, abertas só para membros por link assinado), com as políticas de quem envia e quem apaga. As imagens são reduzidas no navegador antes do envio (e perdem os dados de GPS da câmera). E libera os canais privados do Realtime das chamadas (`realtime.messages`: `grupo:<id>:chamada` para membros, `grupo:<id>:dupla:<a>:<b>` só para as duas pessoas).
+
+> **Chamadas em redes restritas:** por padrão as chamadas usam STUN públicos (só descobrem o endereço de cada aparelho; nenhuma mídia passa por eles). Em algumas redes — 4G com CGNAT, Wi-Fi corporativo — a conexão direta não fecha e só um servidor **TURN** resolve. Para ter o seu, suba um [coturn](https://github.com/coturn/coturn) com `use-auth-secret` e defina `TURN_URLS` e `TURN_SECRET` (veja `.env.example`); cada pessoa recebe uma credencial de 12 h gerada no servidor.

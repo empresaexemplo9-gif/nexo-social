@@ -64,7 +64,27 @@ export type IconName =
   | 'volleyball'
   | 'flag'
   | 'motorcycle'
-  | 'broadcast';
+  | 'broadcast'
+  | 'thumbUp'
+  | 'thumbDown'
+  | 'users'
+  | 'link'
+  | 'send'
+  | 'chat'
+  | 'mail'
+  | 'copy'
+  | 'logOut'
+  | 'image'
+  | 'camera'
+  | 'lock'
+  | 'globe'
+  | 'phone'
+  | 'phoneOff'
+  | 'mic'
+  | 'micOff'
+  | 'videoOff'
+  | 'maximize'
+  | 'cameraSwitch';
 
 interface Props extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -355,6 +375,108 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <circle cx="12" cy="12" r="2.4" />
       <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 15.8a5.4 5.4 0 0 0 0-7.6" />
       <path d="M5.4 5.4a9.3 9.3 0 0 0 0 13.2M18.6 18.6a9.3 9.3 0 0 0 0-13.2" />
+    </>
+  ),
+  // Positivo / negativo: a resposta a um convite.
+  thumbUp: (
+    <>
+      <path d="M7 10v10H4.5A1.5 1.5 0 0 1 3 18.5v-7A1.5 1.5 0 0 1 4.5 10H7Z" />
+      <path d="M7 10l4-7a2.2 2.2 0 0 1 2.6 2.4L13 9.5h5.6a2 2 0 0 1 2 2.4l-1.4 6.5a2 2 0 0 1-2 1.6H7" />
+    </>
+  ),
+  thumbDown: (
+    <>
+      <path d="M17 14V4h2.5A1.5 1.5 0 0 1 21 5.5v7a1.5 1.5 0 0 1-1.5 1.5H17Z" />
+      <path d="M17 14l-4 7a2.2 2.2 0 0 1-2.6-2.4l.6-4.1H5.4a2 2 0 0 1-2-2.4l1.4-6.5a2 2 0 0 1 2-1.6H17" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.2a6.5 6.5 0 0 1 3.5 5.8" />
+    </>
+  ),
+  link: (
+    <>
+      <path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2" />
+      <path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2" />
+    </>
+  ),
+  send: <path d="M21 3 10 14M21 3l-7 18-4-7-7-4 18-7Z" />,
+  chat: <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />,
+  mail: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+    </>
+  ),
+  logOut: (
+    <>
+      <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+      <path d="M10 16l-4-4 4-4M6 12h10" />
+    </>
+  ),
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <circle cx="9" cy="9.5" r="1.8" />
+      <path d="m21 16-5-5-8.5 9" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M4 8h3l1.8-2.5h6.4L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="9" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  globe: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z" />
+    </>
+  ),
+  phone: <path d="M5 4h3.5l1.8 4.5-2.3 1.4a11 11 0 0 0 6.1 6.1l1.4-2.3L20 15.5V19a1 1 0 0 1-1 1A16 16 0 0 1 4 5a1 1 0 0 1 1-1Z" />,
+  phoneOff: (
+    <>
+      <path d="M3.5 13.5c4.8-4.4 12.2-4.4 17 0l-1.8 2.6-3.6-1.5v-2.2a10 10 0 0 0-6.2 0v2.2l-3.6 1.5-1.8-2.6Z" />
+    </>
+  ),
+  mic: (
+    <>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
+    </>
+  ),
+  micOff: (
+    <>
+      <path d="M15 10.5V6a3 3 0 0 0-5.8-1.1M9 9v2a3 3 0 0 0 4.6 2.5" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 10.4 5.2M18.5 11a6.5 6.5 0 0 1-.6 2.7M12 17.5V21M4 4l16 16" />
+    </>
+  ),
+  videoOff: (
+    <>
+      <path d="M10 6h4a2 2 0 0 1 2 2v2.5l4.5-3v9l-2.2-1.5M16 16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 1.3-1.9" />
+      <path d="M3 3l18 18" />
+    </>
+  ),
+  maximize: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
+  cameraSwitch: (
+    <>
+      <path d="M4 8h3l1.8-2.5h6.4L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
+      <path d="M9 13a3 3 0 0 1 5.2-2M15 13a3 3 0 0 1-5.2 2M14.5 9.5v1.7h-1.7M9.5 16.5v-1.7h1.7" />
     </>
   ),
 };

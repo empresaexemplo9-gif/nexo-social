@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
+import FotoDePerfil from '@/components/FotoDePerfil';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
 import { ensureProfile } from '@/lib/provisioning';
@@ -10,6 +11,8 @@ import { usePreferences } from '@/lib/preferences';
 import { topicLabel } from '@/lib/data';
 
 interface Account {
+  id: string;
+  avatarPath: string | null;
   email: string | null;
   fullName: string | null;
   tenantName: string | null;
@@ -41,6 +44,8 @@ export default function ContaPage() {
       }
       const j = await res.json();
       setAccount({
+        id: j.user?.id,
+        avatarPath: j.profile?.avatar_path ?? null,
         email: j.user?.email ?? null,
         fullName: j.profile?.full_name ?? null,
         tenantName: j.tenant?.name ?? null,
@@ -95,6 +100,10 @@ export default function ContaPage() {
               <Link href="/login" className="inline-block rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">Entrar</Link>
             </div>
           ) : (
+            <>
+            <div className="mt-4 border-b border-zinc-800/60 pb-4">
+              <FotoDePerfil userId={account.id} nome={account.fullName || account.email || '?'} inicial={account.avatarPath} />
+            </div>
             <dl className="mt-4 space-y-3 text-sm">
               <Row label="Nome" value={account.fullName ?? '—'} />
               <Row label="E-mail" value={account.email ?? '—'} />
@@ -105,6 +114,7 @@ export default function ContaPage() {
                 value={admin ? 'Administrador da plataforma' : `Membro${account.role ? ` (${account.role})` : ''}`}
               />
             </dl>
+            </>
           )}
 
           {aviso && <p className="mt-3 text-sm text-amber-300/80">{aviso}</p>}
