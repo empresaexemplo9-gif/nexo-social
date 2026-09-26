@@ -26,6 +26,7 @@ const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'Início', icon: 'sparkles' },
   { href: '/descobrir', label: 'Descobrir de graça', icon: 'grade' },
   { href: '/shorts', label: 'Shorts', icon: 'shorts' },
+  { href: '/revista', label: 'Revista', icon: 'jornal' },
   { href: '/agenda', label: 'Compromissos', icon: 'calendarCheck' },
   { href: '/esporte', label: 'Esporte ao vivo', icon: 'trophy' },
   { href: '/livros', label: 'Livros que li esse ano', icon: 'library' },

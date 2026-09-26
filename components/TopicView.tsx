@@ -7,6 +7,7 @@ import EventList from '@/components/EventList';
 import SportsHub from '@/components/SportsHub';
 import HeritageShelf from '@/components/HeritageShelf';
 import ClipsShelf from '@/components/ClipsShelf';
+import RevistaDoTema from '@/components/revista/RevistaDoTema';
 import { usePreferences } from '@/lib/preferences';
 import { getTopic, type CategorySlug, type ContentItem, type EventItem } from '@/lib/data';
 import Icon from './icons';
@@ -80,6 +81,21 @@ export default function TopicView({ slug, contents, events }: Props) {
             <SportsHub />
           </section>
         )}
+
+        {/* Revista do tema: matérias no formato da plataforma, de fontes abertas */}
+        <section id="revista" className="scroll-mt-20 space-y-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="rotulo-hud">Revista nexo</p>
+              <h2 className="mt-2 font-display text-3xl font-bold text-zinc-50 md:text-4xl">Matérias de {topic.label}</h2>
+              <p className="mt-1 text-sm text-zinc-400">Dossiês, perfis, linhas do tempo e curiosidades — a pauta muda todo dia.</p>
+            </div>
+            <Link href="/revista" className="font-mono text-xs uppercase tracking-widest text-emerald-400 hover:text-clay-400">
+              revista completa →
+            </Link>
+          </div>
+          <RevistaDoTema tema={slug} />
+        </section>
 
         {/* Clipes do tema — vídeos curtos que tocam aqui dentro */}
         <ClipsShelf topic={slug} />

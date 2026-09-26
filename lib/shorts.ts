@@ -61,7 +61,7 @@ const TERMO_DO_HOBBY: Record<string, string> = {
  * Canais por interesse para quando não há chave do YouTube. Lista curta e de
  * canais grandes; um handle que não resolver é só ignorado.
  */
-const CANAIS: Record<string, string[]> = {
+export const CANAIS: Record<string, string[]> = {
   'tema:tecnologia': ['@tecmundo', '@canaltech', '@manualdomundo'],
   'tema:musica': ['@kondzilla', '@nprmusic', '@multishow'],
   'tema:esporte': ['@CazeTV', '@nba', '@FIFA'],

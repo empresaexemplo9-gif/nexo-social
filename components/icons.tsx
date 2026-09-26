@@ -19,6 +19,7 @@ export type IconName =
   | 'ticket'
   | 'play'
   | 'grade'
+  | 'jornal'
   | 'shorts'
   | 'volume'
   | 'mudo'
@@ -140,6 +141,13 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   play: <path d="M8 5.5v13l11-6.5-11-6.5Z" />,
+  jornal: (
+    <>
+      <path d="M5 4.5h11.5v15H6.5A1.5 1.5 0 0 1 5 18Z" />
+      <path d="M16.5 8.5H19v9.5a1.5 1.5 0 0 1-3 0" />
+      <path d="M8 8h5.5M8 11.5h5.5M8 15h3.5" />
+    </>
+  ),
   grade: (
     <>
       <rect x="4" y="4" width="7" height="7" rx="1.8" />

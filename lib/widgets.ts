@@ -43,6 +43,12 @@ export const WIDGETS_FIXOS: Record<string, TipoDeWidget> = {
     icone: 'shorts',
     tamanhoPadrao: 'inteira',
   },
+  revista: {
+    titulo: 'Revista do dia',
+    descricao: 'Matérias, perfis e curiosidades dos seus temas.',
+    icone: 'jornal',
+    tamanhoPadrao: 'inteira',
+  },
   gratis: {
     titulo: 'Assistir, ler e ouvir de graça',
     descricao: 'Filmes, livros e audiolivros liberados, tocando aqui.',

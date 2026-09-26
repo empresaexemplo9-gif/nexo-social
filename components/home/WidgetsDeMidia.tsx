@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Icon from '../icons';
 import { SectionHeader } from '../InterestsView';
 import GradeGratis, { type AreaGratis } from '../descobrir/GradeGratis';
+import RevistaDoTema from '../revista/RevistaDoTema';
+import { getTopic, TOPICS, type CategorySlug } from '@/lib/data';
 import { usePreferences } from '@/lib/preferences';
 import { CHAVES_DE_PARTIDA, chavesDoPerfil } from '@/lib/interesses';
 import { BOOK_GENRES, FILM_GENRES } from '@/lib/taxonomy';
@@ -142,6 +144,47 @@ export function GratisWidget() {
         limite={6}
         colunas="grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6"
       />
+    </section>
+  );
+}
+
+/** Widget: a revista do dia, com uma aba por tema seguido. */
+export function RevistaWidget() {
+  const { prefs } = usePreferences();
+  const temas = (prefs.interests.length ? prefs.interests : (['moda', 'musica', 'cultura'] as CategorySlug[])).filter((t) => getTopic(t));
+  const [tema, setTema] = useState<CategorySlug>(temas[0] ?? TOPICS[0].slug);
+  const atual = temas.includes(tema) ? tema : temas[0] ?? TOPICS[0].slug;
+  return (
+    <section className="space-y-4">
+      <SectionHeader
+        label="Revista nexo"
+        title="Revista do dia"
+        icon="jornal"
+        subtitle="Dossiês, perfis e curiosidades dos seus temas — com as fontes no fim."
+        action={
+          <Link href="/revista" className="shrink-0 font-mono text-xs uppercase tracking-widest text-emerald-400 hover:text-clay-400">
+            revista completa →
+          </Link>
+        }
+      />
+      {temas.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          {temas.map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTema(t)}
+              aria-pressed={atual === t}
+              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                atual === t ? 'bg-zinc-50 text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-clay-500 hover:text-clay-300'
+              }`}
+            >
+              {getTopic(t)?.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <RevistaDoTema key={atual} tema={atual} compacta />
     </section>
   );
 }

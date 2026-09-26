@@ -30,6 +30,7 @@ const ESTILOS: { value: EstiloIndicacao; label: string }[] = [
 /** Atalhos: tudo o que a plataforma tem, a um toque. */
 const ATALHOS: { href: string; rotulo: string; apoio: string; icone: IconName }[] = [
   { href: '/shorts', rotulo: 'Shorts', apoio: 'Vídeos curtos dos seus temas', icone: 'shorts' },
+  { href: '/revista', rotulo: 'Revista', apoio: 'Matérias dos seus temas', icone: 'jornal' },
   { href: '/#trilha', rotulo: 'Sua trilha', apoio: 'Música no Spotify', icone: 'headphones' },
   { href: '/esporte', rotulo: 'Esporte ao vivo', apoio: 'Placar e transmissões', icone: 'trophy' },
   { href: '/livros', rotulo: 'Livros que li', apoio: 'Registro e estante liberada', icone: 'library' },
@@ -108,7 +109,7 @@ export default function Descobrir() {
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300">
             Filmes, livros, audiolivros e tutoriais que estão liberados — tocando e abrindo aqui dentro, filtrados pelos seus gostos.
           </p>
-          <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+          <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
             {ATALHOS.map((a) => (
               <Link key={a.href} href={a.href} className="card-soft levanta group flex items-center gap-3 p-3.5">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-950 text-emerald-400 transition duration-300 group-hover:-rotate-6 group-hover:bg-clay-500 group-hover:text-zinc-900">
