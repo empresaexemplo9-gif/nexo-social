@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/api-helpers';
-import { notify } from '@/lib/social';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Resposta do convidado: a única ação dele é CONFIRMAR ou DESMARCAR.
+ * Resposta do convidado: positivo (`confirmado`, concordo) ou negativo
+ * (`recusado`, não concordo). Pode mudar de ideia depois.
+ *
+ * O gatilho notify_appointment_answer do banco tira o convite de pendente
+ * nas notificações e avisa quem criou o compromisso.
  */
 export async function POST(request: Request) {
   const { sb, user } = await getSession();
@@ -31,22 +34,6 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'Você não está marcado neste compromisso.' }, { status: 404 });
-
-  // Avisa quem criou o compromisso.
-  const { data: appt } = await sb.from('appointments').select('owner_id, title').eq('id', appointmentId).maybeSingle();
-  if (appt?.owner_id && appt.owner_id !== user.id) {
-    await notify([
-      {
-        userId: appt.owner_id,
-        type: 'resposta',
-        title: status === 'confirmado' ? 'Presença confirmada' : 'Compromisso desmarcado',
-        body: `${user.email} ${status === 'confirmado' ? 'confirmou' : 'desmarcou'} "${appt.title}".`,
-        link: '/agenda',
-        appointmentId,
-        actorId: user.id,
-      },
-    ]);
-  }
 
   return NextResponse.json({ ok: true, status });
 }

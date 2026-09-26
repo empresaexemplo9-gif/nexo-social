@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Selo } from '@/components/Logo';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -8,8 +8,26 @@ import { ADMIN_EMAIL, isPlatformAdmin, type AccountType } from '@/lib/auth';
 import { describeAuthError } from '@/lib/auth-errors';
 import { ensureProfile } from '@/lib/provisioning';
 
+/**
+ * Destino depois de entrar (`?next=`), vindo por exemplo do link de convite de
+ * um grupo. Só caminhos internos: `//site` e `/\site` levariam para fora.
+ */
+function destinoSeguro(raw: string | null): string | null {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return null;
+  return raw;
+}
+
 export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [next, setNext] = useState<string | null>(null);
+
+  // Lido do endereço no navegador (sem useSearchParams, que obrigaria um
+  // Suspense só para isso). `?cadastro=1` abre direto em "Criar conta".
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setNext(destinoSeguro(params.get('next')));
+    if (params.get('cadastro') === '1') setIsRegistering(true);
+  }, []);
   const [accountType, setAccountType] = useState<AccountType>('pessoal');
   const [fullName, setFullName] = useState('');
   const [organizationName, setOrganizationName] = useState('');
@@ -67,7 +85,7 @@ export default function LoginPage() {
       const prov = await ensureProfile(fullName, tenantName);
       if (!prov.ok) console.warn('[auth] provisionamento:', prov.error);
 
-      window.location.href = isPlatformAdmin(email) ? '/admin' : '/';
+      window.location.href = next ?? (isPlatformAdmin(email) ? '/admin' : '/');
     } catch (err: any) {
       // Loga o objeto completo no console do navegador para depuração fina.
       console.error('[auth] falha:', err);
@@ -91,9 +109,11 @@ export default function LoginPage() {
             {isRegistering ? 'Criar conta' : 'Entrar na plataforma'}
           </h2>
           <p className="mt-1 text-xs text-zinc-400">
-            {isRegistering
-              ? 'Cadastre uma conta pessoal ou uma organização (multi-tenant)'
-              : 'Acesse sua conta para gerenciar e personalizar'}
+            {next?.startsWith('/comunidade/convite/')
+              ? 'Depois de entrar, você já cai no grupo para o qual foi convidado'
+              : isRegistering
+                ? 'Cadastre uma conta pessoal ou uma organização (multi-tenant)'
+                : 'Acesse sua conta para gerenciar e personalizar'}
           </p>
         </div>
 

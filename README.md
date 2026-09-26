@@ -8,6 +8,8 @@ Plataforma de curadoria **personalizada** de conteúdo e **eventos por proximida
 - **Personalização por perfil** — o questionário (`/questionario`) define os interesses; a home ordena conteúdos e eventos de acordo.
 - **Eventos por proximidade** — geolocalização do smartphone/iPhone (`navigator.geolocation`) + fórmula de Haversine, com _fallback_ pela cidade do perfil.
 - **Multi-tenant** — cadastro de conta **pessoal** ou **organização**; cada conta é um tenant isolado por RLS.
+- **Compromissos dentro da plataforma** — em `/agenda`, quem cria escolhe as pessoas pelo nome (nada de e-mail). O convite fica na agenda e nas notificações de cada convidado até ele responder **positivo** (concordo) ou **negativo** (não concordo).
+- **Comunidade** — em `/comunidade`, qualquer conta cria grupos ilimitados para compartilhar livros, músicas, clipes, filmes e links, e tem uma **sala sincronizada** para ouvir músicas e assistir a clipes juntos, no mesmo segundo. **Convidar amigos** chama quem já tem conta (pelas notificações) e manda o link do grupo para quem ainda não tem (WhatsApp, Telegram, SMS, e-mail ou copiar): a pessoa cria o acesso e já entra no grupo.
 - **Admin da plataforma** — `/admin` é exclusivo de `thiagohccarvalho00@gmail.com` (protegido no middleware **e** no servidor).
 - **Backend completo** — API REST em Route Handlers, sessões via cookies (`@supabase/ssr`), seed idempotente e políticas RLS.
 
@@ -46,6 +48,18 @@ Abra http://localhost:3000.
 | `GET` | `/api/events?topic=&lat=&lng=` | Eventos (ordenados por proximidade se lat/lng) | Público |
 | `POST` | `/api/newsletter` | Inscrição na newsletter | Público |
 | `GET` / `PUT` | `/api/preferences` | Preferências do questionário | Autenticado |
+| `GET` | `/api/pessoas?q=` | Pessoas da plataforma para convidar (pelo nome) | Autenticado |
+| `GET` / `POST` | `/api/agenda/appointments` | Compromissos; cria convidando por `participantIds` | Autenticado |
+| `POST` | `/api/agenda/rsvp` | Resposta ao convite: `confirmado` (positivo) ou `recusado` (negativo) | Autenticado |
+| `GET` / `PATCH` | `/api/agenda/notifications` | Notificações (convites sem resposta ficam pendentes) | Autenticado |
+| `GET` / `POST` | `/api/comunidade/grupos` | Meus grupos e convites; cria grupo | Autenticado |
+| `GET` / `PATCH` / `DELETE` | `/api/comunidade/grupos/[id]` | Grupo, membros e sala; editar, novo link, apagar (dono) | Membro |
+| `POST` | `/api/comunidade/grupos/[id]/convites` | Convida contas da plataforma | Membro |
+| `POST` | `/api/comunidade/grupos/[id]/resposta` | Aceita ou recusa o convite do grupo | Convidado |
+| `DELETE` | `/api/comunidade/grupos/[id]/membros` | Sair do grupo / remover alguém (dono) | Membro |
+| `GET` / `POST` / `DELETE` | `/api/comunidade/grupos/[id]/posts` | Mural do grupo | Membro |
+| `GET` / `PUT` | `/api/comunidade/grupos/[id]/sala` | Sala sincronizada (o que toca e em que segundo) | Membro |
+| `POST` | `/api/comunidade/entrar` | Entra no grupo pelo link de convite | Autenticado |
 | `POST` | `/api/admin/contents` | Cadastra conteúdo | Admin |
 | `POST` | `/api/admin/events` | Cadastra evento | Admin |
 | `POST` | `/api/admin/bom-dia` | Publica curadoria Bom Dia | Admin |
@@ -70,4 +84,6 @@ foi descontinuada e a do Sympla é restrita ao organizador).
 - `lib/repo.ts` — leitura de dados (Supabase → tipos do app, com _fallback_).
 - `lib/supabase*.ts` — clientes de navegador, servidor (cookies) e service role.
 - `middleware.ts` — renovação de sessão + proteção de `/admin` e `/conta`.
-- `db/` — `schema.sql` e `seed.sql`.
+- `db/` — `schema.sql` e `seed.sql`; `test-multitenant.sql` e `test-comunidade.sql` testam as regras num Postgres local (nunca no Supabase).
+
+> **Comunidade e convites:** depois de atualizar o código, rode de novo o **`db/schema.sql`** no SQL Editor. Ele cria as tabelas `community_*`, os gatilhos que geram as notificações de convite e resposta (sem depender da service role) e liga o Realtime em `notifications`, `community_sessions` e `community_posts`.

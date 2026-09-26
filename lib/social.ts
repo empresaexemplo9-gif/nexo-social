@@ -139,6 +139,114 @@ export async function notify(
   return { ok: true, sent: rows.length };
 }
 
+export const isUuid = (v: unknown): v is string =>
+  typeof v === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
+/** Pessoa da plataforma que dá para convidar (compromisso ou grupo). */
+export interface PessoaDTO {
+  id: string;
+  name: string;
+  /** E-mail completo para quem tem vínculo com você; mascarado para os demais. */
+  emailHint: string | null;
+  /** Contato, colega de compromisso ou de grupo. */
+  proximo: boolean;
+}
+
+/**
+ * Busca pessoas pelo nome (ou pelo e-mail exato). Sem termo, devolve as
+ * pessoas próximas — contatos, quem já esteve num compromisso com você e
+ * quem está nos seus grupos. Função SECURITY DEFINER no banco.
+ */
+export async function searchPeople(sb: SupabaseClient, q: string): Promise<PessoaDTO[]> {
+  const { data, error } = await sb.rpc('search_profiles', { p_query: q });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    emailHint: r.email_hint ?? null,
+    proximo: Boolean(r.proximo),
+  }));
+}
+
+/** Notificações que pedem resposta: continuam pendentes até a pessoa responder. */
+export const TIPOS_DE_CONVITE = ['convite', 'convite_grupo'] as const;
+
+export interface NotificationDTO {
+  id: string;
+  type: string;
+  title: string;
+  body: string | null;
+  link: string | null;
+  readAt: string | null;
+  createdAt: string;
+  appointmentId: string | null;
+  groupId: string | null;
+  /** Convite ainda sem resposta: mostra os botões positivo/negativo. */
+  pending: boolean;
+}
+
+/**
+ * Notificações do usuário. Os convites sem resposta vêm sempre, mesmo que
+ * sejam antigos — senão um convite sumiria do sino só por ter chegado antes
+ * de outras 40 notificações.
+ */
+export async function listNotifications(sb: SupabaseClient, userId: string) {
+  const [recentes, convites] = await Promise.all([
+    sb.from('notifications').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(40),
+    sb
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .in('type', [...TIPOS_DE_CONVITE])
+      .is('read_at', null)
+      .order('created_at', { ascending: false })
+      .limit(50),
+  ]);
+  if (recentes.error) throw new Error(recentes.error.message);
+
+  const byId = new Map<string, any>();
+  for (const n of [...(convites.data ?? []), ...(recentes.data ?? [])]) byId.set(n.id, n);
+  const rows = Array.from(byId.values());
+
+  // O convite só está pendente se a participação ainda estiver sem resposta.
+  const apptIds = rows.filter((n) => n.type === 'convite' && n.appointment_id).map((n) => n.appointment_id);
+  const groupIds = rows.filter((n) => n.type === 'convite_grupo' && n.group_id).map((n) => n.group_id);
+  const [appts, groups] = await Promise.all([
+    apptIds.length
+      ? sb.from('appointment_participants').select('appointment_id').eq('user_id', userId).eq('status', 'pendente').in('appointment_id', apptIds)
+      : Promise.resolve({ data: [] as any[] }),
+    groupIds.length
+      ? sb.from('community_members').select('group_id').eq('user_id', userId).eq('status', 'convidado').in('group_id', groupIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const apptPendente = new Set((appts.data ?? []).map((r: any) => r.appointment_id));
+  const grupoPendente = new Set((groups.data ?? []).map((r: any) => r.group_id));
+
+  const notifications: NotificationDTO[] = rows
+    .map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      body: n.body ?? null,
+      link: n.link ?? null,
+      readAt: n.read_at ?? null,
+      createdAt: n.created_at,
+      appointmentId: n.appointment_id ?? null,
+      groupId: n.group_id ?? null,
+      pending:
+        (n.type === 'convite' && apptPendente.has(n.appointment_id)) ||
+        (n.type === 'convite_grupo' && grupoPendente.has(n.group_id)),
+    }))
+    // Convites sem resposta primeiro; o resto, do mais novo ao mais antigo.
+    .sort((a, b) => Number(b.pending) - Number(a.pending) || b.createdAt.localeCompare(a.createdAt));
+
+  return {
+    notifications,
+    unread: notifications.filter((n) => n.pending || !n.readAt).length,
+    pending: notifications.filter((n) => n.pending).length,
+  };
+}
+
 /** Procura um usuário pelo e-mail (função SECURITY DEFINER no banco). */
 export async function findUserByEmail(sb: SupabaseClient, email: string) {
   const { data, error } = await sb.rpc('find_profile_by_email', { p_email: email });

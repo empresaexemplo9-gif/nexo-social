@@ -64,7 +64,16 @@ export type IconName =
   | 'volleyball'
   | 'flag'
   | 'motorcycle'
-  | 'broadcast';
+  | 'broadcast'
+  | 'thumbUp'
+  | 'thumbDown'
+  | 'users'
+  | 'link'
+  | 'send'
+  | 'chat'
+  | 'mail'
+  | 'copy'
+  | 'logOut';
 
 interface Props extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -355,6 +364,52 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <circle cx="12" cy="12" r="2.4" />
       <path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 15.8a5.4 5.4 0 0 0 0-7.6" />
       <path d="M5.4 5.4a9.3 9.3 0 0 0 0 13.2M18.6 18.6a9.3 9.3 0 0 0 0-13.2" />
+    </>
+  ),
+  // Positivo / negativo: a resposta a um convite.
+  thumbUp: (
+    <>
+      <path d="M7 10v10H4.5A1.5 1.5 0 0 1 3 18.5v-7A1.5 1.5 0 0 1 4.5 10H7Z" />
+      <path d="M7 10l4-7a2.2 2.2 0 0 1 2.6 2.4L13 9.5h5.6a2 2 0 0 1 2 2.4l-1.4 6.5a2 2 0 0 1-2 1.6H7" />
+    </>
+  ),
+  thumbDown: (
+    <>
+      <path d="M17 14V4h2.5A1.5 1.5 0 0 1 21 5.5v7a1.5 1.5 0 0 1-1.5 1.5H17Z" />
+      <path d="M17 14l-4 7a2.2 2.2 0 0 1-2.6-2.4l.6-4.1H5.4a2 2 0 0 1-2-2.4l1.4-6.5a2 2 0 0 1 2-1.6H17" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.2a6.5 6.5 0 0 1 3.5 5.8" />
+    </>
+  ),
+  link: (
+    <>
+      <path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2" />
+      <path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2" />
+    </>
+  ),
+  send: <path d="M21 3 10 14M21 3l-7 18-4-7-7-4 18-7Z" />,
+  chat: <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />,
+  mail: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 6.5 8.5 6.5 8.5-6.5" />
+    </>
+  ),
+  copy: (
+    <>
+      <rect x="8" y="8" width="12" height="12" rx="2" />
+      <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" />
+    </>
+  ),
+  logOut: (
+    <>
+      <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+      <path d="M10 16l-4-4 4-4M6 12h10" />
     </>
   ),
 };

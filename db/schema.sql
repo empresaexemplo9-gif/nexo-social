@@ -847,3 +847,617 @@ BEGIN
       ADD CONSTRAINT user_preferences_idioma_indicacao_check CHECK (idioma_indicacao IN ('pt', 'todos'));
   END IF;
 END $$;
+
+-- =============================================================================
+-- CONVITES DENTRO DA PLATAFORMA
+--
+-- Compromissos não pedem mais e-mail: quem cria escolhe as pessoas pelo nome,
+-- entre as contas da plataforma. O convite fica na agenda e nas notificações
+-- de quem foi marcado até ele responder: positivo (concordo) ou negativo (não
+-- concordo).
+--
+-- As notificações de convite e de resposta nascem aqui, em gatilhos, e não
+-- mais no servidor com a service role: sem a SUPABASE_SERVICE_ROLE_KEY o
+-- convite era gravado, mas a notificação se perdia — e o convidado nunca
+-- ficava sabendo.
+-- =============================================================================
+
+-- Nome para mostrar: o cadastrado ou, sem ele, o começo do e-mail. Só é usada
+-- dentro das funções SECURITY DEFINER abaixo (roda com os direitos delas).
+CREATE OR REPLACE FUNCTION display_name(p_user UUID)
+RETURNS TEXT LANGUAGE sql STABLE SET search_path = public AS $$
+  SELECT COALESCE(
+    (SELECT COALESCE(NULLIF(trim(full_name), ''), split_part(email, '@', 1)) FROM profiles WHERE id = p_user),
+    'Alguém'
+  );
+$$;
+
+-- "thiago@gmail.com" → "th•••@gmail.com": ajuda a distinguir homônimos sem
+-- entregar o e-mail de quem não tem vínculo com você.
+CREATE OR REPLACE FUNCTION mask_email(p_email TEXT)
+RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE
+    WHEN p_email IS NULL OR position('@' IN p_email) = 0 THEN NULL
+    ELSE left(split_part(p_email, '@', 1), 2) || '•••@' || split_part(p_email, '@', 2)
+  END;
+$$;
+
+-- --- Convite para compromisso → notificação para o convidado ----------------
+CREATE OR REPLACE FUNCTION notify_appointment_invite()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  a RECORD;
+BEGIN
+  SELECT id, owner_id, title, starts_at INTO a FROM appointments WHERE id = NEW.appointment_id;
+  IF a.owner_id IS NULL OR a.owner_id = NEW.user_id OR NEW.status <> 'pendente' THEN
+    RETURN NEW;
+  END IF;
+  INSERT INTO notifications (user_id, type, title, body, link, appointment_id, actor_id)
+  VALUES (
+    NEW.user_id,
+    'convite',
+    'Convite para um compromisso',
+    display_name(a.owner_id) || ' convidou você para "' || a.title || '" em '
+      || to_char(a.starts_at AT TIME ZONE 'America/Sao_Paulo', 'DD/MM "às" HH24:MI')
+      || '. Você concorda?',
+    '/agenda',
+    a.id,
+    a.owner_id
+  );
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  -- Notificação é aviso: a falha dela não pode desfazer o convite.
+  RAISE WARNING 'notify_appointment_invite: %', SQLERRM;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS appointment_participants_notify_invite ON appointment_participants;
+CREATE TRIGGER appointment_participants_notify_invite
+  AFTER INSERT ON appointment_participants
+  FOR EACH ROW EXECUTE FUNCTION notify_appointment_invite();
+
+-- --- Resposta do convidado → aviso para quem criou --------------------------
+-- A notificação do convite sai de "pendente" só aqui, quando a pessoa
+-- responde; "marcar como lidas" não a apaga (ver /api/agenda/notifications).
+CREATE OR REPLACE FUNCTION notify_appointment_answer()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  a RECORD;
+BEGIN
+  IF NEW.status NOT IN ('confirmado', 'recusado') OR NEW.status IS NOT DISTINCT FROM OLD.status THEN
+    RETURN NEW;
+  END IF;
+
+  UPDATE notifications SET read_at = NOW()
+   WHERE user_id = NEW.user_id AND appointment_id = NEW.appointment_id AND type = 'convite' AND read_at IS NULL;
+
+  SELECT id, owner_id, title INTO a FROM appointments WHERE id = NEW.appointment_id;
+  IF a.owner_id IS NOT NULL AND a.owner_id <> NEW.user_id THEN
+    INSERT INTO notifications (user_id, type, title, body, link, appointment_id, actor_id)
+    VALUES (
+      a.owner_id,
+      'resposta',
+      CASE WHEN NEW.status = 'confirmado' THEN 'Concordou com o compromisso' ELSE 'Não concordou com o compromisso' END,
+      display_name(NEW.user_id)
+        || CASE WHEN NEW.status = 'confirmado' THEN ' concordou com "' ELSE ' não concordou com "' END
+        || a.title || '".',
+      '/agenda',
+      a.id,
+      NEW.user_id
+    );
+  END IF;
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'notify_appointment_answer: %', SQLERRM;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS appointment_participants_notify_answer ON appointment_participants;
+CREATE TRIGGER appointment_participants_notify_answer
+  AFTER UPDATE OF status ON appointment_participants
+  FOR EACH ROW EXECUTE FUNCTION notify_appointment_answer();
+
+-- =============================================================================
+-- COMUNIDADE — grupos para compartilhar livros, músicas, clipes e filmes, e
+-- para ouvir e assistir juntos, sincronizados.
+--
+-- Qualquer conta cria quantos grupos quiser. Qualquer membro convida: contas
+-- da plataforma recebem o convite nas notificações; quem ainda não tem conta
+-- recebe o link do grupo (community_groups.invite_token), cria o acesso e
+-- entra direto.
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS community_groups (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL CHECK (char_length(trim(name)) BETWEEN 1 AND 80),
+  description TEXT CHECK (description IS NULL OR char_length(description) <= 500),
+  -- Link de convite. gen_random_uuid (122 bits aleatórios) e não
+  -- gen_random_bytes: este não depende da extensão pgcrypto estar no
+  -- search_path de quem insere.
+  invite_token TEXT NOT NULL UNIQUE DEFAULT replace(gen_random_uuid()::text, '-', ''),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS community_groups_owner_idx ON community_groups (owner_id);
+
+CREATE TABLE IF NOT EXISTS community_members (
+  group_id UUID NOT NULL REFERENCES community_groups(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL DEFAULT 'membro' CHECK (role IN ('dono', 'membro')),
+  status TEXT NOT NULL DEFAULT 'convidado' CHECK (status IN ('convidado', 'ativo', 'recusado')),
+  invited_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  joined_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT community_members_pkey PRIMARY KEY (group_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS community_members_user_idx ON community_members (user_id, status);
+
+-- O que se compartilha no grupo.
+CREATE TABLE IF NOT EXISTS community_posts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  group_id UUID NOT NULL REFERENCES community_groups(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL DEFAULT 'recado' CHECK (kind IN ('recado', 'livro', 'musica', 'clipe', 'filme', 'link')),
+  title TEXT CHECK (title IS NULL OR char_length(title) <= 200),
+  subtitle TEXT CHECK (subtitle IS NULL OR char_length(subtitle) <= 200),
+  url TEXT CHECK (url IS NULL OR (char_length(url) <= 1000 AND url ~* '^https?://')),
+  body TEXT CHECK (body IS NULL OR char_length(body) <= 2000),
+  youtube_id TEXT CHECK (youtube_id IS NULL OR youtube_id ~ '^[A-Za-z0-9_-]{11}$'),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CHECK (COALESCE(NULLIF(trim(title), ''), NULLIF(trim(body), '')) IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS community_posts_group_idx ON community_posts (group_id, created_at DESC);
+
+-- A sala do grupo: o que está tocando para todos e em que ponto. Cada
+-- aparelho calcula a posição atual a partir de position_sec + (agora -
+-- updated_at) e se ajusta sozinho — é o que mantém todo mundo no mesmo
+-- segundo da música ou do clipe.
+CREATE TABLE IF NOT EXISTS community_sessions (
+  group_id UUID PRIMARY KEY REFERENCES community_groups(id) ON DELETE CASCADE,
+  youtube_id TEXT CHECK (youtube_id IS NULL OR youtube_id ~ '^[A-Za-z0-9_-]{11}$'),
+  title TEXT CHECK (title IS NULL OR char_length(title) <= 200),
+  kind TEXT NOT NULL DEFAULT 'clipe' CHECK (kind IN ('musica', 'clipe')),
+  is_playing BOOLEAN NOT NULL DEFAULT FALSE,
+  position_sec DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (position_sec >= 0),
+  updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS group_id UUID REFERENCES community_groups(id) ON DELETE CASCADE;
+
+-- --- Helpers SECURITY DEFINER (evitam recursão entre as políticas) ----------
+CREATE OR REPLACE FUNCTION is_group_member(p_group UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM community_members WHERE group_id = p_group AND user_id = auth.uid() AND status = 'ativo'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION is_group_invitee(p_group UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM community_members WHERE group_id = p_group AND user_id = auth.uid() AND status = 'convidado'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION is_group_owner(p_group UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM community_groups WHERE id = p_group AND owner_id = auth.uid());
+$$;
+
+-- --- Quem cria o grupo já entra como dono -----------------------------------
+CREATE OR REPLACE FUNCTION community_group_add_owner()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  INSERT INTO community_members (group_id, user_id, role, status, joined_at)
+  VALUES (NEW.id, NEW.owner_id, 'dono', 'ativo', NOW())
+  ON CONFLICT ON CONSTRAINT community_members_pkey DO UPDATE SET role = 'dono', status = 'ativo';
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS community_groups_add_owner ON community_groups;
+CREATE TRIGGER community_groups_add_owner
+  AFTER INSERT ON community_groups
+  FOR EACH ROW EXECUTE FUNCTION community_group_add_owner();
+
+-- --- Notificações do grupo ---------------------------------------------------
+--   convidado            → avisa o convidado (fica pendente até ele responder)
+--   convidado → ativo    → avisa quem convidou; o convite sai de pendente
+--   convidado → recusado → idem
+--   entrou pelo link     → avisa o dono do grupo
+CREATE OR REPLACE FUNCTION notify_community_member()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  g RECORD;
+  v_old TEXT := CASE WHEN TG_OP = 'UPDATE' THEN OLD.status END;
+BEGIN
+  IF NEW.status IS NOT DISTINCT FROM v_old OR NEW.role = 'dono' THEN
+    RETURN NEW;
+  END IF;
+  SELECT id, name, owner_id INTO g FROM community_groups WHERE id = NEW.group_id;
+
+  IF NEW.status = 'convidado' THEN
+    INSERT INTO notifications (user_id, type, title, body, link, group_id, actor_id)
+    VALUES (
+      NEW.user_id, 'convite_grupo', 'Convite para um grupo',
+      display_name(NEW.invited_by) || ' convidou você para o grupo "' || g.name || '". Quer participar?',
+      '/comunidade', g.id, NEW.invited_by
+    );
+    RETURN NEW;
+  END IF;
+
+  IF v_old = 'convidado' THEN
+    UPDATE notifications SET read_at = NOW()
+     WHERE user_id = NEW.user_id AND group_id = NEW.group_id AND type = 'convite_grupo' AND read_at IS NULL;
+    IF NEW.invited_by IS NOT NULL AND NEW.invited_by <> NEW.user_id THEN
+      INSERT INTO notifications (user_id, type, title, body, link, group_id, actor_id)
+      VALUES (
+        NEW.invited_by, 'resposta_grupo',
+        CASE WHEN NEW.status = 'ativo' THEN 'Aceitou o convite do grupo' ELSE 'Recusou o convite do grupo' END,
+        display_name(NEW.user_id)
+          || CASE WHEN NEW.status = 'ativo' THEN ' entrou no grupo "' ELSE ' recusou o convite para o grupo "' END
+          || g.name || '".',
+        '/comunidade/' || g.id, g.id, NEW.user_id
+      );
+    END IF;
+  ELSIF NEW.status = 'ativo' AND g.owner_id <> NEW.user_id THEN
+    INSERT INTO notifications (user_id, type, title, body, link, group_id, actor_id)
+    VALUES (
+      g.owner_id, 'entrou_grupo', 'Alguém entrou no seu grupo',
+      display_name(NEW.user_id) || ' entrou no grupo "' || g.name || '" pelo link de convite.',
+      '/comunidade/' || g.id, g.id, NEW.user_id
+    );
+  END IF;
+  RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RAISE WARNING 'notify_community_member: %', SQLERRM;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS community_members_notify ON community_members;
+CREATE TRIGGER community_members_notify
+  AFTER INSERT OR UPDATE OF status ON community_members
+  FOR EACH ROW EXECUTE FUNCTION notify_community_member();
+
+-- --- A sala guarda o relógio do servidor, nunca o do aparelho ---------------
+CREATE OR REPLACE FUNCTION community_session_stamp()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at := clock_timestamp();
+  NEW.updated_by := COALESCE(auth.uid(), NEW.updated_by);
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS community_sessions_stamp ON community_sessions;
+CREATE TRIGGER community_sessions_stamp
+  BEFORE INSERT OR UPDATE ON community_sessions
+  FOR EACH ROW EXECUTE FUNCTION community_session_stamp();
+
+-- --- RLS ----------------------------------------------------------------------
+ALTER TABLE community_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Grupos: membros e convidados enxergam; só o dono edita e apaga.
+DROP POLICY IF EXISTS community_groups_select ON community_groups;
+CREATE POLICY community_groups_select ON community_groups FOR SELECT
+  USING (owner_id = auth.uid() OR is_group_member(id) OR is_group_invitee(id));
+DROP POLICY IF EXISTS community_groups_insert ON community_groups;
+CREATE POLICY community_groups_insert ON community_groups FOR INSERT
+  WITH CHECK (owner_id = auth.uid());
+DROP POLICY IF EXISTS community_groups_update ON community_groups;
+CREATE POLICY community_groups_update ON community_groups FOR UPDATE
+  USING (owner_id = auth.uid()) WITH CHECK (owner_id = auth.uid());
+DROP POLICY IF EXISTS community_groups_delete ON community_groups;
+CREATE POLICY community_groups_delete ON community_groups FOR DELETE
+  USING (owner_id = auth.uid());
+
+-- Membros: quem participa vê a lista. Entrar, convidar e responder passam
+-- pelas funções abaixo (sem INSERT/UPDATE direto: ninguém se faz dono nem
+-- entra num grupo sem convite ou link). Sair é apagar a própria linha — menos
+-- o dono, que apaga o grupo; o dono também remove membros e convites.
+DROP POLICY IF EXISTS community_members_select ON community_members;
+CREATE POLICY community_members_select ON community_members FOR SELECT
+  USING (user_id = auth.uid() OR is_group_member(group_id) OR is_group_owner(group_id));
+DROP POLICY IF EXISTS community_members_delete ON community_members;
+CREATE POLICY community_members_delete ON community_members FOR DELETE
+  USING ((user_id = auth.uid() AND role <> 'dono') OR (is_group_owner(group_id) AND user_id <> auth.uid()));
+
+-- Publicações: só membros leem e publicam; autor ou dono do grupo apagam.
+DROP POLICY IF EXISTS community_posts_select ON community_posts;
+CREATE POLICY community_posts_select ON community_posts FOR SELECT
+  USING (is_group_member(group_id));
+DROP POLICY IF EXISTS community_posts_insert ON community_posts;
+CREATE POLICY community_posts_insert ON community_posts FOR INSERT
+  WITH CHECK (author_id = auth.uid() AND is_group_member(group_id));
+DROP POLICY IF EXISTS community_posts_delete ON community_posts;
+CREATE POLICY community_posts_delete ON community_posts FOR DELETE
+  USING (author_id = auth.uid() OR is_group_owner(group_id));
+
+-- Sala: qualquer membro escolhe o que toca, dá play, pausa e avança.
+DROP POLICY IF EXISTS community_sessions_select ON community_sessions;
+CREATE POLICY community_sessions_select ON community_sessions FOR SELECT
+  USING (is_group_member(group_id));
+DROP POLICY IF EXISTS community_sessions_insert ON community_sessions;
+CREATE POLICY community_sessions_insert ON community_sessions FOR INSERT
+  WITH CHECK (is_group_member(group_id));
+DROP POLICY IF EXISTS community_sessions_update ON community_sessions;
+CREATE POLICY community_sessions_update ON community_sessions FOR UPDATE
+  USING (is_group_member(group_id)) WITH CHECK (is_group_member(group_id));
+
+-- --- Funções da comunidade --------------------------------------------------
+
+-- Convida contas da plataforma. Qualquer membro ativo convida.
+CREATE OR REPLACE FUNCTION invite_to_group(p_group UUID, p_users UUID[])
+RETURNS TABLE (convidado_id UUID, resultado TEXT)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid UUID := auth.uid();
+  v_u UUID;
+  v_status TEXT;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Entre na sua conta para convidar.';
+  END IF;
+  IF NOT is_group_member(p_group) THEN
+    RAISE EXCEPTION 'Só quem participa do grupo pode convidar.';
+  END IF;
+
+  FOR v_u IN SELECT DISTINCT u FROM unnest(COALESCE(p_users, '{}')) AS u WHERE u IS NOT NULL LIMIT 50 LOOP
+    convidado_id := v_u;
+    IF v_u = v_uid THEN
+      CONTINUE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM profiles WHERE id = v_u) THEN
+      resultado := 'inexistente';
+      RETURN NEXT;
+      CONTINUE;
+    END IF;
+
+    SELECT m.status INTO v_status FROM community_members m WHERE m.group_id = p_group AND m.user_id = v_u;
+    IF v_status = 'ativo' THEN
+      resultado := 'ja_membro';
+    ELSIF v_status = 'convidado' THEN
+      resultado := 'ja_convidado';
+    ELSE
+      INSERT INTO community_members (group_id, user_id, role, status, invited_by)
+      VALUES (p_group, v_u, 'membro', 'convidado', v_uid)
+      ON CONFLICT ON CONSTRAINT community_members_pkey
+        DO UPDATE SET status = 'convidado', invited_by = v_uid, created_at = NOW();
+      resultado := 'convidado';
+    END IF;
+    RETURN NEXT;
+  END LOOP;
+END;
+$$;
+
+-- Resposta ao convite: positivo entra no grupo, negativo recusa.
+CREATE OR REPLACE FUNCTION respond_group_invite(p_group UUID, p_accept BOOLEAN)
+RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_status TEXT;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Entre na sua conta para responder.';
+  END IF;
+  UPDATE community_members
+     SET status = CASE WHEN p_accept THEN 'ativo' ELSE 'recusado' END,
+         joined_at = CASE WHEN p_accept THEN NOW() ELSE joined_at END
+   WHERE group_id = p_group AND user_id = auth.uid() AND status = 'convidado'
+  RETURNING status INTO v_status;
+  IF v_status IS NULL THEN
+    RAISE EXCEPTION 'Não há convite pendente para este grupo.';
+  END IF;
+  RETURN v_status;
+END;
+$$;
+
+-- Entrada pelo link de convite (inclusive de quem acabou de criar a conta).
+CREATE OR REPLACE FUNCTION join_group_by_token(p_token TEXT)
+RETURNS UUID LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid UUID := auth.uid();
+  v_group UUID;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'Entre na sua conta para participar do grupo.';
+  END IF;
+  SELECT id INTO v_group FROM community_groups WHERE invite_token = trim(COALESCE(p_token, ''));
+  IF v_group IS NULL THEN
+    RAISE EXCEPTION 'Convite inválido: o link pode ter sido trocado pelo dono do grupo.';
+  END IF;
+  INSERT INTO community_members (group_id, user_id, role, status, joined_at)
+  VALUES (v_group, v_uid, 'membro', 'ativo', NOW())
+  ON CONFLICT ON CONSTRAINT community_members_pkey
+    DO UPDATE SET status = 'ativo', joined_at = NOW()
+    WHERE community_members.status <> 'ativo';
+  RETURN v_group;
+END;
+$$;
+
+-- Prévia do convite por link — aberta a quem ainda não tem conta, para a
+-- página mostrar o grupo antes do cadastro. Só responde a quem tem o token.
+CREATE OR REPLACE FUNCTION group_invite_preview(p_token TEXT)
+RETURNS TABLE (group_id UUID, name TEXT, description TEXT, owner_name TEXT, member_count INT, already_member BOOLEAN)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT g.id, g.name, g.description, display_name(g.owner_id),
+         (SELECT count(*)::int FROM community_members m WHERE m.group_id = g.id AND m.status = 'ativo'),
+         EXISTS (SELECT 1 FROM community_members m WHERE m.group_id = g.id AND m.user_id = auth.uid() AND m.status = 'ativo')
+  FROM community_groups g
+  WHERE length(trim(COALESCE(p_token, ''))) >= 16 AND g.invite_token = trim(p_token);
+$$;
+
+-- Meus grupos e os convites que estão esperando resposta.
+CREATE OR REPLACE FUNCTION my_community_groups()
+RETURNS TABLE (
+  id UUID, name TEXT, description TEXT, owner_id UUID, owner_name TEXT,
+  my_role TEXT, my_status TEXT, invited_by_name TEXT,
+  member_count INT, post_count INT, playing_title TEXT,
+  last_activity TIMESTAMPTZ, created_at TIMESTAMPTZ
+)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT g.id, g.name, g.description, g.owner_id, display_name(g.owner_id),
+         m.role, m.status,
+         CASE WHEN m.invited_by IS NOT NULL AND m.invited_by <> m.user_id THEN display_name(m.invited_by) END,
+         (SELECT count(*)::int FROM community_members x WHERE x.group_id = g.id AND x.status = 'ativo'),
+         (SELECT count(*)::int FROM community_posts p WHERE p.group_id = g.id),
+         (SELECT s.title FROM community_sessions s WHERE s.group_id = g.id AND s.is_playing),
+         GREATEST(g.created_at, (SELECT max(p.created_at) FROM community_posts p WHERE p.group_id = g.id)),
+         g.created_at
+  FROM community_members m
+  JOIN community_groups g ON g.id = m.group_id
+  WHERE m.user_id = auth.uid() AND m.status IN ('ativo', 'convidado')
+  ORDER BY (m.status = 'convidado') DESC, 12 DESC NULLS LAST;
+$$;
+
+-- Membros de um grupo com o nome de cada um (sem expor e-mail).
+CREATE OR REPLACE FUNCTION community_group_members(p_group UUID)
+RETURNS TABLE (user_id UUID, name TEXT, role TEXT, status TEXT, invited_by_name TEXT, joined_at TIMESTAMPTZ)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT m.user_id, display_name(m.user_id), m.role, m.status,
+         CASE WHEN m.invited_by IS NOT NULL AND m.invited_by <> m.user_id THEN display_name(m.invited_by) END,
+         m.joined_at
+  FROM community_members m
+  WHERE m.group_id = p_group
+    AND m.status IN ('ativo', 'convidado')
+    AND is_group_member(p_group)
+  ORDER BY (m.role = 'dono') DESC, (m.status = 'ativo') DESC, m.joined_at NULLS LAST;
+$$;
+
+-- --- Enxergar quem está na sua agenda — agora também pela comunidade --------
+CREATE OR REPLACE FUNCTION shares_agenda_with(p_user UUID)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM connections c
+    WHERE (c.user_id = auth.uid() AND c.contact_id = p_user)
+       OR (c.contact_id = auth.uid() AND c.user_id = p_user)
+  )
+  OR EXISTS (
+    SELECT 1
+    FROM appointment_participants eu
+    JOIN appointment_participants outro ON outro.appointment_id = eu.appointment_id
+    WHERE eu.user_id = auth.uid() AND outro.user_id = p_user
+  )
+  OR EXISTS (
+    SELECT 1 FROM appointments a
+    JOIN appointment_participants p ON p.appointment_id = a.id
+    WHERE (a.owner_id = auth.uid() AND p.user_id = p_user)
+       OR (a.owner_id = p_user      AND p.user_id = auth.uid())
+  )
+  OR EXISTS (
+    SELECT 1 FROM messages m
+    WHERE (m.from_user = auth.uid() AND m.to_user = p_user)
+       OR (m.to_user   = auth.uid() AND m.from_user = p_user)
+  )
+  OR EXISTS (
+    SELECT 1
+    FROM community_members eu
+    JOIN community_members outro ON outro.group_id = eu.group_id
+    WHERE eu.user_id = auth.uid() AND eu.status = 'ativo'
+      AND outro.user_id = p_user AND outro.status IN ('ativo', 'convidado')
+  )
+  OR EXISTS (
+    SELECT 1 FROM community_members m
+    WHERE (m.user_id = auth.uid() AND m.invited_by = p_user)
+       OR (m.user_id = p_user AND m.invited_by = auth.uid())
+  );
+$$;
+
+-- --- Encontrar pessoas para convidar (compromissos e grupos) ----------------
+-- Sem termo: as pessoas próximas (contatos, quem já esteve num compromisso
+-- com você, quem está nos seus grupos). Com termo: busca por nome ou pelo
+-- e-mail exato. Para quem não tem vínculo, o e-mail volta mascarado.
+CREATE OR REPLACE FUNCTION search_profiles(p_query TEXT DEFAULT NULL)
+RETURNS TABLE (id UUID, name TEXT, email_hint TEXT, proximo BOOLEAN)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_uid UUID := auth.uid();
+  v_q TEXT := lower(trim(COALESCE(p_query, '')));
+  v_like TEXT := '%' || replace(replace(replace(lower(trim(COALESCE(p_query, ''))), '\', '\\'), '%', '\%'), '_', '\_') || '%';
+BEGIN
+  IF v_uid IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  WITH proximos AS (
+    SELECT c.contact_id AS uid FROM connections c WHERE c.user_id = v_uid AND c.status <> 'recusado'
+    UNION SELECT c.user_id FROM connections c WHERE c.contact_id = v_uid AND c.status <> 'recusado'
+    UNION SELECT outro.user_id
+            FROM appointment_participants eu
+            JOIN appointment_participants outro ON outro.appointment_id = eu.appointment_id
+           WHERE eu.user_id = v_uid
+    UNION SELECT p.user_id FROM appointments a JOIN appointment_participants p ON p.appointment_id = a.id WHERE a.owner_id = v_uid
+    UNION SELECT a.owner_id FROM appointments a JOIN appointment_participants p ON p.appointment_id = a.id WHERE p.user_id = v_uid
+    UNION SELECT outro.user_id
+            FROM community_members eu
+            JOIN community_members outro ON outro.group_id = eu.group_id
+           WHERE eu.user_id = v_uid AND eu.status = 'ativo' AND outro.status = 'ativo'
+  )
+  SELECT pr.id,
+         COALESCE(NULLIF(trim(pr.full_name), ''), split_part(pr.email, '@', 1)),
+         CASE WHEN px.uid IS NOT NULL OR lower(pr.email) = v_q THEN pr.email ELSE mask_email(pr.email) END,
+         px.uid IS NOT NULL
+  FROM profiles pr
+  LEFT JOIN proximos px ON px.uid = pr.id
+  WHERE pr.id <> v_uid
+    AND CASE
+          WHEN v_q = '' THEN px.uid IS NOT NULL
+          WHEN position('@' IN v_q) > 0 THEN lower(pr.email) = v_q
+          WHEN length(v_q) < 2 THEN FALSE
+          ELSE lower(COALESCE(pr.full_name, '')) LIKE v_like
+            OR lower(split_part(COALESCE(pr.email, ''), '@', 1)) LIKE v_like
+        END
+  ORDER BY (px.uid IS NOT NULL) DESC, lower(COALESCE(NULLIF(trim(pr.full_name), ''), pr.email))
+  LIMIT 12;
+END;
+$$;
+
+-- --- Tempo real: notificação chega na hora; a sala e o mural se atualizam
+-- sozinhos. (O Realtime respeita as políticas de RLS acima.)
+DO $$
+DECLARE
+  t TEXT;
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+    FOREACH t IN ARRAY ARRAY['notifications', 'community_sessions', 'community_posts'] LOOP
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = t
+      ) THEN
+        EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', t);
+      END IF;
+    END LOOP;
+  END IF;
+END $$;
+
+-- --- Permissão de execução (ver a nota em "Permissão de execução" acima) ----
+REVOKE ALL ON FUNCTION display_name(UUID)               FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION mask_email(TEXT)                 FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION notify_appointment_invite()      FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION notify_appointment_answer()      FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION community_group_add_owner()      FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION notify_community_member()        FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION community_session_stamp()        FROM PUBLIC, anon, authenticated;
+
+REVOKE ALL ON FUNCTION search_profiles(TEXT)            FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION invite_to_group(UUID, UUID[])    FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION respond_group_invite(UUID, BOOLEAN) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION join_group_by_token(TEXT)        FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION my_community_groups()            FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION community_group_members(UUID)    FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION search_profiles(TEXT)            TO authenticated;
+GRANT EXECUTE ON FUNCTION invite_to_group(UUID, UUID[])    TO authenticated;
+GRANT EXECUTE ON FUNCTION respond_group_invite(UUID, BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION join_group_by_token(TEXT)        TO authenticated;
+GRANT EXECUTE ON FUNCTION my_community_groups()            TO authenticated;
+GRANT EXECUTE ON FUNCTION community_group_members(UUID)    TO authenticated;
+
+-- A prévia do convite abre para quem ainda não tem conta: é ela que mostra o
+-- grupo na página do link antes do cadastro.
+GRANT EXECUTE ON FUNCTION group_invite_preview(TEXT) TO anon, authenticated;
