@@ -4,8 +4,9 @@ import 'server-only';
 // faixas completas dentro da nexo.social.
 //
 // O app do Spotify usado aqui é o de SPOTIFY_PLAYER_CLIENT_ID (ou, sem ela, o
-// mesmo SPOTIFY_CLIENT_ID da busca). Com PKCE o login e a renovação do token
-// não usam o segredo do app — basta o Client ID, que é público.
+// mesmo SPOTIFY_CLIENT_ID da busca). Com o segredo desse app no servidor, o
+// login é o Authorization Code clássico (o recomendado para site com
+// servidor); sem o segredo, cai no PKCE, que só precisa do Client ID.
 //
 // Não confundir com lib/spotify.ts, que usa só o token do app (Client
 // Credentials) para buscar no catálogo. Aqui o token é da PESSOA: é ele que o
@@ -65,8 +66,8 @@ interface Pedido {
   s: string;
   /** para onde voltar depois do login */
   v: string;
-  /** code_verifier do PKCE */
-  c: string;
+  /** code_verifier do PKCE (null quando o login usa o segredo do app) */
+  c: string | null;
 }
 
 /** Como o login terminou — vai na URL de volta (?spotify=...). */
@@ -77,9 +78,23 @@ function idDoApp(): string {
   return (process.env.SPOTIFY_PLAYER_CLIENT_ID || process.env.SPOTIFY_CLIENT_ID || '').trim();
 }
 
+/**
+ * Segredo do MESMO app de idDoApp() — com app próprio para o player, só vale o
+ * SPOTIFY_PLAYER_CLIENT_SECRET. Vazio: o login usa PKCE.
+ */
+function segredoDoApp(): string {
+  const env = process.env.SPOTIFY_PLAYER_CLIENT_ID ? process.env.SPOTIFY_PLAYER_CLIENT_SECRET : process.env.SPOTIFY_CLIENT_SECRET;
+  return (env || '').trim();
+}
+
 /** Segredo do servidor que cifra o cookie da sessão — nunca vai ao Spotify. */
 function segredoDoCookie(): string {
-  return (process.env.SPOTIFY_CLIENT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+  return (
+    process.env.SPOTIFY_CLIENT_SECRET ||
+    process.env.SPOTIFY_PLAYER_CLIENT_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    ''
+  ).trim();
 }
 
 // ---------------------------------------------------------------------------
@@ -161,15 +176,22 @@ interface Tokens {
 
 type RespostaToken = { ok: true; tokens: Tokens } | { ok: false; revogado: boolean };
 
-/** PKCE: o Client ID vai no corpo e o code_verifier prova quem pediu o login. */
+/**
+ * Com segredo, o app se identifica por Basic (ID:segredo); sem ele (PKCE), o
+ * Client ID vai no corpo e o code_verifier prova quem pediu o login.
+ */
 async function pedirToken(corpo: Record<string, string>): Promise<RespostaToken> {
   const id = idDoApp();
   if (!id) return { ok: false, revogado: false };
+  const segredo = segredoDoApp();
   try {
     const res = await fetch(TOKEN_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ ...corpo, client_id: id }).toString(),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        ...(segredo ? { Authorization: `Basic ${Buffer.from(`${id}:${segredo}`).toString('base64')}` } : {}),
+      },
+      body: new URLSearchParams(segredo ? corpo : { ...corpo, client_id: id }).toString(),
       cache: 'no-store',
     });
     const json = await res.json().catch(() => ({}));
@@ -209,8 +231,9 @@ export function iniciarLogin(req: NextRequest): NextResponse {
   if (!id || !chave()) return NextResponse.redirect(urlDeVolta(req, volta, 'off'));
 
   const estado = randomBytes(16).toString('base64url');
-  // PKCE: 64 caracteres aleatórios; o Spotify recebe só o hash.
-  const verificador = randomBytes(48).toString('base64url');
+  // Sem o segredo do app, PKCE: 64 caracteres aleatórios; o Spotify recebe só
+  // o hash e, na troca do código, o original.
+  const verificador = segredoDoApp() ? null : randomBytes(48).toString('base64url');
   const url = new URL(AUTORIZAR);
   url.search = new URLSearchParams({
     response_type: 'code',
@@ -218,8 +241,9 @@ export function iniciarLogin(req: NextRequest): NextResponse {
     scope: ESCOPOS,
     redirect_uri: enderecoDeRetorno(req),
     state: estado,
-    code_challenge_method: 'S256',
-    code_challenge: createHash('sha256').update(verificador).digest('base64url'),
+    ...(verificador
+      ? { code_challenge_method: 'S256', code_challenge: createHash('sha256').update(verificador).digest('base64url') }
+      : {}),
   }).toString();
 
   const res = NextResponse.redirect(url);
@@ -242,7 +266,7 @@ export async function concluirLogin(req: NextRequest): Promise<NextResponse> {
 
   // Sem o pedido que nós mesmos abrimos, ou com state diferente, o retorno
   // não é de um login iniciado aqui — descarta.
-  if (!pedido?.c || !p.get('state') || p.get('state') !== pedido.s) return terminar('falhou');
+  if (!pedido || !p.get('state') || p.get('state') !== pedido.s) return terminar('falhou');
   if (p.get('error')) return terminar(p.get('error') === 'access_denied' ? 'recusado' : 'falhou');
 
   const code = p.get('code');
@@ -252,7 +276,7 @@ export async function concluirLogin(req: NextRequest): Promise<NextResponse> {
     grant_type: 'authorization_code',
     code,
     redirect_uri: enderecoDeRetorno(req),
-    code_verifier: pedido.c,
+    ...(pedido.c ? { code_verifier: pedido.c } : {}),
   });
   if (!troca.ok || !troca.tokens.refresh_token) return terminar('falhou');
 
