@@ -32,7 +32,7 @@ export default function EventCard({ event, distanceKm }: Props) {
               {event.startsAt ? relativeLabel(event.startsAt, event.endsAt) : (topic?.label ?? event.topic)}
             </span>
           </div>
-          <h3 className="text-base font-semibold leading-snug text-white transition group-hover:text-emerald-400">
+          <h3 className="text-base font-semibold leading-snug text-zinc-50 transition group-hover:text-emerald-400">
             {event.title}
           </h3>
           <p className="mt-1 text-xs text-zinc-400">

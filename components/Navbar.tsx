@@ -54,10 +54,15 @@ function BotaoMenu({ onClick, aberto, rotulo }: { onClick: () => void; aberto?: 
 
 function Marca({ onClick }: { onClick?: () => void }) {
   return (
-    <Link href="/" onClick={onClick} className="flex min-w-0 items-center gap-2.5" aria-label="nexo.social — início">
-      <LogoMark size={30} bloco={false} className="shrink-0 text-emerald-400 drop-shadow-[0_0_8px_rgba(31,208,242,0.6)]" />
-      <span className="rotulo-menu truncate font-display text-lg font-semibold tracking-tight text-zinc-50">
-        nexo<span className="text-emerald-400">.social</span>
+    <Link href="/" onClick={onClick} className="group flex min-w-0 items-center gap-2.5" aria-label="nexo.social — início">
+      <LogoMark size={38} disco className="shrink-0 transition duration-500 group-hover:-rotate-12" />
+      <span className="rotulo-menu min-w-0">
+        <span className="block truncate font-display text-[1.35rem] font-bold leading-none tracking-tight text-zinc-50">
+          nexo<span className="text-clay-500 transition group-hover:text-emerald-400">.</span>social
+        </span>
+        <span className="mt-1 block truncate font-mono text-[9px] font-medium uppercase tracking-[0.14em] text-zinc-500">
+          cultura · novidade
+        </span>
       </span>
     </Link>
   );
@@ -84,7 +89,7 @@ function ConteudoMenu({
   const item = (on: boolean) =>
     `item-menu flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
       on
-        ? 'bg-emerald-400/10 text-emerald-300 shadow-[inset_2px_0_0_0_rgba(31,208,242,0.9)]'
+        ? 'bg-emerald-400/10 text-emerald-300 shadow-[inset_2px_0_0_0_rgba(43,82,136,0.5)]'
         : 'text-zinc-300 hover:bg-zinc-900 hover:text-zinc-50'
     }`;
 
@@ -229,7 +234,7 @@ export default function Navbar() {
     <>
       {/* Computador: barra lateral fixa */}
       <aside
-        className="barra-lateral fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-emerald-400/10 bg-zinc-950/85 shadow-[1px_0_0_0_rgba(31,208,242,0.06),10px_0_40px_-24px_rgba(31,208,242,0.35)] backdrop-blur-xl lg:flex"
+        className="barra-lateral fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-emerald-400/10 bg-zinc-950/85 shadow-[1px_0_0_0_rgba(43,82,136,0.03),10px_0_40px_-24px_rgba(43,82,136,0.19)] backdrop-blur-xl lg:flex"
         aria-label="Menu"
       >
         <div className="flex h-16 items-center gap-2 border-b border-emerald-400/10 px-3">

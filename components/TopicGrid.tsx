@@ -68,7 +68,7 @@ export default function TopicGrid({ events }: Props) {
             <button
               onClick={() => setOpen(isOpen ? null : topic.slug)}
               aria-expanded={isOpen}
-              className="flex w-full items-center gap-4 p-5 text-left transition hover:bg-white/[0.03]"
+              className="flex w-full items-center gap-4 p-5 text-left transition hover:bg-zinc-800/40"
             >
               <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${topic.accent.border} ${topic.accent.bg} ${topic.accent.text}`}>
                 <Icon name={topic.icon} size={22} />

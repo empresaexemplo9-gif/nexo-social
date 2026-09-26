@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import LogoMark from '@/components/Logo';
+import { Selo } from '@/components/Logo';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin, type AccountType } from '@/lib/auth';
 import { describeAuthError } from '@/lib/auth-errors';
@@ -82,12 +82,12 @@ export default function LoginPage() {
       <div className="card-soft cantos-hud w-full max-w-md space-y-6 p-8">
         <div className="text-center">
           <Link href="/" className="inline-flex flex-col items-center gap-2">
-            <LogoMark size={44} bloco={false} className="text-emerald-400 drop-shadow-[0_0_10px_rgba(31,208,242,0.6)]" />
-            <span className="text-xl font-bold text-white">
-              nexo<span className="text-emerald-400">.social</span>
+            <Selo size={112} girar textura />
+            <span className="font-display text-2xl font-bold text-zinc-50">
+              nexo<span className="text-clay-500">.</span>social
             </span>
           </Link>
-          <h2 className="mt-4 text-lg font-semibold text-white">
+          <h2 className="mt-4 text-lg font-semibold text-zinc-50">
             {isRegistering ? 'Criar conta' : 'Entrar na plataforma'}
           </h2>
           <p className="mt-1 text-xs text-zinc-400">
@@ -114,7 +114,7 @@ export default function LoginPage() {
                     className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
                       accountType === type
                         ? 'border-emerald-600 bg-emerald-950/40 text-emerald-400'
-                        : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-white'
+                        : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-50'
                     }`}
                   >
                     {type === 'pessoal' ? '👤 Conta Pessoal' : '🏢 Organização'}
@@ -127,7 +127,7 @@ export default function LoginPage() {
                 <input
                   type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)}
                   placeholder="Nome completo"
-                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                  className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none"
                 />
               </div>
 
@@ -137,7 +137,7 @@ export default function LoginPage() {
                   <input
                     type="text" required value={organizationName} onChange={(e) => setOrganizationName(e.target.value)}
                     placeholder="Ex: Minha Empresa / Agência"
-                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+                    className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none"
                   />
                 </div>
               )}
@@ -149,7 +149,7 @@ export default function LoginPage() {
             <input
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="voce@exemplo.com"
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none"
             />
           </div>
 
@@ -158,7 +158,7 @@ export default function LoginPage() {
             <input
               type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••" minLength={6}
-              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none"
             />
           </div>
 

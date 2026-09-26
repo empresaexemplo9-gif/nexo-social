@@ -76,7 +76,7 @@ function Chips({
             onClick={() => onToggle(o.id)}
             className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition ${
               active
-                ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-200 shadow-[0_0_14px_-4px_rgba(31,208,242,0.7)]'
+                ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-200 shadow-[0_0_14px_-4px_rgba(43,82,136,0.39)]'
                 : 'border-zinc-800 bg-zinc-950/60 text-zinc-300 hover:border-emerald-400/40 hover:text-zinc-50'
             }`}
           >
@@ -349,7 +349,7 @@ export default function Questionnaire() {
               {SECOES.map((s) => (
                 <span
                   key={s.id}
-                  className={`h-1.5 flex-1 rounded-full ${respondidas[s.id] ? 'bg-emerald-400 shadow-[0_0_8px_rgba(31,208,242,0.8)]' : 'bg-zinc-800'}`}
+                  className={`h-1.5 flex-1 rounded-full ${respondidas[s.id] ? 'bg-emerald-400 shadow-[0_0_8px_rgba(43,82,136,0.44)]' : 'bg-zinc-800'}`}
                 />
               ))}
             </div>
@@ -399,7 +399,7 @@ export default function Questionnaire() {
                   onClick={() => toggleTema(t.slug)}
                   className={`flex items-center gap-3 rounded-xl border p-3.5 text-left transition ${
                     active
-                      ? `${t.accent.border} ${t.accent.bg} shadow-[0_0_18px_-6px_rgba(31,208,242,0.6)]`
+                      ? `${t.accent.border} ${t.accent.bg} shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]`
                       : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
                   }`}
                 >
@@ -468,7 +468,7 @@ export default function Questionnaire() {
                     }}
                     className={`rounded-xl border p-3.5 text-left transition ${
                       musicHits === o.value
-                        ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(31,208,242,0.6)]'
+                        ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
                         : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
                     }`}
                   >
@@ -493,7 +493,7 @@ export default function Questionnaire() {
                     }}
                     className={`rounded-xl border p-3.5 text-left transition ${
                       musicMix === o.value
-                        ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(31,208,242,0.6)]'
+                        ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
                         : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
                     }`}
                   >
@@ -527,7 +527,7 @@ export default function Questionnaire() {
                   onClick={() => toggle(hobbies, setHobbies, h.id)}
                   className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs font-medium transition ${
                     active
-                      ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-200 shadow-[0_0_14px_-4px_rgba(31,208,242,0.7)]'
+                      ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-200 shadow-[0_0_14px_-4px_rgba(43,82,136,0.39)]'
                       : 'border-zinc-800 bg-zinc-950/60 text-zinc-300 hover:border-emerald-400/40'
                   }`}
                 >
@@ -601,7 +601,7 @@ export default function Questionnaire() {
                 onClick={() => chooseFrequency(f.value)}
                 className={`rounded-xl border p-4 text-left transition ${
                   frequency === f.value
-                    ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(31,208,242,0.6)]'
+                    ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
                     : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
                 }`}
               >

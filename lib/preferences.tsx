@@ -19,6 +19,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CategorySlug } from './data';
+import { normalizarWidgets, type WidgetDaHome } from './widgets';
 
 export type Frequency = 'diaria' | 'semanal' | 'mensal';
 
@@ -47,6 +48,8 @@ export interface UserPreferences {
   radiusKm: number;
   frequency: Frequency;
   completedAt: string | null;
+  /** Widgets da home, na ordem da tela; `null` = arranjo padrão. */
+  homeWidgets: WidgetDaHome[] | null;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -64,6 +67,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   radiusKm: 50,
   frequency: 'semanal',
   completedAt: null,
+  homeWidgets: null,
 };
 
 const STORAGE_KEY = 'nexo:prefs:v1';
@@ -98,7 +102,7 @@ function readStorage(): UserPreferences {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_PREFERENCES;
     const parsed = JSON.parse(raw);
-    return { ...DEFAULT_PREFERENCES, ...parsed };
+    return { ...DEFAULT_PREFERENCES, ...parsed, homeWidgets: normalizarWidgets(parsed?.homeWidgets) };
   } catch {
     return DEFAULT_PREFERENCES;
   }

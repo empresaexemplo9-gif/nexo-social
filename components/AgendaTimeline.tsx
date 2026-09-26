@@ -147,7 +147,7 @@ export default function AgendaTimeline({ events }: Props) {
       <div className="card-soft texture-grain cantos-hud relative overflow-hidden p-6 md:p-8">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 w-full bg-chip bg-cover bg-center opacity-60 [mask-image:linear-gradient(to_left,black_20%,transparent_85%)] md:w-2/3"
+          className="pointer-events-none absolute inset-y-0 right-0 w-full bg-chip bg-cover bg-center opacity-35 [mask-image:linear-gradient(to_left,black_20%,transparent_85%)] md:w-2/3"
         />
         <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
@@ -157,7 +157,7 @@ export default function AgendaTimeline({ events }: Props) {
             <h2 className="mt-2 text-3xl font-semibold leading-tight text-zinc-50 md:text-4xl">
               {nextEvent ? (
                 <>
-                  A seguir: <span className="text-clay-300 [text-shadow:0_0_18px_rgba(255,77,191,0.45)]">{nextEvent.title}</span>
+                  A seguir: <span className="text-clay-300">{nextEvent.title}</span>
                 </>
               ) : (
                 'Sua agenda está livre'

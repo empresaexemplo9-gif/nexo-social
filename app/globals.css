@@ -2,11 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Propriedades animáveis: deixam cantoneiras e brilhos mudarem com transição
+   quando o cursor passa (sem @property, variável CSS muda "no salto"). */
+@property --canto {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 14px;
+}
+@property --cor-canto {
+  syntax: '<color>';
+  inherits: false;
+  initial-value: rgb(43 82 136 / 0.4);
+}
+
 :root {
-  color-scheme: dark;
-  --neon: 31 208 242; /* ciano da marca (emerald-400) */
-  --neon-magenta: 255 77 191; /* clay-400 */
-  --neon-violeta: 139 92 246;
+  color-scheme: light;
+  --tinta: 22 24 29; /* zinc-50 */
+  --marinho: 43 82 136; /* emerald-400 */
+  --laranja: 236 106 44; /* clay-500 */
+  --papel: 246 242 234; /* zinc-950 */
+  --cartao: 255 253 248; /* zinc-900 */
+  /* Grão de papel: ruído fino, bem leve. */
+  --grao: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .09 0 0 0 0 .09 0 0 0 0 .11 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 }
 
 html {
@@ -14,41 +31,43 @@ html {
 }
 
 body {
-  background-color: #060a16;
-  color: #e3ecfa;
+  background-color: #f6f2ea;
+  color: #23262d;
 }
 
-/* Títulos em Chakra Petch — cortes retos de painel de equipamento. */
+/* Títulos em Barlow Condensed — o corpo condensado e firme das referências. */
 h1,
 h2 {
   font-family: var(--font-display), var(--font-sans), sans-serif;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
 }
 
 ::selection {
-  background-color: #1fd0f2;
-  color: #060a16;
+  background-color: #ec6a2c;
+  color: #fffdf8;
 }
 
-/* Barra de rolagem fina, no tom dos painéis */
+/* Barra de rolagem fina, no tom do papel */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #060a16;
+  background: #f6f2ea;
 }
 ::-webkit-scrollbar-thumb {
-  background: #18223a;
+  background: #d8d1c4;
   border-radius: 9999px;
-  border: 2px solid #060a16;
+  border: 2px solid #f6f2ea;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #006f8e;
+  background: #2b5288;
 }
 
 /* ---------------------------------------------------------------------------
-   Fundo tecnológico (components/TechBackdrop.tsx)
+   Fundo (components/TechBackdrop.tsx)
+   Papel claro com manchas de cor que derivam devagar, o circuito e a grade de
+   antes em traço fino, uma faixa de luz passando e o grão do papel por cima.
    -------------------------------------------------------------------------*/
 .fundo-tech {
   position: fixed;
@@ -56,34 +75,60 @@ h2 {
   z-index: -10;
   overflow: hidden;
   pointer-events: none;
+  background: #f6f2ea;
 }
 .fundo-tech > div {
   position: absolute;
   inset: 0;
 }
 .fundo-tech__brilhos {
+  inset: -12% !important;
   background:
-    radial-gradient(1100px 620px at 6% -8%, rgb(var(--neon) / 0.16), transparent 62%),
-    radial-gradient(900px 560px at 100% 0%, rgb(var(--neon-violeta) / 0.16), transparent 60%),
-    radial-gradient(760px 520px at 88% 100%, rgb(var(--neon-magenta) / 0.08), transparent 62%),
-    radial-gradient(1200px 700px at 30% 110%, rgb(47 107 255 / 0.12), transparent 60%);
+    radial-gradient(760px 520px at 8% 4%, rgb(var(--marinho) / 0.13), transparent 64%),
+    radial-gradient(640px 480px at 96% 8%, rgb(125 170 230 / 0.2), transparent 62%),
+    radial-gradient(720px 520px at 90% 96%, rgb(var(--laranja) / 0.14), transparent 62%),
+    radial-gradient(900px 600px at 26% 104%, rgb(250 205 160 / 0.28), transparent 60%);
+  animation: fundo-deriva 30s ease-in-out infinite;
+}
+@keyframes fundo-deriva {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(4%, 3%, 0) scale(1.06);
+  }
+  66% {
+    transform: translate3d(-3%, 5%, 0) scale(0.97);
+  }
 }
 .fundo-tech__circuito {
   background: url('/bg/circuito.svg') center / cover no-repeat;
-  opacity: 0.26;
-  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, #000 30%, transparent 85%);
-  mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, #000 30%, transparent 85%);
+  opacity: 0.11;
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 25%, #000 25%, transparent 80%);
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 25%, #000 25%, transparent 80%);
 }
 .fundo-tech__grade {
   top: auto !important;
-  height: 42vh;
+  height: 40vh;
   background: url('/bg/grade.svg') center top / cover no-repeat;
-  opacity: 0.24;
+  opacity: 0.16;
 }
-/* Linha de varredura lenta, como um monitor de radar. */
+/* Faixa de luz quente passando devagar — o "radar" de antes, mais manso. */
 .fundo-tech__varredura {
-  background: linear-gradient(to bottom, transparent 0%, rgb(var(--neon) / 0.05) 48%, rgb(var(--neon) / 0.09) 50%, transparent 52%);
-  animation: varredura 9s linear infinite;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgb(var(--laranja) / 0.035) 47%,
+    rgb(255 255 255 / 0.35) 50%,
+    transparent 53%
+  );
+  animation: varredura 14s linear infinite;
+}
+.fundo-tech__grao {
+  background-image: var(--grao);
+  opacity: 0.18;
+  mix-blend-mode: multiply;
 }
 @keyframes varredura {
   from {
@@ -157,7 +202,7 @@ body:has(.barra-player) {
   }
 }
 
-/* Progresso fino, no tom neon — o range nativo fica grosso e cinza. */
+/* Progresso fino, no azul da marca — o range nativo fica grosso e cinza. */
 .barra-player .progresso {
   -webkit-appearance: none;
   appearance: none;
@@ -169,19 +214,19 @@ body:has(.barra-player) {
   width: 12px;
   height: 12px;
   border-radius: 9999px;
-  background: #1fd0f2;
-  box-shadow: 0 0 10px rgba(31, 208, 242, 0.8);
+  background: #2b5288;
+  box-shadow: 0 0 0 3px rgb(var(--cartao)), 0 2px 6px rgb(var(--marinho) / 0.5);
 }
 .barra-player .progresso::-moz-range-thumb {
   width: 12px;
   height: 12px;
   border: 0;
   border-radius: 9999px;
-  background: #1fd0f2;
+  background: #2b5288;
 }
 
-/* Linhas de varredura finas sobre superfícies grandes (a antiga "textura de
-   papel" virou tela de monitor). */
+/* Superfícies grandes: grão de papel e, bem de leve, as linhas de monitor
+   de antes. */
 .texture-grain {
   position: relative;
 }
@@ -189,26 +234,51 @@ body:has(.barra-player) {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: repeating-linear-gradient(to bottom, rgb(255 255 255 / 0.028) 0 1px, transparent 1px 3px);
+  background-image:
+    var(--grao),
+    repeating-linear-gradient(to bottom, rgb(var(--marinho) / 0.022) 0 1px, transparent 1px 4px);
+  opacity: 0.2;
+  mix-blend-mode: multiply;
   pointer-events: none;
   border-radius: inherit;
 }
 
-/* Cartão padrão: vidro azul-escuro com fio de neon no topo */
+/* Cartão padrão: papel claro, fio azul no topo e sombra macia. Ao passar o
+   cursor, o fio acende em laranja e a sombra cresce. */
 .card-soft {
   background:
-    linear-gradient(90deg, transparent, rgb(var(--neon) / 0.55), transparent) top / 100% 1px no-repeat,
-    linear-gradient(180deg, rgb(13 20 38 / 0.82), rgb(6 10 22 / 0.78));
-  border: 1px solid rgb(var(--neon) / 0.16);
-  border-radius: 1.125rem;
+    linear-gradient(90deg, transparent, rgb(var(--marinho) / 0.35), transparent) top / 100% 1px no-repeat,
+    radial-gradient(640px 220px at 100% 0%, rgb(var(--laranja) / 0.05), transparent 70%),
+    rgb(var(--cartao) / 0.94);
+  border: 1px solid rgb(var(--tinta) / 0.08);
+  border-radius: 1.375rem;
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.03),
-    0 20px 50px -30px rgb(0 0 0 / 0.9);
+    0 1px 2px rgb(var(--tinta) / 0.04),
+    0 18px 40px -30px rgb(var(--tinta) / 0.35);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease,
+    background-size 0.4s ease,
+    transform 0.3s ease;
+}
+.card-soft:hover {
+  background:
+    linear-gradient(90deg, transparent, rgb(var(--laranja) / 0.7), transparent) top / 100% 1px no-repeat,
+    radial-gradient(640px 220px at 100% 0%, rgb(var(--laranja) / 0.08), transparent 70%),
+    rgb(var(--cartao) / 0.98);
+  border-color: rgb(var(--marinho) / 0.2);
+  box-shadow:
+    0 1px 2px rgb(var(--tinta) / 0.05),
+    0 26px 50px -30px rgb(var(--marinho) / 0.45);
+}
+a.card-soft:hover,
+.card-soft.levanta:hover {
+  transform: translateY(-3px);
 }
 
-/* Cantoneiras de HUD nos quatro cantos do elemento. */
+/* Cantoneiras de painel nos quatro cantos — crescem e esquentam no hover. */
 .cantos-hud {
   position: relative;
 }
@@ -218,8 +288,8 @@ body:has(.barra-player) {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  --c: rgb(var(--neon) / 0.75);
-  --t: 16px;
+  --t: var(--canto);
+  --c: var(--cor-canto);
   background:
     linear-gradient(var(--c) 0 0) top left / var(--t) 1.5px,
     linear-gradient(var(--c) 0 0) top left / 1.5px var(--t),
@@ -231,42 +301,156 @@ body:has(.barra-player) {
     linear-gradient(var(--c) 0 0) bottom right / 1.5px var(--t);
   background-repeat: no-repeat;
   z-index: 1;
+  transition:
+    --canto 0.35s ease,
+    --cor-canto 0.35s ease;
+}
+.cantos-hud:hover::before {
+  --canto: 26px;
+  --cor-canto: rgb(236 106 44 / 0.85);
 }
 
-/* Rótulo de painel: caixa-alta monoespaçada com um traço aceso à esquerda. */
+/* Rótulo de painel: caixa-alta monoespaçada com um traço laranja à esquerda,
+   que estica quando o cartão em volta recebe o cursor. */
 .rotulo-hud {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
   font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 0.6875rem;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #4de3fb;
+  color: #2b5288;
 }
 .rotulo-hud::before {
   content: '';
   width: 1.25rem;
   height: 2px;
   border-radius: 2px;
-  background: currentColor;
-  box-shadow: 0 0 8px currentColor;
+  background: #ec6a2c;
+  transition: width 0.35s ease;
+}
+:hover > .rotulo-hud::before,
+.card-soft:hover .rotulo-hud::before,
+section:hover > .rotulo-hud::before {
+  width: 2rem;
 }
 
-/* Brilho de neon em títulos de destaque. */
+/* Destaque de marcador: um traço laranja por baixo da palavra, como caneta. */
 .texto-neon {
-  text-shadow:
-    0 0 18px rgb(var(--neon) / 0.45),
-    0 0 2px rgb(var(--neon) / 0.6);
+  width: fit-content;
+  background-image: linear-gradient(transparent 64%, rgb(var(--laranja) / 0.28) 64%, rgb(var(--laranja) / 0.28) 90%, transparent 90%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
-/* Degradê ciano → violeta → magenta para palavras-chave. */
+/* Degradê marinho → laranja que corre devagar nas palavras-chave. */
 .texto-degrade {
-  background: linear-gradient(90deg, #4de3fb, #8b5cf6 55%, #ff4dbf);
+  background: linear-gradient(90deg, #2b5288, #3d67a3 35%, #ec6a2c 65%, #2b5288);
+  background-size: 220% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: degrade-corre 9s ease-in-out infinite alternate;
+}
+@keyframes degrade-corre {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+/* Papel solto (etiquetas do topo, adesivos de tema): inclinado de leve e, no
+   hover, endireita e levanta. --giro vem inline de cada peça. */
+.inclinado,
+.adesivo {
+  transform: rotate(var(--giro, 0deg));
+  transition:
+    transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.4s ease;
+}
+.inclinado:hover,
+.adesivo:hover {
+  transform: rotate(0deg) translateY(-3px) scale(1.05);
+}
+.adesivo:hover {
+  box-shadow: 0 8px 18px -10px rgb(var(--tinta) / 0.45);
+}
+
+/* Fita adesiva segurando o recado no mural. */
+.fita::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 54px;
+  height: 18px;
+  transform: translateX(-50%) rotate(-4deg);
+  background: rgb(var(--marinho) / 0.18);
+  border-left: 1px dashed rgb(var(--marinho) / 0.25);
+  border-right: 1px dashed rgb(var(--marinho) / 0.25);
+}
+
+/* Traço de caneta sob o título: se desenha quando a página abre. */
+.traco-caneta path {
+  fill: none;
+  stroke: #ec6a2c;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+  animation: desenhar-traco 1.1s 0.35s cubic-bezier(0.6, 0, 0.2, 1) forwards;
+}
+@keyframes desenhar-traco {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Widgets da home entram subindo, um depois do outro. */
+.widget-entra {
+  animation: widget-entra 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes widget-entra {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+
+/* Selo da marca (components/Logo.tsx). */
+.selo__papel {
+  fill: #efe9dd;
+  stroke: rgb(var(--tinta) / 0.08);
+  stroke-width: 1;
+}
+.selo__tinta {
+  fill: #16181d;
+}
+.selo__grao {
+  fill: #efe9dd;
+}
+.selo__anel {
+  transform-origin: 100px 100px;
+  transform-box: view-box;
+}
+.selo__anel--gira {
+  animation: selo-gira 60s linear infinite;
+}
+@keyframes selo-gira {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* No hover o selo inclina, como um carimbo pego na mão. */
+.selo {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.selo:hover {
+  transform: rotate(-8deg) scale(1.03);
 }
 
 /* ---------------------------------------------------------------------------

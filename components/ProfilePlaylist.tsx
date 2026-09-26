@@ -87,7 +87,7 @@ function ListaDeFaixas({
                 aria-pressed={ativa}
                 className={`group flex min-w-0 flex-1 items-center gap-3 rounded-xl border p-2.5 text-left transition ${
                   ativa
-                    ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_14px_-4px_rgba(31,208,242,0.7)]'
+                    ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_14px_-4px_rgba(43,82,136,0.39)]'
                     : 'border-zinc-800/80 bg-zinc-900/60 hover:border-emerald-400/40'
                 }`}
               >

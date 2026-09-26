@@ -35,7 +35,7 @@ export default function ContentCard({ item, href }: Props) {
             <span>{item.date}</span>
             <span>{item.readTime}</span>
           </div>
-          <h3 className="text-base font-semibold leading-snug text-white transition group-hover:text-emerald-400">
+          <h3 className="text-base font-semibold leading-snug text-zinc-50 transition group-hover:text-emerald-400">
             {item.title}
           </h3>
           <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-zinc-400">{item.snippet}</p>

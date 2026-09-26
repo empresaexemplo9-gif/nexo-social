@@ -299,7 +299,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={m.thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
                       ) : null}
-                      <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-zinc-100 transition group-hover:bg-black/20">
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/35 text-white transition group-hover:bg-black/20">
                         <Icon name="play" size={26} />
                       </span>
                     </span>

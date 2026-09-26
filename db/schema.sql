@@ -823,3 +823,9 @@ BEGIN
       ADD CONSTRAINT user_preferences_music_mix_check CHECK (music_mix IN ('misturar', 'famosas', 'lancamentos'));
   END IF;
 END $$;
+
+-- ---------------------------------------------------------------------------
+-- Widgets da home (lib/widgets.ts): a pessoa escolhe quais blocos aparecem, a
+-- ordem e o tamanho. Lista de {id, tamanho}; NULL = arranjo padrão.
+-- ---------------------------------------------------------------------------
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS home_widgets JSONB;

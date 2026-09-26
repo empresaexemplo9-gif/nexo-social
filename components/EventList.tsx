@@ -106,7 +106,7 @@ export default function EventList({ events, showFilters = false, emptyLabel }: P
           <button
             onClick={() => setFilter('todos')}
             className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-              filter === 'todos' ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
+              filter === 'todos' ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-50'
             }`}
           >
             Todos
@@ -116,7 +116,7 @@ export default function EventList({ events, showFilters = false, emptyLabel }: P
               key={t.slug}
               onClick={() => setFilter(t.slug)}
               className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
-                filter === t.slug ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white'
+                filter === t.slug ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-50'
               }`}
             >
               <span className="inline-flex items-center gap-1.5"><Icon name={t.icon} size={14} /> {t.label}</span>

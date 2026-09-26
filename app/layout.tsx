@@ -1,7 +1,7 @@
 import React from 'react';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { Chakra_Petch, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
+import { Barlow, Barlow_Condensed, Caveat_Brush, JetBrains_Mono } from 'next/font/google';
 import { PreferencesProvider } from '@/lib/preferences';
 import { AgendaProvider } from '@/lib/agenda';
 import { ReadingProvider } from '@/lib/reading';
@@ -10,19 +10,27 @@ import PWARegister from '@/components/PWARegister';
 import TechBackdrop from '@/components/TechBackdrop';
 import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
 
-// Chakra Petch: cortes retos e angulares, cara de painel — usada nos títulos.
-const display = Chakra_Petch({
+// Barlow Condensed: títulos firmes e condensados, como nos cartazes.
+const display = Barlow_Condensed({
   subsets: ['latin', 'latin-ext'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['500', '600', '700', '800'],
   variable: '--font-display',
   display: 'swap',
 });
 
-// Space Grotesk: sans geométrica, legível em texto corrido — corpo e interface.
-const sans = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+// Barlow: a mesma família no corpo — acolhedora e legível em texto corrido.
+const sans = Barlow({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
+  display: 'swap',
+});
+
+// Caveat Brush: a letra de caneta dos recados colados (só em detalhes).
+const mao = Caveat_Brush({
+  subsets: ['latin', 'latin-ext'],
+  weight: '400',
+  variable: '--font-mao',
   display: 'swap',
 });
 
@@ -84,7 +92,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#060a16',
+  themeColor: '#f6f2ea',
   width: 'device-width',
   initialScale: 1,
   // Necessário para o conteúdo alcançar as bordas em aparelhos com entalhe;
@@ -95,7 +103,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className={`${display.variable} ${sans.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="pt-BR" className={`${display.variable} ${sans.variable} ${mono.variable} ${mao.variable}`} suppressHydrationWarning>
       <head>
         {/* Barra lateral recolhida: aplicado antes de pintar, senão ela abriria
             e fecharia a cada carregamento (ver components/Navbar.tsx). */}

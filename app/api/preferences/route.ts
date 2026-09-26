@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/api-helpers';
+import { normalizarWidgets } from '@/lib/widgets';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,7 +11,7 @@ const MIXES = ['misturar', 'famosas', 'lancamentos'];
  * falhar por causa de uma delas, salva o resto em vez de perder o questionário
  * inteiro — e avisa nos logs para rodar o db/schema.sql.
  */
-const COLUNAS_OPCIONAIS = ['completed_at', 'music_hits', 'music_mix'];
+const COLUNAS_OPCIONAIS = ['completed_at', 'music_hits', 'music_mix', 'home_widgets'];
 
 /** Linha do banco → formato usado pelo aplicativo (camelCase). */
 function toClient(row: Record<string, any>) {
@@ -29,6 +30,7 @@ function toClient(row: Record<string, any>) {
     city: row.city ?? null,
     radiusKm: Number.isFinite(row.radius_km) ? Number(row.radius_km) : 50,
     frequency: row.frequency ?? 'semanal',
+    homeWidgets: normalizarWidgets(row.home_widgets),
     // Contas anteriores à coluna completed_at têm interesses mas não têm data.
     // Sem esta herança elas voltariam a ver "responda o questionário".
     completedAt: row.completed_at ?? (interests.length > 0 ? (row.updated_at ?? row.created_at ?? null) : null),
@@ -91,6 +93,7 @@ export async function PUT(request: Request) {
   if (Number.isFinite(b.readingGoal)) row.reading_goal = Math.min(365, Math.max(1, Number(b.readingGoal)));
   if (typeof b.musicHits === 'boolean') row.music_hits = b.musicHits;
   if (typeof b.musicMix === 'string' && MIXES.includes(b.musicMix)) row.music_mix = b.musicMix;
+  if ('homeWidgets' in b) row.home_widgets = normalizarWidgets(b.homeWidgets);
 
   // A conclusão do questionário fica na conta — é ela que impede a plataforma
   // de pedir o questionário de novo em outro aparelho. `null` limpa (é o que

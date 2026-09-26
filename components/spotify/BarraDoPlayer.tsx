@@ -45,7 +45,7 @@ export default function BarraDoPlayer() {
     <div
       role="region"
       aria-label="Player do Spotify"
-      className="barra-player fixed inset-x-0 z-40 border-t border-emerald-400/25 bg-zinc-950/90 shadow-[0_-12px_30px_-18px_rgba(31,208,242,0.6)] backdrop-blur-xl"
+      className="barra-player fixed inset-x-0 z-40 border-t border-emerald-400/25 bg-zinc-950/90 shadow-[0_-12px_30px_-18px_rgba(43,82,136,0.33)] backdrop-blur-xl"
     >
       <input
         type="range"
@@ -60,7 +60,7 @@ export default function BarraDoPlayer() {
         aria-label="Posição da faixa"
         aria-valuetext={`${tempo(mostrada)} de ${tempo(faixa.duracao)}`}
         style={{
-          background: `linear-gradient(to right, #1fd0f2 ${(mostrada / Math.max(1, faixa.duracao)) * 100}%, rgba(148,163,184,0.22) 0)`,
+          background: `linear-gradient(to right, #2b5288 ${(mostrada / Math.max(1, faixa.duracao)) * 100}%, rgba(22,24,29,0.12) 0)`,
         }}
         className="progresso absolute inset-x-0 -top-0.5 w-full cursor-pointer"
       />

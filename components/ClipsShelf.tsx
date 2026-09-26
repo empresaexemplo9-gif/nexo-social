@@ -113,7 +113,7 @@ export default function ClipsShelf({ topic }: { topic: CategorySlug }) {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={c.thumb} alt="" className="h-full w-full object-cover" loading="lazy" />
                 )}
-                <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-zinc-100 transition group-hover:bg-black/15">
+                <span className="absolute inset-0 flex items-center justify-center bg-black/30 text-white transition group-hover:bg-black/15">
                   <Icon name="play" size={24} />
                 </span>
               </span>

@@ -109,7 +109,7 @@ export default function AdminPage() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4 text-zinc-100">
         <div className="max-w-md space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900 p-8 text-center">
           <div className="text-4xl">🔒</div>
-          <h1 className="text-xl font-bold text-white">Acesso restrito</h1>
+          <h1 className="text-xl font-bold text-zinc-50">Acesso restrito</h1>
           <p className="text-sm text-zinc-400">
             {currentEmail
               ? `A conta ${currentEmail} não tem permissão para o painel administrativo global.`
@@ -118,21 +118,21 @@ export default function AdminPage() {
           <p className="text-xs text-zinc-500">Painel exclusivo de <span className="font-mono">{ADMIN_EMAIL}</span>.</p>
           <div className="flex justify-center gap-3 pt-2">
             <Link href="/login" className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">Entrar</Link>
-            <Link href="/" className="rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-white">Voltar</Link>
+            <Link href="/" className="rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-50">Voltar</Link>
           </div>
         </div>
       </div>
     );
   }
 
-  const inputClass = 'w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none';
+  const inputClass = 'w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none';
 
   return (
     <div className="min-h-screen p-6 font-sans text-zinc-100 md:p-12">
       <div className="mx-auto max-w-4xl space-y-8">
         <div className="flex items-center justify-between border-b border-zinc-800 pb-6">
           <div>
-            <h1 className="text-2xl font-bold text-white">Painel do Administrador</h1>
+            <h1 className="text-2xl font-bold text-zinc-50">Painel do Administrador</h1>
             <p className="text-sm text-zinc-400">
               {authState === 'demo'
                 ? 'Modo demonstração — em produção, exclusivo do administrador da plataforma'
@@ -170,7 +170,7 @@ export default function AdminPage() {
                 key={tab}
                 onClick={() => { setActiveTab(tab); setMessage(''); }}
                 className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
-                  activeTab === tab ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:text-white'
+                  activeTab === tab ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-50'
                 }`}
               >
                 {label}
@@ -182,7 +182,7 @@ export default function AdminPage() {
         {/* Conteúdo */}
         {activeTab === 'content' && (
           <form onSubmit={handleSaveContent} className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <h2 className="text-lg font-bold text-white">Cadastrar Conteúdo no Hub</h2>
+            <h2 className="text-lg font-bold text-zinc-50">Cadastrar Conteúdo no Hub</h2>
             <div>
               <label className="mb-1 block text-xs text-zinc-400">Título</label>
               <input type="text" required value={content.title} onChange={(e) => setContent({ ...content, title: e.target.value })} className={inputClass} />
@@ -224,7 +224,7 @@ export default function AdminPage() {
         {/* Evento */}
         {activeTab === 'event' && (
           <form onSubmit={handleSaveEvent} className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <h2 className="text-lg font-bold text-white">Cadastrar Evento na Agenda</h2>
+            <h2 className="text-lg font-bold text-zinc-50">Cadastrar Evento na Agenda</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-xs text-zinc-400">Nome do evento</label>
@@ -288,7 +288,7 @@ export default function AdminPage() {
         {/* Bom Dia */}
         {activeTab === 'bom-dia' && (
           <form onSubmit={handleSaveBomDia} className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-            <h2 className="text-lg font-bold text-white">Editar Curadoria do Módulo &quot;Bom Dia&quot;</h2>
+            <h2 className="text-lg font-bold text-zinc-50">Editar Curadoria do Módulo &quot;Bom Dia&quot;</h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1 block text-xs text-zinc-400">Título da trilha</label>

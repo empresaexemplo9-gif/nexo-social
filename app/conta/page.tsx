@@ -76,13 +76,13 @@ export default function ContaPage() {
       <Navbar />
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-12 sm:px-6 lg:px-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">Minha Conta</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-zinc-50">Minha Conta</h1>
           <p className="mt-1 text-sm text-zinc-400">Gerencie sua identidade e suas preferências de curadoria.</p>
         </div>
 
         {/* Identidade */}
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-          <h2 className="text-lg font-semibold text-white">Identidade &amp; Tenant</h2>
+          <h2 className="text-lg font-semibold text-zinc-50">Identidade &amp; Tenant</h2>
           {loading ? (
             <p className="mt-3 text-sm text-zinc-400">Carregando…</p>
           ) : !isSupabaseConfigured ? (
@@ -127,7 +127,7 @@ export default function ContaPage() {
         {/* Preferências */}
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Preferências de curadoria</h2>
+            <h2 className="text-lg font-semibold text-zinc-50">Preferências de curadoria</h2>
             <Link href="/questionario" className="text-xs text-emerald-400 hover:underline">
               {hasCompleted ? 'Refazer questionário' : 'Responder questionário'}
             </Link>
@@ -148,7 +148,7 @@ export default function ContaPage() {
               />
             </dl>
           )}
-          <button onClick={reset} className="mt-4 text-xs text-zinc-500 underline hover:text-white">
+          <button onClick={reset} className="mt-4 text-xs text-zinc-500 underline hover:text-zinc-50">
             Limpar preferências
           </button>
         </section>
@@ -161,7 +161,7 @@ function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 border-b border-zinc-800/60 pb-2">
       <dt className="text-zinc-400">{label}</dt>
-      <dd className="text-right font-medium text-white">{value}</dd>
+      <dd className="text-right font-medium text-zinc-50">{value}</dd>
     </div>
   );
 }
