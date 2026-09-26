@@ -57,8 +57,10 @@ Melhor fonte para ligar um evento de música a faixas/artistas.
 - **Custo:** gratuito. O *Client Credentials* acessa catálogo público (busca,
   artistas, playlists) — não acessa dados de usuários.
 - **Variáveis:** `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET` (só no servidor).
-  Opcional: `SPOTIFY_REDIRECT_URI`, para fixar o endereço de retorno do login
-  (útil em previews da Vercel, cujo domínio muda a cada deploy).
+  Opcional: `SPOTIFY_PLAYER_CLIENT_ID`, o Client ID do app usado no login e na
+  reprodução (pode ser outro app; o login usa PKCE e dispensa o segredo), e
+  `SPOTIFY_REDIRECT_URI`, para fixar o endereço de retorno do login (útil em
+  previews da Vercel, cujo domínio muda a cada deploy).
 
 #### Ouvir completo: "Entrar com Spotify"
 Sem conta, o player embutido do Spotify toca só prévias de 30 s — é regra do
@@ -66,7 +68,7 @@ Spotify. Por isso a trilha oferece dois caminhos:
 
 - **Conta grátis:** o botão "Ouvir no app do Spotify" abre a playlist/faixa no
   app (ou no site) do Spotify, que toca completo, com anúncios.
-- **Premium:** "Entrar com Spotify" faz o login (fluxo *Authorization Code*,
+- **Premium:** "Entrar com Spotify" faz o login (*Authorization Code com PKCE*,
   rotas em `app/api/spotify/`) e o **Web Playback SDK** toca as faixas completas
   dentro da nexo.social, sem anúncios, com a barra do player seguindo entre as
   páginas. O Spotify não libera esse player para contas grátis.

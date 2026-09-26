@@ -1,7 +1,11 @@
 import 'server-only';
 
-// Login da pessoa no Spotify (fluxo Authorization Code), para ouvir as faixas
-// completas dentro da nexo.social.
+// Login da pessoa no Spotify (Authorization Code com PKCE), para ouvir as
+// faixas completas dentro da nexo.social.
+//
+// O app do Spotify usado aqui é o de SPOTIFY_PLAYER_CLIENT_ID (ou, sem ela, o
+// mesmo SPOTIFY_CLIENT_ID da busca). Com PKCE o login e a renovação do token
+// não usam o segredo do app — basta o Client ID, que é público.
 //
 // Não confundir com lib/spotify.ts, que usa só o token do app (Client
 // Credentials) para buscar no catálogo. Aqui o token é da PESSOA: é ele que o
@@ -10,7 +14,7 @@ import 'server-only';
 // anúncios, no app do Spotify.
 //
 // Nada disso vai para o banco: a sessão fica num cookie httpOnly, cifrado com
-// uma chave derivada do SPOTIFY_CLIENT_SECRET. O navegador só enxerga o token
+// uma chave derivada de um segredo do servidor. O navegador só enxerga o token
 // de acesso (curto, ~1h) pedindo a /api/spotify/token; o refresh token nunca
 // sai do servidor.
 
@@ -61,24 +65,30 @@ interface Pedido {
   s: string;
   /** para onde voltar depois do login */
   v: string;
+  /** code_verifier do PKCE */
+  c: string;
 }
 
 /** Como o login terminou — vai na URL de volta (?spotify=...). */
 export type Desfecho = 'conectado' | 'recusado' | 'nao-liberado' | 'falhou' | 'off';
 
-function credenciais(): { id: string; secret: string } | null {
-  const id = (process.env.SPOTIFY_CLIENT_ID || '').trim();
-  const secret = (process.env.SPOTIFY_CLIENT_SECRET || '').trim();
-  return id && secret ? { id, secret } : null;
+/** Client ID do app que faz o login e a reprodução. */
+function idDoApp(): string {
+  return (process.env.SPOTIFY_PLAYER_CLIENT_ID || process.env.SPOTIFY_CLIENT_ID || '').trim();
+}
+
+/** Segredo do servidor que cifra o cookie da sessão — nunca vai ao Spotify. */
+function segredoDoCookie(): string {
+  return (process.env.SPOTIFY_CLIENT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 }
 
 // ---------------------------------------------------------------------------
-// Cookie cifrado (AES-256-GCM). Se o segredo do app mudar, os cookies antigos
-// simplesmente deixam de abrir — a pessoa só precisa entrar de novo.
+// Cookie cifrado (AES-256-GCM). Se o segredo do servidor mudar, os cookies
+// antigos simplesmente deixam de abrir — a pessoa só precisa entrar de novo.
 // ---------------------------------------------------------------------------
 function chave(): Buffer | null {
-  const c = credenciais();
-  return c ? createHash('sha256').update(`nexo.social/spotify-sessao\0${c.secret}`).digest() : null;
+  const segredo = segredoDoCookie();
+  return segredo ? createHash('sha256').update(`nexo.social/spotify-sessao\0${segredo}`).digest() : null;
 }
 
 function selar(dado: unknown): string {
@@ -151,17 +161,15 @@ interface Tokens {
 
 type RespostaToken = { ok: true; tokens: Tokens } | { ok: false; revogado: boolean };
 
+/** PKCE: o Client ID vai no corpo e o code_verifier prova quem pediu o login. */
 async function pedirToken(corpo: Record<string, string>): Promise<RespostaToken> {
-  const c = credenciais();
-  if (!c) return { ok: false, revogado: false };
+  const id = idDoApp();
+  if (!id) return { ok: false, revogado: false };
   try {
     const res = await fetch(TOKEN_URL, {
       method: 'POST',
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${c.id}:${c.secret}`).toString('base64')}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams(corpo).toString(),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ ...corpo, client_id: id }).toString(),
       cache: 'no-store',
     });
     const json = await res.json().catch(() => ({}));
@@ -197,21 +205,26 @@ async function quemEntrou(token: string): Promise<{ status: number; nome: string
 /** GET /api/spotify/entrar?volta=/caminho — manda a pessoa para o Spotify. */
 export function iniciarLogin(req: NextRequest): NextResponse {
   const volta = voltaSegura(req.nextUrl.searchParams.get('volta'));
-  const c = credenciais();
-  if (!c) return NextResponse.redirect(urlDeVolta(req, volta, 'off'));
+  const id = idDoApp();
+  if (!id || !chave()) return NextResponse.redirect(urlDeVolta(req, volta, 'off'));
 
   const estado = randomBytes(16).toString('base64url');
+  // PKCE: 64 caracteres aleatórios; o Spotify recebe só o hash.
+  const verificador = randomBytes(48).toString('base64url');
   const url = new URL(AUTORIZAR);
   url.search = new URLSearchParams({
     response_type: 'code',
-    client_id: c.id,
+    client_id: id,
     scope: ESCOPOS,
     redirect_uri: enderecoDeRetorno(req),
     state: estado,
+    code_challenge_method: 'S256',
+    code_challenge: createHash('sha256').update(verificador).digest('base64url'),
   }).toString();
 
   const res = NextResponse.redirect(url);
-  res.cookies.set(COOKIE_PEDIDO, selar({ s: estado, v: volta } satisfies Pedido), opcoes(req, '/api/spotify', 600));
+  const pedido: Pedido = { s: estado, v: volta, c: verificador };
+  res.cookies.set(COOKIE_PEDIDO, selar(pedido), opcoes(req, '/api/spotify', 600));
   return res;
 }
 
@@ -229,13 +242,18 @@ export async function concluirLogin(req: NextRequest): Promise<NextResponse> {
 
   // Sem o pedido que nós mesmos abrimos, ou com state diferente, o retorno
   // não é de um login iniciado aqui — descarta.
-  if (!pedido || !p.get('state') || p.get('state') !== pedido.s) return terminar('falhou');
+  if (!pedido?.c || !p.get('state') || p.get('state') !== pedido.s) return terminar('falhou');
   if (p.get('error')) return terminar(p.get('error') === 'access_denied' ? 'recusado' : 'falhou');
 
   const code = p.get('code');
   if (!code) return terminar('falhou');
 
-  const troca = await pedirToken({ grant_type: 'authorization_code', code, redirect_uri: enderecoDeRetorno(req) });
+  const troca = await pedirToken({
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: enderecoDeRetorno(req),
+    code_verifier: pedido.c,
+  });
   if (!troca.ok || !troca.tokens.refresh_token) return terminar('falhou');
 
   const quem = await quemEntrou(troca.tokens.access_token);
