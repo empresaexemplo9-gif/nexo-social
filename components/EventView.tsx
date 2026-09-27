@@ -83,7 +83,7 @@ export default function EventView({ event, related }: Props) {
                   href={event.ticketUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+                  className="inline-flex items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
                 >
                   <Icon name="ticket" size={17} /> Comprar na bilheteria oficial
                   <Icon name="external" size={14} />

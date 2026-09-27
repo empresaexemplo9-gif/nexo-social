@@ -225,7 +225,7 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
         <button
           type="submit"
           disabled={enviando}
-          className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
         >
           <Icon name="send" size={15} /> {enviando ? 'Publicando…' : 'Publicar'}
         </button>
@@ -269,7 +269,7 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
                         <button
                           onClick={() => tocar(p)}
                           disabled={tocando === p.id}
-                          className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60"
+                          className="inline-flex items-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60"
                         >
                           <Icon name="headphones" size={14} />{' '}
                           {tocando === p.id ? 'Procurando…' : p.kind === 'musica' ? 'Ouvir junto com o grupo' : 'Assistir junto com o grupo'}

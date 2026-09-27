@@ -27,7 +27,7 @@ export default function BotoesResposta({
         className={`inline-flex items-center gap-1.5 rounded-xl font-semibold transition disabled:cursor-default ${tam} ${
           status === 'confirmado'
             ? 'border border-emerald-700 bg-emerald-950/40 text-emerald-300'
-            : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400 disabled:opacity-60'
+            : 'action-patch action-patch--olive bg-emerald-500 text-zinc-950 hover:bg-emerald-400 disabled:opacity-60'
         }`}
       >
         <Icon name="thumbUp" size={grande ? 16 : 14} /> {status === 'confirmado' ? 'Você concordou' : 'Concordo'}
@@ -40,7 +40,7 @@ export default function BotoesResposta({
         className={`inline-flex items-center gap-1.5 rounded-xl font-semibold transition disabled:cursor-default ${tam} ${
           status === 'recusado'
             ? 'border border-clay-700 bg-clay-950/40 text-clay-300'
-            : 'border border-zinc-700 text-zinc-300 hover:border-clay-600 hover:text-clay-300 disabled:opacity-60'
+            : 'action-patch action-patch--paper border border-zinc-700 text-zinc-300 hover:border-clay-600 hover:text-clay-300 disabled:opacity-60'
         }`}
       >
         <Icon name="thumbDown" size={grande ? 16 : 14} /> {status === 'recusado' ? 'Você não concordou' : 'Não concordo'}

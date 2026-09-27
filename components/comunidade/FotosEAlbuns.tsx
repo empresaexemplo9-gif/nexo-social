@@ -197,7 +197,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
             className={campo}
           />
           <div className="flex gap-2">
-            <button type="submit" className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400">
+            <button type="submit" className="rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400">
               Criar e adicionar fotos
             </button>
             <button type="button" onClick={() => setCriando(false)} className="rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
@@ -220,7 +220,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
               className={campo}
             />
             <div className="flex gap-2">
-              <button type="submit" className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950">
+              <button type="submit" className="rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950">
                 Salvar
               </button>
               <button type="button" onClick={() => setEditando(false)} className="rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
@@ -244,7 +244,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
             <button
               type="button"
               onClick={() => setEnviando((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
+              className="inline-flex items-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-3 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
             >
               <Icon name="camera" size={14} /> {album ? 'Adicionar fotos ao álbum' : 'Enviar fotos'}
             </button>

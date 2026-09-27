@@ -133,7 +133,7 @@ export default async function BomDiaPage() {
         <section className="rounded-3xl border border-zinc-800 bg-zinc-900/60 p-8 text-center">
           <h2 className="text-xl font-semibold text-zinc-50">Quer o Bom Dia no seu ritmo?</h2>
           <p className="mt-1 text-sm text-zinc-300">Defina a frequência da curadoria no questionário de interesses.</p>
-          <Link href="/questionario" className="mt-5 inline-block rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">
+          <Link href="/questionario" className="mt-5 inline-block rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">
             Personalizar →
           </Link>
         </section>

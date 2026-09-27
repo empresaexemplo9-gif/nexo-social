@@ -170,7 +170,7 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
               type="button"
               onClick={() => setCap((c) => Math.min(total - 1, c + 1))}
               disabled={cap >= total - 1}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-30"
+              className="inline-flex items-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-30"
             >
               Próximo capítulo <Icon name="chevronRight" size={14} />
             </button>

@@ -161,7 +161,7 @@ export default function GrupoView({ id }: { id: string }) {
         <h1 className="text-xl font-semibold text-zinc-50">Entre para ver este grupo</h1>
         <Link
           href={`/login?next=/comunidade/${id}`}
-          className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950"
+          className="mt-5 inline-flex items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950"
         >
           Entrar ou criar conta <Icon name="arrowRight" size={16} />
         </Link>
@@ -203,7 +203,7 @@ export default function GrupoView({ id }: { id: string }) {
           <button
             onClick={() => responder(true)}
             disabled={ocupado}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-emerald-400 disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 hover:bg-emerald-400 disabled:opacity-60"
           >
             <Icon name="thumbUp" size={16} /> Participar
           </button>
@@ -351,7 +351,7 @@ export default function GrupoView({ id }: { id: string }) {
                 className={campo}
               />
               <div className="flex gap-2">
-                <button type="submit" disabled={ocupado} className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950">
+                <button type="submit" disabled={ocupado} className="rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950">
                   Salvar
                 </button>
                 <button type="button" onClick={() => setEditando(false)} className="rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
@@ -392,7 +392,7 @@ export default function GrupoView({ id }: { id: string }) {
         {podeConvidar ? (
           <button
             onClick={() => setConvidar(true)}
-            className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+            className="inline-flex shrink-0 items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
           >
             <Icon name="users" size={16} /> Convidar amigos
           </button>
@@ -416,7 +416,7 @@ export default function GrupoView({ id }: { id: string }) {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => ligar(chegando.modo, true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+              className="inline-flex items-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
             >
               <Icon name="video" size={16} /> Atender com vídeo
             </button>
@@ -445,7 +445,7 @@ export default function GrupoView({ id }: { id: string }) {
           <div className="flex gap-2">
             <button
               onClick={() => ligar({ tipo: 'grupo' }, true)}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
+              className="inline-flex items-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-400"
             >
               <Icon name="video" size={16} /> Entrar
             </button>

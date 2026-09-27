@@ -170,7 +170,7 @@ export default function NotificationsBell({ lateral = false, rotulo }: { lateral
                         <button
                           onClick={() => responder(n, true)}
                           disabled={respondendo === n.id}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60"
+                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60"
                         >
                           <Icon name="thumbUp" size={14} /> {n.type === 'convite_grupo' ? 'Participar' : 'Concordo'}
                         </button>

@@ -512,7 +512,7 @@ export default function SalaSincronizada({
               </button>
               <button
                 onClick={alternar}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
+                className="inline-flex items-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400"
               >
                 <Icon name={sala.isPlaying ? 'pause' : 'play'} size={14} /> {sala.isPlaying ? 'Pausar para todos' : 'Tocar para todos'}
               </button>

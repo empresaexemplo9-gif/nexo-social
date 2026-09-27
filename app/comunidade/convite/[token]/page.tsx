@@ -111,7 +111,7 @@ export default async function ConvitePage({ params }: { params: { token: string 
               <div className="space-y-2">
                 <Link
                   href={`/login?cadastro=1&next=${encodeURIComponent(aqui)}`}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl action-patch action-patch--cobalt bg-emerald-500 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
                 >
                   Criar meu acesso grátis <Icon name="arrowRight" size={16} />
                 </Link>

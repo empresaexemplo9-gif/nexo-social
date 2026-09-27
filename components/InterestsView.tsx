@@ -195,7 +195,7 @@ export function HeroDoPerfil({ onMontar, montando }: { onMontar: () => void; mon
           <div className="mt-7 flex flex-wrap gap-3">
             <Link
               href="/questionario"
-              className="group inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-400 px-5 py-3 text-sm font-semibold text-zinc-950 shadow-glow transition hover:-translate-y-0.5 hover:bg-emerald-300"
+              className="group inline-flex w-fit items-center gap-2 rounded-xl action-patch action-patch--cobalt bg-emerald-400 px-5 py-3 text-sm font-semibold text-zinc-950 shadow-glow transition hover:-translate-y-0.5 hover:bg-emerald-300"
             >
               {hasCompleted ? 'Ajustar perfil' : 'Responder questionário'}
               <Icon name="arrowRight" size={15} className="transition group-hover:translate-x-1" />
@@ -207,7 +207,7 @@ export function HeroDoPerfil({ onMontar, montando }: { onMontar: () => void; mon
               className={`group inline-flex w-fit items-center gap-2 rounded-xl border px-5 py-3 text-sm font-semibold transition hover:-translate-y-0.5 ${
                 montando
                   ? 'border-clay-500 bg-clay-950 text-clay-300'
-                  : 'border-zinc-700 bg-zinc-900/80 text-zinc-100 hover:border-clay-500 hover:text-clay-300'
+                  : 'action-patch action-patch--paper border-zinc-700 bg-zinc-900/80 text-zinc-100 hover:border-clay-500 hover:text-clay-300'
               }`}
             >
               <Icon name="palette" size={16} className="transition duration-500 group-hover:rotate-45" />

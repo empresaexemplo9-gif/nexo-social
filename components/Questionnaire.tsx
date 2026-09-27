@@ -326,7 +326,7 @@ export default function Questionnaire() {
       type="button"
       onClick={salvar}
       disabled={estado.tipo === 'salvando'}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-400 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-glow transition hover:bg-emerald-300 disabled:opacity-60 ${extra}`}
+      className={`inline-flex items-center justify-center gap-2 rounded-xl action-patch action-patch--cobalt bg-emerald-400 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-glow transition hover:bg-emerald-300 disabled:opacity-60 ${extra}`}
     >
       {estado.tipo === 'salvando' ? 'Salvando…' : 'Salvar meu perfil'} <Icon name="check" size={15} />
     </button>

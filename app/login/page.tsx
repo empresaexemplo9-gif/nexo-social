@@ -184,7 +184,7 @@ export default function LoginPage() {
 
           <button
             type="submit" disabled={loading}
-            className="w-full rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60"
+            className="w-full rounded-xl action-patch action-patch--cobalt bg-emerald-500 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60"
           >
             {loading ? 'Processando…' : isRegistering ? 'Criar conta' : 'Entrar'}
           </button>

@@ -143,7 +143,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
           <button
             onClick={testAll}
             disabled={loading || providers.length === 0}
-            className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+            className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
           >
             Testar todas
           </button>
@@ -233,7 +233,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
                     <button
                       onClick={() => runImport(p.id)}
                       disabled={busy[`${p.id}:import`] || !p.ready}
-                      className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-40"
+                      className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-40"
                       title={p.ready ? 'Importar eventos para a agenda' : 'Configure a chave primeiro'}
                     >
                       {busy[`${p.id}:import`] ? 'Importando…' : 'Importar eventos'}

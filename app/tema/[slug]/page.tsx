@@ -22,7 +22,7 @@ export default async function TopicPage({ params }: { params: { slug: string } }
         <div className="mx-auto max-w-3xl px-4 py-24 text-center">
           <h1 className="text-2xl font-semibold text-zinc-50">Tema não encontrado</h1>
           <p className="mt-2 text-sm text-zinc-300">O assunto que você procura não existe ou foi movido.</p>
-          <Link href="/#temas" className="mt-6 inline-block rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">
+          <Link href="/#temas" className="mt-6 inline-block rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">
             Ver todos os temas
           </Link>
         </div>

@@ -106,8 +106,8 @@ export default function AgendaTimeline({ events }: { events: EventItem[] }) {
           <p className="mt-1 text-sm text-zinc-400">Seus próximos compromissos, convites e eventos salvos.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/agenda#novo-compromisso" className="rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">Marcar compromisso</Link>
-          <Link href="/agenda" className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 hover:border-emerald-400">Abrir agenda</Link>
+          <Link href="/agenda#novo-compromisso" className="rounded-xl action-patch action-patch--red bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">Marcar compromisso</Link>
+          <Link href="/agenda" className="action-patch action-patch--ink rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 hover:border-emerald-400">Abrir agenda</Link>
         </div>
       </div>
 

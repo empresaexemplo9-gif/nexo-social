@@ -147,7 +147,7 @@ export default function EnviarFotos({
       <button
         type="submit"
         disabled={Boolean(progresso) || !arquivos.length}
-        className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-2xl action-patch action-patch--red bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
       >
         <Icon name="send" size={15} />{' '}
         {progresso ?? (arquivos.length > 1 ? `Publicar ${arquivos.length} fotos` : 'Publicar foto')}

@@ -285,7 +285,7 @@ export default function ProfilePlaylist() {
         </p>
         <Link
           href="/questionario#q-musica"
-          className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-4 py-2 text-xs font-semibold text-zinc-950 shadow-glow hover:bg-emerald-300"
+          className="inline-flex items-center gap-2 rounded-xl action-patch action-patch--olive bg-emerald-400 px-4 py-2 text-xs font-semibold text-zinc-950 shadow-glow hover:bg-emerald-300"
         >
           Escolher meus estilos <Icon name="arrowRight" size={14} />
         </Link>

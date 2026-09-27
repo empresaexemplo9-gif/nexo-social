@@ -152,7 +152,7 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
                   setGaleria(false);
                   onConcluir();
                 }}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-400 px-4 py-2 text-xs font-semibold text-zinc-950 shadow-glow transition hover:bg-emerald-300"
+                className="inline-flex items-center gap-1.5 rounded-xl action-patch action-patch--cobalt bg-emerald-400 px-4 py-2 text-xs font-semibold text-zinc-950 shadow-glow transition hover:bg-emerald-300"
               >
                 <Icon name="check" size={14} /> Concluir
               </button>

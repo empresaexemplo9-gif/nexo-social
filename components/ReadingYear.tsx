@@ -155,7 +155,7 @@ function AddForm() {
       </select>
       <button
         type="submit"
-        className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+        className="inline-flex items-center justify-center gap-1.5 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
       >
         <Icon name="plus" size={15} /> Adicionar
       </button>

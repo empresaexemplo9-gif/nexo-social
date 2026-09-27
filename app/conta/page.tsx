@@ -97,7 +97,7 @@ export default function ContaPage() {
           ) : !account ? (
             <div className="mt-3 space-y-3">
               <p className="text-sm text-zinc-400">Você não está autenticado.</p>
-              <Link href="/login" className="inline-block rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">Entrar</Link>
+              <Link href="/login" className="inline-block rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">Entrar</Link>
             </div>
           ) : (
             <>
@@ -128,7 +128,7 @@ export default function ContaPage() {
           )}
 
           {admin && (
-            <Link href="/admin" className="mt-4 inline-block rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">
+            <Link href="/admin" className="mt-4 inline-block rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">
               Abrir Painel Admin →
             </Link>
           )}

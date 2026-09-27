@@ -117,7 +117,7 @@ export default function AdminPage() {
           </p>
           <p className="text-xs text-zinc-500">Painel exclusivo de <span className="font-mono">{ADMIN_EMAIL}</span>.</p>
           <div className="flex justify-center gap-3 pt-2">
-            <Link href="/login" className="rounded-xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">Entrar</Link>
+            <Link href="/login" className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">Entrar</Link>
             <Link href="/" className="rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-50">Voltar</Link>
           </div>
         </div>
@@ -217,7 +217,7 @@ export default function AdminPage() {
               <label className="mb-1 block text-xs text-zinc-400">Texto completo</label>
               <textarea rows={4} value={content.body} onChange={(e) => setContent({ ...content, body: e.target.value })} className={inputClass} />
             </div>
-            <button type="submit" className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">Publicar no Hub</button>
+            <button type="submit" className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">Publicar no Hub</button>
           </form>
         )}
 
@@ -278,7 +278,7 @@ export default function AdminPage() {
               <label className="mb-1 block text-xs text-zinc-400">Descrição</label>
               <textarea rows={3} required value={event.description} onChange={(e) => setEvent({ ...event, description: e.target.value })} className={inputClass} />
             </div>
-            <button type="submit" className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">Salvar Evento</button>
+            <button type="submit" className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">Salvar Evento</button>
           </form>
         )}
 
@@ -311,7 +311,7 @@ export default function AdminPage() {
               <label className="mb-1 block text-xs text-zinc-400">Dica / hábito matinal</label>
               <input type="text" required value={bomDia.quickTip} onChange={(e) => setBomDia({ ...bomDia, quickTip: e.target.value })} className={inputClass} />
             </div>
-            <button type="submit" className="rounded-xl bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">Atualizar Curadoria</button>
+            <button type="submit" className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">Atualizar Curadoria</button>
           </form>
         )}
       </div>

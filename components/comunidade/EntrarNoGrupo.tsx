@@ -33,7 +33,7 @@ export default function EntrarNoGrupo({ token }: { token: string }) {
       <button
         onClick={entrar}
         disabled={ocupado}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-xl action-patch action-patch--cobalt bg-emerald-500 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60"
       >
         <Icon name="thumbUp" size={16} /> {ocupado ? 'Entrando…' : 'Participar do grupo'}
       </button>

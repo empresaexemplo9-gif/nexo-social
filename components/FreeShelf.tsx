@@ -75,7 +75,7 @@ function BookCard({ book }: { book: FreeBook }) {
                   link: book.url,
                 })
               }
-              className="inline-flex items-center gap-1 rounded-xl bg-emerald-400 px-2.5 py-1 text-[11px] font-semibold text-zinc-950 transition hover:bg-emerald-300"
+              className="inline-flex items-center gap-1 rounded-xl action-patch action-patch--cobalt bg-emerald-400 px-2.5 py-1 text-[11px] font-semibold text-zinc-950 transition hover:bg-emerald-300"
             >
               <Icon name="book" size={11} /> Ler aqui
             </button>

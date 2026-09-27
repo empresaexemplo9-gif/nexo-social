@@ -117,7 +117,7 @@ export default function InstallApp({ compacto = false }: { compacto?: boolean })
           </button>
           <button
             onClick={instalar}
-            className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+            className="inline-flex items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
           >
             <Icon name="download" size={15} /> {ios ? 'Como instalar' : rotulo}
           </button>

@@ -198,7 +198,7 @@ export default function AgendaWorkspace() {
         </p>
         <Link
           href="/login"
-          className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+          className="mt-5 inline-flex items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-6 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
         >
           Entrar ou criar conta <Icon name="arrowRight" size={16} />
         </Link>
@@ -345,7 +345,7 @@ export default function AgendaWorkspace() {
             <button
               type="submit"
               disabled={busy}
-              className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+              className="rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
             >
               {busy ? 'Salvando…' : 'Criar compromisso'}
             </button>
@@ -465,7 +465,7 @@ export default function AgendaWorkspace() {
             <button
               type="submit"
               disabled={busy}
-              className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+              className="rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
             >
               {busy ? 'Enviando…' : 'Enviar'}
             </button>
@@ -527,7 +527,7 @@ export default function AgendaWorkspace() {
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+                className="rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
               >
                 Adicionar
               </button>
@@ -555,7 +555,7 @@ export default function AgendaWorkspace() {
                           await post('/api/agenda/contacts', { id: c.id, status: 'aceito' }, 'PATCH');
                           loadAll();
                         }}
-                        className="rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950"
+                        className="rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-zinc-950"
                       >
                         Aceitar
                       </button>

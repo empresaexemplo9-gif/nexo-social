@@ -63,7 +63,7 @@ export default function LibraryView() {
         </div>
         <Link
           href="/questionario"
-          className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+          className="inline-flex shrink-0 items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
         >
           Ajustar perfil <Icon name="arrowRight" size={16} />
         </Link>

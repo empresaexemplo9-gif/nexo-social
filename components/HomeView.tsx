@@ -199,7 +199,7 @@ function NewsletterWidget() {
             <button
               type="submit"
               disabled={status === 'loading'}
-              className="rounded-xl bg-emerald-400 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-glow transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:opacity-60"
+              className="rounded-xl action-patch action-patch--cobalt bg-emerald-400 px-6 py-3 text-sm font-semibold text-zinc-950 shadow-glow transition hover:-translate-y-0.5 hover:bg-emerald-300 disabled:opacity-60"
             >
               {status === 'loading' ? 'Enviando…' : 'Inscrever-se'}
             </button>
