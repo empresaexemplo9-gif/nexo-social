@@ -53,8 +53,6 @@ export default function HomeView({ events }: Props) {
           return prefs.interests?.[0] ? <ClipsShelf topic={prefs.interests[0]} /> : null;
         case 'conhecer-hoje':
           return <HeritageShelf titulo="Para conhecer hoje" />;
-        case 'agenda':
-          return <AgendaTimeline events={events} />;
         case 'bom-dia':
           return <BomDiaWidget />;
         case 'newsletter':
@@ -80,6 +78,8 @@ export default function HomeView({ events }: Props) {
 
         <HeroDoPerfil onMontar={alternarMontagem} montando={montando} />
 
+        <AgendaTimeline events={events} />
+
         {/* Os widgets, na ordem e no tamanho que a pessoa escolheu */}
         <div id="widgets" className="scroll-mt-20">
           {ready && <MontarHome montando={montando} onConcluir={() => setMontando(false)} conteudo={conteudo} />}
@@ -102,7 +102,7 @@ export default function HomeView({ events }: Props) {
         <div className="flex w-full flex-col items-center justify-between gap-3 px-4 sm:flex-row sm:px-6 lg:px-10 2xl:px-14">
           <span className="font-mono uppercase tracking-widest">nexo.social — cultura • novidade</span>
           <div className="flex gap-5">
-            <Link href="/agenda" className="hover:text-clay-400">Compromissos</Link>
+            <Link href="/agenda" className="hover:text-clay-400">Agenda</Link>
             <Link href="/questionario" className="hover:text-clay-400">Questionário</Link>
             <Link href="/conta" className="hover:text-clay-400">Minha conta</Link>
           </div>

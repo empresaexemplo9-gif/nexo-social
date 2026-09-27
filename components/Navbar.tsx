@@ -27,7 +27,7 @@ const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/descobrir', label: 'Descobrir de graça', icon: 'grade' },
   { href: '/shorts', label: 'Shorts', icon: 'shorts' },
   { href: '/revista', label: 'Revista', icon: 'jornal' },
-  { href: '/agenda', label: 'Compromissos', icon: 'calendarCheck' },
+  { href: '/agenda', label: 'Agenda', icon: 'calendarCheck' },
   { href: '/comunidade', label: 'Comunidade', icon: 'users' },
   { href: '/esporte', label: 'Esporte ao vivo', icon: 'trophy' },
   { href: '/livros', label: 'Livros que li esse ano', icon: 'library' },

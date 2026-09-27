@@ -34,7 +34,7 @@ const ATALHOS: { href: string; rotulo: string; apoio: string; icone: IconName }[
   { href: '/#trilha', rotulo: 'Sua trilha', apoio: 'Música no Spotify', icone: 'headphones' },
   { href: '/esporte', rotulo: 'Esporte ao vivo', apoio: 'Placar e transmissões', icone: 'trophy' },
   { href: '/livros', rotulo: 'Livros que li', apoio: 'Registro e estante liberada', icone: 'library' },
-  { href: '/agenda', rotulo: 'Compromissos', apoio: 'Sua agenda de eventos', icone: 'calendarCheck' },
+  { href: '/agenda', rotulo: 'Agenda', apoio: 'Sua agenda de eventos', icone: 'calendarCheck' },
   { href: '/#nichos', rotulo: 'Seus nichos', apoio: 'Indicações por tema', icone: 'compass' },
 ];
 

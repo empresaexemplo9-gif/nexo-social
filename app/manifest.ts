@@ -39,7 +39,7 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     // Atalhos de toque longo no ícone (Android e desktop).
     shortcuts: [
-      { name: 'Compromissos', short_name: 'Agenda', url: '/agenda' },
+      { name: 'Agenda', short_name: 'Agenda', url: '/agenda' },
       { name: 'Esporte ao vivo', short_name: 'Esporte', url: '/esporte' },
       { name: 'Livros que li esse ano', short_name: 'Livros', url: '/livros' },
     ],

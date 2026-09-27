@@ -79,12 +79,6 @@ export const WIDGETS_FIXOS: Record<string, TipoDeWidget> = {
     icone: 'sparkles',
     tamanhoPadrao: 'inteira',
   },
-  agenda: {
-    titulo: 'Sua agenda',
-    descricao: 'O que vem por aí e os eventos perto de você.',
-    icone: 'calendarCheck',
-    tamanhoPadrao: 'inteira',
-  },
   'bom-dia': {
     titulo: 'Bom Dia',
     descricao: 'Trilha matinal, receitas rápidas e hábitos.',

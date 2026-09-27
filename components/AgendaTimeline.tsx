@@ -1,206 +1,151 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Icon from './icons';
+import BotoesResposta from './BotoesResposta';
 import { useAgenda } from '@/lib/agenda';
-import { usePreferences } from '@/lib/preferences';
-import { useGeolocation } from '@/lib/useGeolocation';
-import { cityCoords, getTopic, type EventItem } from '@/lib/data';
-import { formatDistance, haversineKm } from '@/lib/geo';
-import { daysUntil, isHappeningNow, relativeLabel } from '@/lib/datetime';
-import { pickSuggestions, scoreEvents } from '@/lib/recommendations';
+import type { Appointment } from '@/lib/compromissos';
+import type { EventItem } from '@/lib/data';
+import { formatEventDateLong, isUpcoming } from '@/lib/datetime';
+import { EVENTO_CONVITES, responderConvite } from '@/lib/convites';
 
-interface Props {
-  events: EventItem[];
-}
+type LoadState = 'loading' | 'ok' | 'anon' | 'error';
 
-interface Bucket {
-  id: string;
-  label: string;
-  events: (EventItem & { distanceKm: number | null; saved: boolean })[];
-}
-
-/** Agrupa por horizonte de tempo: hoje, amanhã, esta semana, depois. */
-function bucketize(items: (EventItem & { distanceKm: number | null; saved: boolean })[], now: Date): Bucket[] {
-  const groups: Record<string, typeof items> = { hoje: [], amanha: [], semana: [], depois: [] };
-  for (const e of items) {
-    if (!e.startsAt) {
-      groups.depois.push(e);
-      continue;
-    }
-    const d = daysUntil(e.startsAt, now);
-    if (isHappeningNow(e.startsAt, e.endsAt, now) || d === 0) groups.hoje.push(e);
-    else if (d === 1) groups.amanha.push(e);
-    else if (d <= 7) groups.semana.push(e);
-    else groups.depois.push(e);
-  }
-  return [
-    { id: 'hoje', label: 'Hoje', events: groups.hoje },
-    { id: 'amanha', label: 'Amanhã', events: groups.amanha },
-    { id: 'semana', label: 'Esta semana', events: groups.semana },
-    { id: 'depois', label: 'Em breve', events: groups.depois },
-  ].filter((b) => b.events.length > 0);
-}
-
-function AgendaRow({ event, distanceKm, saved }: { event: EventItem; distanceKm: number | null; saved: boolean }) {
-  const topic = getTopic(event.topic);
-  const { toggle } = useAgenda();
-  const now = isHappeningNow(event.startsAt ?? '', event.endsAt);
-
-  return (
-    <li className="group relative flex gap-4 rounded-2xl border border-zinc-800/70 bg-zinc-900/60 p-4 transition hover:border-zinc-700">
-      {/* Marcador do tema */}
-      <div className={`mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${topic?.accent.border} ${topic?.accent.bg} ${topic?.accent.text}`}>
-        <Icon name={topic?.icon ?? 'calendar'} size={20} />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2 text-[11px]">
-          <span className={`inline-flex items-center gap-1 font-medium ${now ? 'text-clay-300' : 'text-emerald-400'}`}>
-            <Icon name="clock" size={13} />
-            {event.startsAt ? relativeLabel(event.startsAt, event.endsAt) : event.date}
-          </span>
-          <span className="text-zinc-600">•</span>
-          <span className="text-zinc-400">{event.date}</span>
-          {saved && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/60 px-2 py-0.5 text-emerald-400">
-              <Icon name="check" size={11} /> na sua agenda
-            </span>
-          )}
-        </div>
-
-        <Link href={`/evento/${event.id}`} className="mt-1 block">
-          <h4 className="truncate text-sm font-semibold text-zinc-50 transition group-hover:text-emerald-300">{event.title}</h4>
-          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-zinc-400">
-            <Icon name="mapPin" size={13} className="shrink-0" />
-            {event.venue} — {event.city}
-            {typeof distanceKm === 'number' && <span className="text-emerald-400">• {formatDistance(distanceKm)}</span>}
-          </p>
-        </Link>
-      </div>
-
-      <button
-        onClick={() => toggle(event.id)}
-        aria-label={saved ? 'Remover da agenda' : 'Salvar na agenda'}
-        title={saved ? 'Remover da agenda' : 'Salvar na agenda'}
-        className={`self-start rounded-lg p-2 transition ${
-          saved ? 'text-emerald-400 hover:text-emerald-300' : 'text-zinc-500 hover:text-zinc-200'
-        }`}
-      >
-        <Icon name={saved ? 'bookmarkFilled' : 'bookmark'} size={18} />
-      </button>
-    </li>
-  );
-}
-
-export default function AgendaTimeline({ events }: Props) {
+export default function AgendaTimeline({ events }: { events: EventItem[] }) {
   const { saved, ready } = useAgenda();
-  const { prefs } = usePreferences();
-  const { coords } = useGeolocation();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [state, setState] = useState<LoadState>('loading');
+  const [busy, setBusy] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState('');
+  const [now, setNow] = useState(() => new Date());
+  const request = useRef(0);
+  const responding = useRef(false);
 
-  const origin = coords ?? cityCoords(prefs.city);
+  const load = useCallback(async () => {
+    const current = ++request.current;
+    try {
+      const res = await fetch('/api/agenda/appointments', { cache: 'no-store' });
+      if (current !== request.current) return;
+      if (res.status === 401) {
+        setAppointments([]);
+        setState('anon');
+        return;
+      }
+      if (!res.ok) throw new Error();
+      const json = await res.json();
+      if (current !== request.current) return;
+      if (!Array.isArray(json.appointments)) throw new Error();
+      setAppointments(json.appointments);
+      setState('ok');
+    } catch {
+      if (current !== request.current) return;
+      setAppointments([]);
+      setState('error');
+    }
+  }, []);
 
-  const { buckets, savedCount, suggestionCount } = useMemo(() => {
-    const now = new Date();
-    // Sugestões pontuadas pelo algoritmo (perfil + proximidade + tempo).
-    const ranked = scoreEvents({
-      interests: prefs.interests,
-      origin,
-      radiusKm: prefs.radiusKm || 50,
-      events,
-      contents: [],
-      now,
-    });
+  useEffect(() => {
+    void load();
+    const refresh = () => { setNow(new Date()); void load(); };
+    const visible = () => { if (document.visibilityState === 'visible') refresh(); };
+    window.addEventListener(EVENTO_CONVITES, refresh);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', visible);
+    const timer = window.setInterval(visible, 60000);
+    return () => {
+      ++request.current;
+      window.clearInterval(timer);
+      window.removeEventListener(EVENTO_CONVITES, refresh);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', visible);
+    };
+  }, [load]);
 
-    const savedSet = new Set(saved);
-    const decorar = (r: (typeof ranked)[number]) => ({
-      ...r.event,
-      distanceKm: r.distanceKm,
-      saved: savedSet.has(r.event.id),
-    });
+  const respond = async (id: string, status: 'confirmado' | 'recusado') => {
+    if (responding.current) return;
+    responding.current = true;
+    setBusy(id);
+    setFeedback('');
+    try {
+      const result = await responderConvite({ type: 'convite_compromisso', appointmentId: id }, status === 'confirmado');
+      if (!result.ok) {
+        setFeedback(result.error || 'Não foi possível responder. Tente novamente.');
+      } else {
+        setAppointments((items) => items.map((item) => item.id === id ? { ...item, myStatus: status } : item));
+        setFeedback(status === 'confirmado' ? 'Você concordou com o compromisso.' : 'Você não concordou com o compromisso.');
+      }
+    } finally {
+      responding.current = false;
+      setBusy(null);
+    }
+  };
 
-    // Agenda = o que o usuário salvou primeiro; depois as melhores sugestões.
-    // As sugestões passam pelo teto por tema e por cidade: cortar direto o topo
-    // do ranking enchia o bloco com o mesmo tema na mesma cidade.
-    const mine = ranked.filter((r) => savedSet.has(r.event.id)).map(decorar);
-    const suggestions = pickSuggestions(
-      ranked.filter((r) => !savedSet.has(r.event.id)),
-      8,
-    ).map(decorar);
-    const merged = [...mine, ...suggestions].sort((a, b) => {
-      const ta = a.startsAt ? new Date(a.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
-      const tb = b.startsAt ? new Date(b.startsAt).getTime() : Number.MAX_SAFE_INTEGER;
-      return ta - tb;
-    });
-
-    return { buckets: bucketize(merged, now), savedCount: mine.length, suggestionCount: suggestions.length };
-  }, [events, prefs.interests, prefs.radiusKm, origin, saved]);
-
-  if (!ready) return null;
-
-  const nextEvent = buckets[0]?.events[0];
+  // Convites permanecem visíveis até a resposta, mesmo após a data marcada.
+  const pending = appointments.filter((a) => a.role === 'convidado' && a.myStatus === 'pendente');
+  const scheduled = appointments.filter((a) =>
+    (a.role === 'dono' || a.myStatus === 'confirmado') && isUpcoming(a.startsAt, a.endsAt ?? undefined, now),
+  );
+  const savedEvents = ready ? events.filter((event) => saved.includes(event.id) &&
+    (!event.startsAt || isUpcoming(event.startsAt, event.endsAt, now))) : [];
+  const items = [
+    ...scheduled.map((a) => ({ key: `appointment:${a.id}`, title: a.title, startsAt: a.startsAt,
+      date: formatEventDateLong(a.startsAt), location: [a.location, a.city].filter(Boolean).join(' — '),
+      href: '/agenda', kind: a.role === 'dono' ? 'Compromisso' : 'Confirmado' })),
+    ...savedEvents.map((event) => ({ key: `event:${event.id}`, title: event.title, startsAt: event.startsAt,
+      date: event.startsAt ? formatEventDateLong(event.startsAt) : event.date,
+      location: [event.venue, event.city].filter(Boolean).join(' — '), href: `/evento/${event.id}`, kind: 'Evento salvo' })),
+  ].sort((a, b) => (a.startsAt ? Date.parse(a.startsAt) : Infinity) - (b.startsAt ? Date.parse(b.startsAt) : Infinity));
 
   return (
-    <div className="space-y-6">
-      {/* Resumo do dia */}
-      <div className="card-soft texture-grain cantos-hud relative overflow-hidden p-6 md:p-8">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 w-full bg-chip bg-cover bg-center opacity-35 [mask-image:linear-gradient(to_left,black_20%,transparent_85%)] md:w-2/3"
-        />
-        <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="rotulo-hud">
-              <Icon name="calendarCheck" size={14} /> Sua agenda
-            </p>
-            <h2 className="mt-2 text-3xl font-semibold leading-tight text-zinc-50 md:text-4xl">
-              {nextEvent ? (
-                <>
-                  A seguir: <span className="text-clay-300">{nextEvent.title}</span>
-                </>
-              ) : (
-                'Sua agenda está livre'
-              )}
-            </h2>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-300">
-              {savedCount > 0
-                ? `${savedCount} evento(s) salvos e ${suggestionCount} sugestões escolhidas para você.`
-                : 'Salve os eventos que te interessam — abaixo já separamos sugestões perto de você.'}
-            </p>
-          </div>
-          <Link
-            href="/questionario"
-            className="inline-flex w-fit items-center gap-2 rounded-xl border border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
-          >
-            <Icon name="sparkles" size={15} /> Ajustar meus temas
-          </Link>
+    <section id="agenda-home" aria-labelledby="agenda-home-title" className="card-soft space-y-5 p-5 sm:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="rotulo-hud"><Icon name="calendarCheck" size={14} /> Compromissos e datas marcadas</p>
+          <h2 id="agenda-home-title" className="mt-2 text-3xl font-semibold text-zinc-50">Sua agenda</h2>
+          <p className="mt-1 text-sm text-zinc-400">Seus próximos compromissos, convites e eventos salvos.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/agenda#novo-compromisso" className="rounded-xl bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300">Marcar compromisso</Link>
+          <Link href="/agenda" className="rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 hover:border-emerald-400">Abrir agenda</Link>
         </div>
       </div>
 
-      {/* Linha do tempo */}
-      {buckets.length === 0 ? (
-        <p className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-8 text-center text-sm text-zinc-400">
-          Nenhum evento por enquanto. Escolha seus temas no questionário para receber sugestões.
-        </p>
-      ) : (
-        <div className="space-y-7">
-          {buckets.map((bucket) => (
-            <section key={bucket.id}>
-              <div className="mb-3 flex items-center gap-3">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-300">{bucket.label}</h3>
-                <span className="h-px flex-1 bg-zinc-800" />
-                <span className="text-xs text-zinc-500">{bucket.events.length}</span>
-              </div>
-              <ul className="grid grid-cols-1 gap-3 xl:grid-cols-2 2xl:grid-cols-3">
-                {bucket.events.map((e) => (
-                  <AgendaRow key={e.id} event={e} distanceKm={e.distanceKm} saved={e.saved} />
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
-      )}
-    </div>
+      {state === 'loading' && <p role="status" className="text-sm text-zinc-400">Carregando seus compromissos…</p>}
+      {state === 'anon' && <p className="text-sm text-zinc-400"><Link href="/conta" className="font-semibold text-emerald-400 underline">Entre na sua conta</Link> para ver seus compromissos e convites.</p>}
+      {state === 'error' && <div role="alert" className="text-sm text-clay-300">Não foi possível carregar seus compromissos. <button type="button" onClick={() => { setState('loading'); void load(); }} className="font-semibold underline">Tentar novamente</button></div>}
+      {feedback && <p role="status" className="text-sm text-zinc-300">{feedback}</p>}
+
+      {pending.length > 0 && <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-clay-300">Convites aguardando sua resposta ({pending.length})</h3>
+        <ul className="grid gap-3 lg:grid-cols-2">
+          {pending.map((a) => <li key={a.id} className="min-w-0 space-y-3 rounded-2xl border border-clay-700/40 bg-zinc-900/60 p-4">
+            <div>
+              <h4 className="break-words font-semibold text-zinc-50">{a.title}</h4>
+              <p className="mt-1 text-sm text-emerald-400">{formatEventDateLong(a.startsAt)}</p>
+              {a.location && <p className="mt-1 break-words text-xs text-zinc-400">{a.location}</p>}
+              <p className="mt-1 text-xs text-zinc-400">Convite de {a.ownerName || 'um participante'}</p>
+            </div>
+            <BotoesResposta status={a.myStatus} busy={busy !== null} onResponder={(status) => void respond(a.id, status)} />
+          </li>)}
+        </ul>
+      </div>}
+
+      {items.length > 0 && <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-zinc-300">Próximas datas</h3>
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {items.slice(0, 6).map((item) => <li key={item.key} className="min-w-0">
+            <Link href={item.href} className="block h-full rounded-2xl border border-zinc-800 bg-zinc-900/60 p-4 transition hover:border-emerald-600">
+              <p className="text-xs font-medium text-emerald-400">{item.date}</p>
+              <h4 className="mt-2 break-words font-semibold text-zinc-50">{item.title}</h4>
+              {item.location && <p className="mt-1 break-words text-xs text-zinc-400">{item.location}</p>}
+              <p className="mt-2 text-xs text-zinc-500">{item.kind}</p>
+            </Link>
+          </li>)}
+        </ul>
+        {items.length > 6 && <p className="text-sm text-zinc-400">Mostrando as próximas 6 datas. <Link href="/agenda" className="text-emerald-400 underline">Ver todos os compromissos</Link></p>}
+      </div>}
+      {state === 'ok' && ready && items.length === 0 && pending.length === 0 && <p className="text-sm text-zinc-400">Nenhum compromisso próximo. Marque uma data para começar sua agenda.</p>}
+    </section>
   );
 }
