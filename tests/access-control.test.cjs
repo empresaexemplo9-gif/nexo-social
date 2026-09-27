@@ -33,7 +33,7 @@ function load({ user = null, error = null, throws = false, url = 'https://exampl
 
 test('all internal pages, new routes and extension-shaped URLs require login', async () => {
   const app = load();
-  for (const path of ['/', '/agenda', '/comunidade/convite/token', '/admin', '/conta', '/new-route', '/revista/tema/article.png', '/login/extra', '/privacidade/extra']) {
+  for (const path of ['/', '/agenda', '/comunidade/convite/token', '/admin', '/conta', '/new-route', '/revista/tema/article.png', '/login/extra', '/privacidade/extra', '/termos/extra']) {
     const res = await app.run(path);
     assert.equal(res.status, 307, path);
     const target = new URL(res.headers.get('location'));
@@ -55,7 +55,7 @@ test('APIs reject visitors with JSON 401, including health and admin', async () 
 });
 test('login, registration and PWA assets remain public even during auth outage', async () => {
   const app = load({ throws: true });
-  for (const path of ['/privacidade', '/login', '/login?cadastro=1', '/api/signup', '/offline', '/sw.js', '/manifest.webmanifest', '/icon-192.png', '/bg/hud.svg']) {
+  for (const path of ['/termos', '/privacidade', '/login', '/login?cadastro=1', '/api/signup', '/offline', '/sw.js', '/manifest.webmanifest', '/icon-192.png', '/bg/hud.svg']) {
     assert.equal((await app.run(path)).headers.get('x-middleware-next'), '1', path);
   }
   assert.equal(app.calls(), 0);

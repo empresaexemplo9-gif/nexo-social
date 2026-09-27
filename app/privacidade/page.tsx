@@ -187,7 +187,7 @@ export default function PrivacidadePage() {
       <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">
         <Link href="/" className="hover:text-zinc-300">nexo.social</Link>
         <span className="mx-2">•</span>
-        <span>Política de Privacidade</span>
+        <span>Política de Privacidade</span><span className="mx-2">•</span><Link href="/termos" className="underline">Termos de Serviço</Link>
       </footer>
     </div>
   );

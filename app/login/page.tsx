@@ -191,7 +191,7 @@ export default function LoginPage() {
         </form>
 
         <p className="text-center text-xs text-zinc-400">
-          Saiba como seus dados são usados na <Link href="/privacidade" className="underline hover:text-zinc-50">Política de Privacidade</Link>.
+          Consulte os <Link href="/termos" className="underline hover:text-zinc-50">Termos de Serviço</Link> e saiba como seus dados são usados na <Link href="/privacidade" className="underline hover:text-zinc-50">Política de Privacidade</Link>.
         </p>
 
         <div className="text-center">
