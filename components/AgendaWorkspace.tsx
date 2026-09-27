@@ -72,6 +72,35 @@ export default function AgendaWorkspace() {
   const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
 
+  const [criando, setCriando] = useState(false);
+
+  useEffect(() => {
+    const sync = () => {
+      const abrir = window.location.hash === '#novo-compromisso';
+      setCriando(abrir);
+      if (abrir) setTab('compromissos');
+    };
+    sync();
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+
+  useEffect(() => {
+    if (!criando || authState !== 'ok' || tab !== 'compromissos') return;
+    const frame = requestAnimationFrame(() => {
+      document.querySelector<HTMLInputElement>('#novo-compromisso input')?.focus();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [criando, authState, tab]);
+
+  const fecharCriacao = () => {
+    setCriando(false);
+    if (window.location.hash === '#novo-compromisso') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    requestAnimationFrame(() => document.getElementById('abrir-criacao')?.focus());
+  };
+
   // formulário de compromisso
   const [form, setForm] = useState({ title: '', startsAt: '', location: '', description: '' });
   const [convidados, setConvidados] = useState<Pessoa[]>([]);
@@ -155,6 +184,7 @@ export default function AgendaWorkspace() {
       );
       setForm({ title: '', startsAt: '', location: '', description: '' });
       setConvidados([]);
+      fecharCriacao();
       loadAll();
     }
   };
@@ -229,6 +259,7 @@ export default function AgendaWorkspace() {
               key={id}
               onClick={() => {
                 setTab(id);
+                if (id !== 'compromissos') fecharCriacao();
                 setError('');
                 setInfo('');
                 if (id === 'recados') fetch('/api/agenda/messages', { method: 'PATCH' });
@@ -287,7 +318,20 @@ export default function AgendaWorkspace() {
             </section>
           )}
 
-          {/* Novo compromisso */}
+          <button
+            id="abrir-criacao"
+            type="button"
+            aria-expanded={criando}
+            aria-controls="novo-compromisso"
+            onClick={() => setCriando(true)}
+            hidden={criando}
+            className="action-patch action-patch--cobalt rounded-xl px-5 py-2.5 text-sm"
+          >
+            Criar compromisso
+          </button>
+
+          {/* Novo compromisso: abre somente por uma ação explícita. */}
+          {criando && (
           <form id="novo-compromisso" onSubmit={createAppointment} className="card-soft space-y-3 p-5">
             <h3 className="flex items-center gap-2 text-sm font-semibold text-zinc-50">
               <Icon name="plus" size={16} className="text-emerald-400" /> Novo compromisso
@@ -347,14 +391,16 @@ export default function AgendaWorkspace() {
               disabled={busy}
               className="rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
             >
-              {busy ? 'Salvando…' : 'Criar compromisso'}
+              {busy ? 'Salvando…' : 'Salvar compromisso'}
             </button>
+            <button type="button" disabled={busy} onClick={fecharCriacao} className="action-collage action-collage--paper ml-3 rounded-xl px-4 py-2.5 text-sm">Cancelar</button>
           </form>
+          )}
 
           {/* Lista (os convites sem resposta já estão no quadro de cima) */}
           {agendados.length === 0 ? (
             <p className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 text-center text-sm text-zinc-400">
-              {pendingInvites.length ? 'Responda os convites acima para eles entrarem na sua agenda.' : 'Nenhum compromisso ainda. Crie o primeiro acima.'}
+              {pendingInvites.length ? 'Responda os convites acima para eles entrarem na sua agenda.' : 'Nenhum compromisso ainda. Selecione “Criar compromisso” para marcar uma data.'}
             </p>
           ) : (
             <ul className="space-y-3">
