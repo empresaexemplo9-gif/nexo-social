@@ -40,6 +40,7 @@ const ABAS: Aba[] = [
 export default function MobileTabBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const publicPage = pathname === "/login" || pathname === "/offline";
   const [plat, setPlat] = useState<Plataforma | null>(null);
 
   useEffect(() => {
@@ -61,14 +62,14 @@ export default function MobileTabBar() {
       obs.disconnect();
       raiz.style.removeProperty('--altura-abas');
     };
-  }, [plat]);
+  }, [plat, publicPage]);
 
   // Pré-carrega os destinos: no celular a diferença é perceptível.
   useEffect(() => {
-    ABAS.forEach((a) => router.prefetch(a.href));
-  }, [router]);
+    if (!publicPage) ABAS.forEach((a) => router.prefetch(a.href));
+  }, [router, publicPage]);
 
-  if (!plat || !plat.ehMobile) return null;
+  if (publicPage || !plat || !plat.ehMobile) return null;
 
   const ios = plat.sistema === 'ios';
 

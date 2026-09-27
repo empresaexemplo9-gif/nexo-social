@@ -3,20 +3,49 @@ import { createServerClient } from '@supabase/ssr';
 import { isPlatformAdmin } from '@/lib/auth';
 import { resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config';
 
-const url = resolveSupabaseUrl();
-const anonKey = PUBLISHABLE_ANON_KEY;
+// Apenas a entrada, o cadastro e os arquivos do app são públicos.
+// Não liberar por extensão: uma rota interna pode terminar em .png ou .svg.
+const publicPaths = new Set([
+  '/login', '/offline', '/api/signup', '/manifest.webmanifest', '/sw.js',
+  '/favicon.ico', '/favicon-32.png', '/favicon-48.png', '/apple-touch-icon.png',
+  '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png',
+  '/logo.png', '/logo.svg',
+  '/bg/linhas-luz.svg', '/bg/grade.svg', '/bg/chip.svg', '/bg/hud.svg',
+  '/bg/rede.svg', '/bg/hexagonos.svg', '/bg/circuito.svg',
+]);
 
 export async function middleware(request: NextRequest) {
-  if (!url || !anonKey) return NextResponse.next();
+  const path = request.nextUrl.pathname;
+  if (publicPaths.has(path)) return NextResponse.next();
+
+  const isApi = path === '/api' || path.startsWith('/api/');
+  let response = NextResponse.next({ request });
+  const finish = (result: NextResponse) => {
+    if (result !== response) {
+      response.cookies.getAll().forEach((cookie) => result.cookies.set(cookie));
+    }
+    result.headers.set('Cache-Control', 'private, no-store');
+    return result;
+  };
+  const deny = (unavailable = false) => {
+    if (isApi) {
+      return finish(NextResponse.json(
+        { error: unavailable ? 'Não foi possível validar sua sessão. Tente novamente.' : 'Faça login para acessar a plataforma.' },
+        { status: unavailable ? 503 : 401 },
+      ));
+    }
+    const login = new URL('/login', request.url);
+    login.searchParams.set('next', path + request.nextUrl.search);
+    return finish(NextResponse.redirect(login));
+  };
 
   try {
-    let response = NextResponse.next({ request });
+    const url = resolveSupabaseUrl();
+    if (!url || !PUBLISHABLE_ANON_KEY) return deny(true);
 
-    const supabase = createServerClient(url, anonKey, {
+    const supabase = createServerClient(url, PUBLISHABLE_ANON_KEY, {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
+        getAll: () => request.cookies.getAll(),
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
@@ -25,33 +54,26 @@ export async function middleware(request: NextRequest) {
       },
     });
 
-    // Renova a sessão (mantém os cookies válidos entre servidor e cliente).
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // Validação no servidor: a presença de um cookie não comprova identidade.
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user || user.is_anonymous) return deny();
 
-    const path = request.nextUrl.pathname;
-
-    // /admin é exclusivo do administrador da plataforma.
-    if (path.startsWith('/admin')) {
-      if (!user) return NextResponse.redirect(new URL('/login', request.url));
-      if (!isPlatformAdmin(user.email)) return NextResponse.redirect(new URL('/', request.url));
+    const adminPage = path === '/admin' || path.startsWith('/admin/');
+    const adminApi = path === '/api/admin' || path.startsWith('/api/admin/');
+    if ((adminPage || adminApi) && !isPlatformAdmin(user.email)) {
+      return finish(adminApi
+        ? NextResponse.json({ error: 'Acesso restrito ao administrador.' }, { status: 403 })
+        : NextResponse.redirect(new URL('/', request.url)));
     }
 
-    // /conta exige autenticação.
-    if (path.startsWith('/conta') && !user) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-
-    return response;
-  } catch (e) {
-    // Falha de credencial/rede não deve derrubar todas as requisições.
-    console.error('[middleware] Supabase indisponível:', e);
-    return NextResponse.next();
+    return finish(response);
+  } catch {
+    // Falhas de rede/configuração nunca podem liberar a área interna.
+    console.error('[middleware] Não foi possível validar a sessão.');
+    return deny(true);
   }
 }
 
 export const config = {
-  // Executa em todas as rotas, exceto assets estáticos e as próprias APIs.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: ['/((?!_next/static/|_next/image(?:/|$)).*)'],
 };

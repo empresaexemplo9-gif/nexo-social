@@ -42,7 +42,7 @@ export default function LoginPage() {
 
     if (!isSupabaseConfigured || !supabase) {
       setMessage(
-        '⚠️ Modo demonstração: configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY para ativar contas multi-tenant.',
+        'O login está temporariamente indisponível. Tente novamente mais tarde.',
       );
       return;
     }
@@ -112,8 +112,8 @@ export default function LoginPage() {
             {next?.startsWith('/comunidade/convite/')
               ? 'Depois de entrar, você já cai no grupo para o qual foi convidado'
               : isRegistering
-                ? 'Cadastre uma conta pessoal ou uma organização (multi-tenant)'
-                : 'Acesse sua conta para gerenciar e personalizar'}
+                ? 'Crie sua conta para acessar a plataforma'
+                : 'Faça login para acessar a plataforma'}
           </p>
         </div>
 
