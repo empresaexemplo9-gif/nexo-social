@@ -85,11 +85,11 @@ function ListaDeFaixas({
                 type="button"
                 onClick={() => onTocar(f)}
                 aria-pressed={ativa}
-                className={`group flex min-w-0 flex-1 items-center gap-3 rounded-xl border p-2.5 text-left transition ${
+                className={"action-collage " + (`group flex min-w-0 flex-1 items-center gap-3 rounded-xl border p-2.5 text-left transition ${
                   ativa
                     ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_14px_-4px_rgba(43,82,136,0.39)]'
                     : 'border-zinc-800/80 bg-zinc-900/60 hover:border-emerald-400/40'
-                }`}
+                }`)}
               >
                 <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
                   {f.image ? (
@@ -137,7 +137,7 @@ function PainelSpotify() {
   const voltarAqui = () => entrar(`${window.location.pathname}${window.location.search}#trilha`);
   const quem = nome ? <span className="text-zinc-100">{nome}</span> : 'sua conta';
   const botaoSair = (
-    <button type="button" onClick={() => void sair()} className="text-xs font-medium text-zinc-400 transition hover:text-zinc-100">
+    <button type="button" onClick={() => void sair()} className="action-collage action-collage--paper text-xs font-medium text-zinc-400 transition hover:text-zinc-100">
       Sair do Spotify
     </button>
   );
@@ -187,7 +187,7 @@ function PainelSpotify() {
     <button
       type="button"
       onClick={voltarAqui}
-      className="flex w-full items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-left transition hover:border-emerald-400/70 hover:bg-emerald-400/15"
+      className="action-collage flex w-full items-center gap-3 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-3 text-left transition hover:border-emerald-400/70 hover:bg-emerald-400/15"
     >
       <Icon name="headphones" size={18} className="shrink-0 text-emerald-300" />
       <span className="flex-1">
@@ -349,11 +349,11 @@ export default function ProfilePlaylist() {
               setRodada(0);
             }}
             aria-pressed={g === ativo}
-            className={`rounded-lg px-3.5 py-2 text-xs font-medium transition ${
+            className={"action-collage " + (`rounded-lg px-3.5 py-2 text-xs font-medium transition ${
               g === ativo
                 ? 'bg-emerald-400 text-zinc-950 shadow-glow'
                 : 'border border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:border-emerald-400/40 hover:text-zinc-50'
-            }`}
+            }`)}
           >
             {genreLabel(MUSIC_GENRES, g)}
           </button>
@@ -362,7 +362,7 @@ export default function ProfilePlaylist() {
           <button
             type="button"
             onClick={() => setRodada((r) => (r + 1) % trilha.rodadas)}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-clay-500/40 px-3 py-2 text-xs font-medium text-clay-300 transition hover:bg-clay-500/10"
+            className="action-collage action-collage--paper ml-auto inline-flex items-center gap-1.5 rounded-lg border border-clay-500/40 px-3 py-2 text-xs font-medium text-clay-300 transition hover:bg-clay-500/10"
           >
             <Icon name="refresh" size={13} /> Outras descobertas
           </button>
@@ -384,7 +384,7 @@ export default function ProfilePlaylist() {
         <div className="rounded-2xl border border-red-900/60 bg-red-950/25 p-5 text-sm text-red-200">
           <p className="font-semibold">Não foi possível montar a trilha de {genreLabel(MUSIC_GENRES, ativo)}.</p>
           <p className="mt-1 text-xs">{estado.msg}</p>
-          <button onClick={() => void carregar(ativo, rodada)} className="mt-3 rounded-xl border border-red-800 px-3 py-1.5 text-xs">
+          <button onClick={() => void carregar(ativo, rodada)} className="action-collage action-collage--paper mt-3 rounded-xl border border-red-800 px-3 py-1.5 text-xs">
             Tentar de novo
           </button>
         </div>
@@ -404,7 +404,7 @@ export default function ProfilePlaylist() {
               <button
                 type="button"
                 onClick={() => void spotify.tocar({ contexto: `spotify:playlist:${trilha.playlist!.id}` })}
-                className={BOTAO_PRIMARIO}
+                className={"action-collage " + (BOTAO_PRIMARIO)}
               >
                 <Icon name="play" size={13} /> Tocar a playlist
               </button>
@@ -445,13 +445,13 @@ export default function ProfilePlaylist() {
                         <button
                           type="button"
                           onClick={avancar}
-                          className="inline-flex items-center gap-1 text-xs font-medium text-zinc-300 hover:text-emerald-300"
+                          className="action-collage action-collage--paper inline-flex items-center gap-1 text-xs font-medium text-zinc-300 hover:text-emerald-300"
                         >
                           <Icon name="skipNext" size={13} /> Próxima
                         </button>
                       )}
                       {trilha.playlist && (
-                        <button type="button" onClick={voltarParaPlaylist} className="text-xs font-medium text-emerald-400 hover:text-emerald-300">
+                        <button type="button" onClick={voltarParaPlaylist} className="action-collage action-collage--paper text-xs font-medium text-emerald-400 hover:text-emerald-300">
                           Voltar para a playlist
                         </button>
                       )}

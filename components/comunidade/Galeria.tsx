@@ -124,7 +124,7 @@ export function Lightbox({
           {fotos.length > 1 && `${i + 1} de ${fotos.length} · `}
           {f.uploaderName} · {formatEventDateLong(f.createdAt)}
         </p>
-        <button onClick={onFechar} className="rounded-xl p-2 hover:bg-white/10" aria-label="Fechar">
+        <button onClick={onFechar} className="action-collage action-collage--paper rounded-xl p-2 hover:bg-white/10" aria-label="Fechar">
           <Icon name="close" size={20} />
         </button>
       </div>
@@ -156,14 +156,14 @@ export function Lightbox({
           <>
             <button
               onClick={() => ir(-1)}
-              className="absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/10 p-3 text-[#f6f2ea] hover:bg-white/20 sm:block"
+              className="action-collage action-collage--seal absolute left-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/10 p-3 text-[#f6f2ea] hover:bg-white/20 sm:block"
               aria-label="Foto anterior"
             >
               <Icon name="chevronRight" size={20} className="rotate-180" />
             </button>
             <button
               onClick={() => ir(1)}
-              className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/10 p-3 text-[#f6f2ea] hover:bg-white/20 sm:block"
+              className="action-collage action-collage--seal absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-full bg-white/10 p-3 text-[#f6f2ea] hover:bg-white/20 sm:block"
               aria-label="Próxima foto"
             >
               <Icon name="chevronRight" size={20} />
@@ -177,7 +177,7 @@ export function Lightbox({
         style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
       >
         {f.url && (
-          <a href={f.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 hover:bg-white/20">
+          <a href={f.url} target="_blank" rel="noopener noreferrer" className="action-collage inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 hover:bg-white/20">
             <Icon name="external" size={14} /> Abrir original
           </a>
         )}
@@ -214,7 +214,7 @@ export function Lightbox({
               setOcupado(false);
               setI((x) => Math.max(0, Math.min(x, fotos.length - 2)));
             }}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 hover:bg-red-500/30"
+            className="action-collage inline-flex items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 hover:bg-red-500/30"
           >
             <Icon name="trash" size={14} /> Apagar
           </button>

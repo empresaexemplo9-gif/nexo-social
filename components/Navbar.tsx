@@ -57,7 +57,7 @@ function BotaoMenu({ onClick, aberto, rotulo }: { onClick: () => void; aberto?: 
       aria-label={rotulo}
       aria-expanded={aberto}
       title={rotulo}
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-300 transition hover:bg-zinc-900 hover:text-emerald-300"
+      className="action-collage action-collage--paper flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-300 transition hover:bg-zinc-900 hover:text-emerald-300"
     >
       <Icon name="menu" size={22} />
     </button>
@@ -162,22 +162,22 @@ function ConteudoMenu({
           <>
             <NotificationsBell lateral={lateral} rotulo={lateral ? undefined : 'Notificações'} />
             {admin && (
-              <Link href="/admin" onClick={onNavegar} className={item(ativo(pathname, '/admin'))} title="Painel">
+              <Link href="/admin" onClick={onNavegar} className={`action-collage action-collage--paper ${item(ativo(pathname, '/admin'))}`} title="Painel">
                 <Icon name="plug" size={19} className="shrink-0" />
                 <span className="rotulo-menu truncate">Painel</span>
               </Link>
             )}
-            <Link href="/conta" onClick={onNavegar} className={item(ativo(pathname, '/conta'))} title="Minha conta">
+            <Link href="/conta" onClick={onNavegar} className={`action-collage action-collage--paper ${item(ativo(pathname, '/conta'))}`} title="Minha conta">
               <Icon name="user" size={19} className="shrink-0" />
               <span className="rotulo-menu truncate">Minha conta</span>
             </Link>
-            <button type="button" onClick={onSair} className={`${item(false)} w-full text-zinc-500`} title="Sair">
+            <button type="button" onClick={onSair} className={`action-collage action-collage--paper ${item(false)} w-full text-zinc-500`} title="Sair">
               <Icon name="arrowRight" size={19} className="shrink-0" />
               <span className="rotulo-menu">Sair</span>
             </button>
           </>
         ) : (
-          <Link href="/login" onClick={onNavegar} className={item(ativo(pathname, '/login'))} title="Entrar">
+          <Link href="/login" onClick={onNavegar} className={`action-collage action-collage--paper ${item(ativo(pathname, '/login'))}`} title="Entrar">
             <Icon name="user" size={19} className="shrink-0" />
             <span className="rotulo-menu">Entrar</span>
           </Link>
@@ -284,7 +284,7 @@ export default function Navbar() {
           <BotaoMenu onClick={() => setGaveta(true)} aberto={gaveta} rotulo="Abrir o menu" />
           <Marca />
           <div className="ml-auto flex items-center gap-1">
-            <Link href="/busca" className="rounded-xl p-2 text-zinc-300 hover:text-zinc-50" aria-label="Buscar">
+            <Link href="/busca" className="action-collage action-collage--paper rounded-xl p-2 text-zinc-300 hover:text-zinc-50" aria-label="Buscar">
               <Icon name="search" size={20} />
             </Link>
             {email && <NotificationsBell />}
@@ -310,7 +310,7 @@ export default function Navbar() {
                 type="button"
                 onClick={() => setGaveta(false)}
                 aria-label="Fechar o menu"
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-zinc-300 hover:bg-zinc-900 hover:text-emerald-300"
+                className="action-collage action-collage--paper flex h-10 w-10 items-center justify-center rounded-xl text-zinc-300 hover:bg-zinc-900 hover:text-emerald-300"
               >
                 <Icon name="close" size={20} />
               </button>

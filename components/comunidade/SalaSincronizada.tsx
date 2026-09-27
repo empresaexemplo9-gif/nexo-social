@@ -507,7 +507,7 @@ export default function SalaSincronizada({
               <p className="truncate text-sm font-semibold text-zinc-50">{sala.title || 'Vídeo do YouTube'}</p>
             </div>
             <div className="flex items-center gap-1.5">
-              <button onClick={() => pular(-10)} className="rounded-xl border border-zinc-800 px-2.5 py-2 text-xs text-zinc-300 hover:text-zinc-50" title="Voltar 10 segundos para todos">
+              <button onClick={() => pular(-10)} className="action-collage action-collage--paper rounded-xl border border-zinc-800 px-2.5 py-2 text-xs text-zinc-300 hover:text-zinc-50" title="Voltar 10 segundos para todos">
                 −10s
               </button>
               <button
@@ -516,7 +516,7 @@ export default function SalaSincronizada({
               >
                 <Icon name={sala.isPlaying ? 'pause' : 'play'} size={14} /> {sala.isPlaying ? 'Pausar para todos' : 'Tocar para todos'}
               </button>
-              <button onClick={() => pular(10)} className="rounded-xl border border-zinc-800 px-2.5 py-2 text-xs text-zinc-300 hover:text-zinc-50" title="Avançar 10 segundos para todos">
+              <button onClick={() => pular(10)} className="action-collage action-collage--paper rounded-xl border border-zinc-800 px-2.5 py-2 text-xs text-zinc-300 hover:text-zinc-50" title="Avançar 10 segundos para todos">
                 +10s
               </button>
               <button
@@ -524,7 +524,7 @@ export default function SalaSincronizada({
                   melhorRtt.current = Number.POSITIVE_INFINITY;
                   entrarNaSala();
                 }}
-                className="rounded-xl border border-zinc-800 p-2 text-zinc-400 hover:text-zinc-50"
+                className="action-collage action-collage--paper rounded-xl border border-zinc-800 p-2 text-zinc-400 hover:text-zinc-50"
                 title="Ressincronizar com o grupo"
                 aria-label="Ressincronizar com o grupo"
               >
@@ -551,9 +551,9 @@ export default function SalaSincronizada({
                 role="radio"
                 aria-checked={tipo === id}
                 onClick={() => setTipo(id)}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                className={"action-collage " + (`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   tipo === id ? 'bg-emerald-500/15 text-emerald-300' : 'text-zinc-400 hover:text-zinc-100'
-                }`}
+                }`)}
               >
                 <Icon name={icone} size={13} /> {rotulo}
               </button>
@@ -569,7 +569,7 @@ export default function SalaSincronizada({
             <button
               type="submit"
               disabled={buscando || !busca.trim()}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:border-emerald-700 disabled:opacity-50"
+              className="action-collage action-collage--paper inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:border-emerald-700 disabled:opacity-50"
             >
               <Icon name="search" size={15} /> {buscando ? 'Buscando…' : 'Buscar'}
             </button>
@@ -582,7 +582,7 @@ export default function SalaSincronizada({
               <li key={a.id}>
                 <button
                   onClick={() => tocar(a)}
-                  className="flex w-full items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-2 text-left transition hover:border-emerald-700"
+                  className="action-collage flex w-full items-center gap-3 rounded-2xl border border-zinc-800 bg-zinc-950/40 p-2 text-left transition hover:border-emerald-700"
                 >
                   {a.thumb ? (
                     // eslint-disable-next-line @next/next/no-img-element

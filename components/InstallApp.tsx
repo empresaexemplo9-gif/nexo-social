@@ -84,7 +84,7 @@ export default function InstallApp({ compacto = false }: { compacto?: boolean })
       <>
         <button
           onClick={instalar}
-          className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
+          className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
         >
           <Icon name="download" size={13} /> Baixar app
         </button>
@@ -112,7 +112,7 @@ export default function InstallApp({ compacto = false }: { compacto?: boolean })
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <button onClick={dispensar} className="text-xs text-zinc-500 transition hover:text-zinc-300">
+          <button onClick={dispensar} className="action-collage action-collage--paper text-xs text-zinc-500 transition hover:text-zinc-300">
             Agora não
           </button>
           <button
@@ -176,7 +176,7 @@ function PassosIOS({ plat, onClose }: { plat: Plataforma; onClose: () => void })
         </ol>
         <button
           onClick={onClose}
-          className="mt-6 w-full rounded-2xl bg-zinc-800 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-700"
+          className="action-collage mt-6 w-full rounded-2xl bg-zinc-800 py-3 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-700"
         >
           Entendi
         </button>

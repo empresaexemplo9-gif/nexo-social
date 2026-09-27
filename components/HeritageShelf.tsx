@@ -60,7 +60,7 @@ export default function HeritageShelf({ topic, titulo }: { topic?: CategorySlug;
                 tocar(h);
                 document.getElementById('player-acervo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
-              className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 text-left transition hover:border-clay-700/60"
+              className="action-collage group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 text-left transition hover:border-clay-700/60"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">

@@ -91,7 +91,7 @@ export default function BarraDoPlayer() {
             onClick={anterior}
             disabled={!reproducao.temAnterior && posicao < 3000}
             aria-label="Faixa anterior"
-            className="hidden h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition hover:text-emerald-300 disabled:opacity-40 sm:flex"
+            className="action-collage action-collage--paper action-collage--seal hidden h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition hover:text-emerald-300 disabled:opacity-40 sm:flex"
           >
             <Icon name="skipPrev" size={18} />
           </button>
@@ -99,7 +99,7 @@ export default function BarraDoPlayer() {
             type="button"
             onClick={alternar}
             aria-label={reproducao.pausado ? 'Tocar' : 'Pausar'}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400 text-zinc-950 shadow-glow transition hover:bg-emerald-300"
+            className="action-collage action-collage--seal flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400 text-zinc-950 shadow-glow transition hover:bg-emerald-300"
           >
             <Icon name={reproducao.pausado ? 'play' : 'pause'} size={18} />
           </button>
@@ -108,7 +108,7 @@ export default function BarraDoPlayer() {
             onClick={proxima}
             disabled={!reproducao.temProxima}
             aria-label="Próxima faixa"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition hover:text-emerald-300 disabled:opacity-40"
+            className="action-collage action-collage--paper action-collage--seal flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition hover:text-emerald-300 disabled:opacity-40"
           >
             <Icon name="skipNext" size={18} />
           </button>
@@ -123,7 +123,7 @@ export default function BarraDoPlayer() {
           type="button"
           onClick={fechar}
           aria-label="Parar e fechar o player"
-          className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 transition hover:text-zinc-200"
+          className="action-collage action-collage--paper action-collage--seal flex h-8 w-8 items-center justify-center rounded-full text-zinc-500 transition hover:text-zinc-200"
         >
           <Icon name="close" size={16} />
         </button>

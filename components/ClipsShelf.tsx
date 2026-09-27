@@ -76,7 +76,7 @@ export default function ClipsShelf({ topic }: { topic: CategorySlug }) {
         </div>
         <button
           onClick={carregar}
-          className="inline-flex shrink-0 items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-200"
+          className="action-collage action-collage--paper inline-flex shrink-0 items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-200"
         >
           <Icon name="refresh" size={13} /> Atualizar
         </button>

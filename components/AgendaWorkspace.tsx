@@ -233,9 +233,9 @@ export default function AgendaWorkspace() {
                 setInfo('');
                 if (id === 'recados') fetch('/api/agenda/messages', { method: 'PATCH' });
               }}
-              className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium transition ${
+              className={"action-collage " + (`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-medium transition ${
                 tab === id ? 'bg-emerald-500 text-zinc-950' : 'border border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:text-zinc-50'
-              }`}
+              }`)}
             >
               <Icon name={icon} size={16} /> {label}
               {badge > 0 && (
@@ -390,7 +390,7 @@ export default function AgendaWorkspace() {
                       <button
                         onClick={() => removeAppointment(a.id)}
                         disabled={busy}
-                        className="shrink-0 rounded-xl border border-zinc-800 px-3 py-2 text-xs text-zinc-400 transition hover:border-clay-700 hover:text-clay-300"
+                        className="action-collage action-collage--paper shrink-0 rounded-xl border border-zinc-800 px-3 py-2 text-xs text-zinc-400 transition hover:border-clay-700 hover:text-clay-300"
                       >
                         Excluir
                       </button>
@@ -564,7 +564,7 @@ export default function AgendaWorkspace() {
                           await post('/api/agenda/contacts', { id: c.id, status: 'recusado' }, 'PATCH');
                           loadAll();
                         }}
-                        className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300"
+                        className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300"
                       >
                         Recusar
                       </button>

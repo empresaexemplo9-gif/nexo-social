@@ -20,9 +20,9 @@ export default function EscolherTipo({ value, onChange }: { value: Privacidade; 
           role="radio"
           aria-checked={value === t.id}
           onClick={() => onChange(t.id)}
-          className={`flex items-start gap-2.5 rounded-2xl border p-3 text-left transition ${
+          className={"action-collage " + (`flex items-start gap-2.5 rounded-2xl border p-3 text-left transition ${
             value === t.id ? 'border-emerald-600 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'
-          }`}
+          }`)}
         >
           <Icon name={t.icone} size={16} className={`mt-0.5 shrink-0 ${value === t.id ? 'text-emerald-400' : 'text-zinc-500'}`} />
           <span>

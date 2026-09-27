@@ -41,7 +41,7 @@ export default function GratisDoTitulo({ titulo, autor }: { titulo: string; auto
         type="button"
         onClick={() => void buscar()}
         disabled={estado === 'buscando'}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-950 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-400 transition hover:bg-emerald-400 hover:text-zinc-950 disabled:opacity-60"
+        className="action-collage inline-flex items-center gap-1.5 rounded-lg bg-emerald-950 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-400 transition hover:bg-emerald-400 hover:text-zinc-950 disabled:opacity-60"
       >
         <Icon name="play" size={11} /> {estado === 'buscando' ? 'Procurando versões grátis…' : 'Ler ou ouvir grátis'}
       </button>
@@ -59,7 +59,7 @@ export default function GratisDoTitulo({ titulo, autor }: { titulo: string; auto
           key={it.id}
           type="button"
           onClick={() => abrir({ midia: it.midia, titulo: it.titulo, autor: it.autor, capa: it.capa, fonte: it.fonte, link: it.link })}
-          className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] text-zinc-300 transition hover:bg-zinc-800"
+          className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] text-zinc-300 transition hover:bg-zinc-800"
         >
           <Icon name={it.midia.tipo === 'livro' ? 'book' : it.midia.tipo === 'youtube' ? 'play' : 'headphones'} size={13} className="shrink-0 text-emerald-400" />
           <span className="min-w-0 flex-1 truncate">

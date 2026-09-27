@@ -109,7 +109,7 @@ export default function EventList({ events: iniciais, showFilters = false, empty
             <button
               onClick={requestLocation}
               disabled={geoState === 'loading'}
-              className="rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-950/70 disabled:opacity-60"
+              className="action-collage rounded-xl border border-emerald-800/60 bg-emerald-950/40 px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-950/70 disabled:opacity-60"
             >
               {geoState === 'loading' ? 'Localizando…' : 'Usar minha localização'}
             </button>
@@ -136,9 +136,9 @@ export default function EventList({ events: iniciais, showFilters = false, empty
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setFilter('todos')}
-            className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
+            className={"action-collage " + (`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
               filter === 'todos' ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-50'
-            }`}
+            }`)}
           >
             Todos
           </button>
@@ -146,9 +146,9 @@ export default function EventList({ events: iniciais, showFilters = false, empty
             <button
               key={t.slug}
               onClick={() => setFilter(t.slug)}
-              className={`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
+              className={"action-collage " + (`rounded-xl px-3 py-1.5 text-xs font-medium transition ${
                 filter === t.slug ? 'bg-emerald-500 font-semibold text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-50'
-              }`}
+              }`)}
             >
               <span className="inline-flex items-center gap-1.5"><Icon name={t.icon} size={14} /> {t.label}</span>
             </button>
@@ -172,7 +172,7 @@ export default function EventList({ events: iniciais, showFilters = false, empty
               <button
                 type="button"
                 onClick={() => setMostrar((n) => n + POR_PAGINA)}
-                className="rounded-full border border-zinc-800 bg-zinc-900 px-5 py-2 text-sm font-semibold text-zinc-200 transition hover:border-clay-500 hover:text-clay-400"
+                className="action-collage action-collage--seal rounded-full border border-zinc-800 bg-zinc-900 px-5 py-2 text-sm font-semibold text-zinc-200 transition hover:border-clay-500 hover:text-clay-400"
               >
                 Mostrar mais eventos ({decorated.length - mostrar})
               </button>

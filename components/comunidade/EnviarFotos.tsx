@@ -84,7 +84,7 @@ export default function EnviarFotos({
               <button
                 type="button"
                 onClick={() => setArquivos((a) => a.filter((_, j) => j !== i))}
-                className="absolute right-1 top-1 rounded-full bg-zinc-950/80 p-1 text-zinc-100"
+                className="action-collage action-collage--seal absolute right-1 top-1 rounded-full bg-zinc-950/80 p-1 text-zinc-100"
                 aria-label="Tirar esta foto"
               >
                 <Icon name="close" size={12} />

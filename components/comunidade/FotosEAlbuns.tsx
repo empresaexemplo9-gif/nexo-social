@@ -136,7 +136,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
             setEnviando(false);
             setEditando(false);
           }}
-          className={`w-32 shrink-0 rounded-2xl border p-2 text-left transition ${albumAberto === null ? 'border-emerald-600 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'}`}
+          className={"action-collage " + (`w-32 shrink-0 rounded-2xl border p-2 text-left transition ${albumAberto === null ? 'border-emerald-600 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'}`)}
         >
           <span className="flex aspect-square items-center justify-center rounded-xl bg-zinc-800 text-zinc-400">
             <Icon name="image" size={26} />
@@ -152,7 +152,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
               setEnviando(false);
               setEditando(false);
             }}
-            className={`w-32 shrink-0 rounded-2xl border p-2 text-left transition ${albumAberto === a.id ? 'border-emerald-600 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'}`}
+            className={"action-collage " + (`w-32 shrink-0 rounded-2xl border p-2 text-left transition ${albumAberto === a.id ? 'border-emerald-600 bg-emerald-500/10' : 'border-zinc-800 hover:border-zinc-700'}`)}
           >
             {a.coverUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -171,7 +171,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
         <button
           type="button"
           onClick={() => setCriando(true)}
-          className="flex w-32 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-zinc-700 p-2 text-xs text-zinc-400 transition hover:border-emerald-700 hover:text-emerald-300"
+          className="action-collage action-collage--paper flex w-32 shrink-0 flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-zinc-700 p-2 text-xs text-zinc-400 transition hover:border-emerald-700 hover:text-emerald-300"
         >
           <Icon name="plus" size={20} /> Criar álbum
         </button>
@@ -200,7 +200,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
             <button type="submit" className="rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-emerald-400">
               Criar e adicionar fotos
             </button>
-            <button type="button" onClick={() => setCriando(false)} className="rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
+            <button type="button" onClick={() => setCriando(false)} className="action-collage action-collage--paper rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
               Cancelar
             </button>
           </div>
@@ -223,7 +223,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
               <button type="submit" className="rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950">
                 Salvar
               </button>
-              <button type="button" onClick={() => setEditando(false)} className="rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
+              <button type="button" onClick={() => setEditando(false)} className="action-collage action-collage--paper rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
                 Cancelar
               </button>
             </div>
@@ -256,11 +256,11 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
                     setEdicao({ title: album.title, description: album.description ?? '' });
                     setEditando(true);
                   }}
-                  className="rounded-xl border border-zinc-800 px-3 py-2 text-xs text-zinc-300 hover:text-zinc-50"
+                  className="action-collage action-collage--paper rounded-xl border border-zinc-800 px-3 py-2 text-xs text-zinc-300 hover:text-zinc-50"
                 >
                   Renomear
                 </button>
-                <button type="button" onClick={apagarAlbum} className="rounded-xl border border-zinc-800 px-3 py-2 text-xs text-clay-300 hover:border-clay-700">
+                <button type="button" onClick={apagarAlbum} className="action-collage action-collage--paper rounded-xl border border-zinc-800 px-3 py-2 text-xs text-clay-300 hover:border-clay-700">
                   Apagar álbum
                 </button>
               </>
@@ -296,7 +296,7 @@ export default function FotosEAlbuns({ groupId, versao, aoMudar }: { groupId: st
       {!fim && (
         <button
           onClick={() => carregarFotos(fotos[fotos.length - 1]?.createdAt)}
-          className="w-full rounded-2xl border border-zinc-800 py-2.5 text-sm text-zinc-300 transition hover:text-zinc-50"
+          className="action-collage action-collage--paper w-full rounded-2xl border border-zinc-800 py-2.5 text-sm text-zinc-300 transition hover:text-zinc-50"
         >
           Ver fotos mais antigas
         </button>

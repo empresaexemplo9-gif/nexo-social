@@ -375,7 +375,7 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
         >
           <Icon name={aviso.erro ? 'alert' : 'headphones'} size={18} className="mt-0.5 shrink-0" />
           <p className="flex-1 leading-relaxed">{aviso.texto}</p>
-          <button type="button" onClick={() => setAviso(null)} aria-label="Fechar aviso" className="text-zinc-400 hover:text-zinc-100">
+          <button type="button" onClick={() => setAviso(null)} aria-label="Fechar aviso" className="action-collage action-collage--paper text-zinc-400 hover:text-zinc-100">
             <Icon name="close" size={16} />
           </button>
         </div>

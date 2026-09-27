@@ -99,7 +99,7 @@ export default function SearchView() {
                 key={s}
                 type="button"
                 onClick={() => setTermo(s)}
-                className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-zinc-700 hover:text-zinc-50"
+                className="action-collage action-collage--seal rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-zinc-700 hover:text-zinc-50"
               >
                 {s}
               </button>
@@ -164,7 +164,7 @@ export default function SearchView() {
             <button
               onClick={buscarVideos}
               disabled={buscandoVideo}
-              className="inline-flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950 disabled:opacity-60"
+              className="action-collage inline-flex items-center gap-1.5 rounded-2xl bg-zinc-800 px-3.5 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950 disabled:opacity-60"
             >
               <Icon name="video" size={13} /> {buscandoVideo ? 'Buscando…' : 'Buscar vídeos'}
             </button>

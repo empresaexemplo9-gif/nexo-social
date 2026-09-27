@@ -31,7 +31,7 @@ function PickList({ title, icon, picks }: { title: string; icon: 'film' | 'book'
                   href={l.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-950/60 px-2.5 py-1 text-[11px] text-zinc-300 transition hover:border-clay-500 hover:bg-clay-950 hover:text-clay-300"
+                  className="action-collage action-collage--seal inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-950/60 px-2.5 py-1 text-[11px] text-zinc-300 transition hover:border-clay-500 hover:bg-clay-950 hover:text-clay-300"
                 >
                   {l.label} <Icon name="external" size={11} />
                 </a>

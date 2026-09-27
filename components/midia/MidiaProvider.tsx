@@ -65,9 +65,9 @@ function AudioCapitulos({ feed }: { feed: string }) {
             <button
               type="button"
               onClick={() => setAtual(i)}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
+              className={"action-collage " + (`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm transition ${
                 i === atual ? 'bg-emerald-950 font-semibold text-emerald-300' : 'text-zinc-300 hover:bg-zinc-800/60'
-              }`}
+              }`)}
             >
               <span className="font-mono text-[11px] text-zinc-500">{String(i + 1).padStart(2, '0')}</span>
               <span className="min-w-0 flex-1 truncate">{c.titulo}</span>
@@ -114,7 +114,7 @@ function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => voi
               href={item.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden items-center gap-1.5 rounded-lg border border-zinc-800 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 transition hover:border-emerald-400/50 hover:text-emerald-400 sm:inline-flex"
+              className="action-collage action-collage--paper hidden items-center gap-1.5 rounded-lg border border-zinc-800 px-2.5 py-1.5 text-[11px] font-medium text-zinc-400 transition hover:border-emerald-400/50 hover:text-emerald-400 sm:inline-flex"
             >
               Abrir na fonte <Icon name="external" size={12} />
             </a>
@@ -123,7 +123,7 @@ function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => voi
             type="button"
             onClick={onFechar}
             aria-label="Fechar"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-50"
+            className="action-collage action-collage--paper action-collage--seal flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-50"
           >
             <Icon name="close" size={18} />
           </button>

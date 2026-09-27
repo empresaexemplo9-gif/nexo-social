@@ -111,9 +111,9 @@ function Botao({
       aria-label={rotulo}
       title={rotulo}
       aria-pressed={!perigo ? !ativo : undefined}
-      className={`flex h-12 w-12 items-center justify-center rounded-full transition sm:h-14 sm:w-14 ${
+      className={"action-collage " + (`flex h-12 w-12 items-center justify-center rounded-full transition sm:h-14 sm:w-14 ${
         perigo ? 'bg-[#dc2626] text-white hover:bg-[#ef4444]' : ativo ? 'bg-white/10 text-[#f6f2ea] hover:bg-white/20' : 'bg-[#f6f2ea] text-[#16181d]'
-      }`}
+      }`)}
     >
       <Icon name={icone} size={22} />
     </button>
@@ -279,7 +279,7 @@ export default function Chamada({
                 : `${tempo(segundos)} · ${total} ${total === 1 ? 'pessoa' : 'pessoas'} · ponta a ponta, sem servidor de mídia`}
           </p>
         </div>
-        <button onClick={telaCheia} className="rounded-xl p-2 opacity-80 hover:bg-white/10" aria-label="Tela cheia" title="Tela cheia">
+        <button onClick={telaCheia} className="action-collage action-collage--paper rounded-xl p-2 opacity-80 hover:bg-white/10" aria-label="Tela cheia" title="Tela cheia">
           <Icon name="maximize" size={18} />
         </button>
       </div>
@@ -289,7 +289,7 @@ export default function Chamada({
           <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
             <Icon name="alert" size={28} className="opacity-70" />
             <p className="max-w-sm text-sm">{m?.cheia ? `A chamada está cheia (até ${MAX_PESSOAS} pessoas).` : erro}</p>
-            <button onClick={onSair} className="rounded-xl bg-white/15 px-4 py-2 text-sm hover:bg-white/25">
+            <button onClick={onSair} className="action-collage rounded-xl bg-white/15 px-4 py-2 text-sm hover:bg-white/25">
               Fechar
             </button>
           </div>

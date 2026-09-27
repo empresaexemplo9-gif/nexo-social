@@ -51,9 +51,9 @@ export default async function BomDiaPage() {
             Comece o dia com intenção: uma trilha sonora para focar, uma receita rápida e um hábito para clarear a mente.
           </p>
           <div className="mt-6 flex flex-wrap gap-2">
-            <a href="#trilha" className="rounded-full border border-emerald-800/50 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium text-emerald-400"><span className="inline-flex items-center gap-1.5"><Icon name="headphones" size={14} /> Trilha</span></a>
-            <a href="#receita" className="rounded-full border border-clay-800/50 bg-clay-950/40 px-4 py-1.5 text-xs font-medium text-clay-300"><span className="inline-flex items-center gap-1.5"><Icon name="leaf" size={14} /> Nutrição</span></a>
-            <a href="#habito" className="rounded-full border border-emerald-800/50 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium text-emerald-400"><span className="inline-flex items-center gap-1.5"><Icon name="bulb" size={14} /> Hábitos</span></a>
+            <a href="#trilha" className="action-collage action-collage--seal rounded-full border border-emerald-800/50 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium text-emerald-400"><span className="inline-flex items-center gap-1.5"><Icon name="headphones" size={14} /> Trilha</span></a>
+            <a href="#receita" className="action-collage action-collage--seal rounded-full border border-clay-800/50 bg-clay-950/40 px-4 py-1.5 text-xs font-medium text-clay-300"><span className="inline-flex items-center gap-1.5"><Icon name="leaf" size={14} /> Nutrição</span></a>
+            <a href="#habito" className="action-collage action-collage--seal rounded-full border border-emerald-800/50 bg-emerald-950/40 px-4 py-1.5 text-xs font-medium text-emerald-400"><span className="inline-flex items-center gap-1.5"><Icon name="bulb" size={14} /> Hábitos</span></a>
           </div>
         </section>
 

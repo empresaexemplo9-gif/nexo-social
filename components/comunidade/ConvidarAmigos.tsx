@@ -118,7 +118,7 @@ export default function ConvidarAmigos({
             <h2 className="text-lg font-semibold text-zinc-50">Convidar amigos</h2>
             <p className="text-xs text-zinc-400">para o grupo {groupName}</p>
           </div>
-          <button onClick={onFechar} className="rounded-xl p-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100" aria-label="Fechar">
+          <button onClick={onFechar} className="action-collage action-collage--paper rounded-xl p-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100" aria-label="Fechar">
             <Icon name="close" size={18} />
           </button>
         </div>
@@ -161,7 +161,7 @@ export default function ConvidarAmigos({
             <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-zinc-400">{link}</span>
             <button
               onClick={copiar}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-zinc-700"
+              className="action-collage inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-100 transition hover:bg-zinc-700"
             >
               <Icon name={copiado ? 'check' : 'copy'} size={14} /> {copiado ? 'Copiado' : 'Copiar'}
             </button>
@@ -173,7 +173,7 @@ export default function ConvidarAmigos({
                 href={c.href}
                 target={c.href.startsWith('http') ? '_blank' : undefined}
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-800 px-3 py-2.5 text-xs font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
+                className="action-collage action-collage--paper inline-flex items-center justify-center gap-1.5 rounded-xl border border-zinc-800 px-3 py-2.5 text-xs font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
               >
                 <Icon name={c.icone} size={14} /> {c.rotulo}
               </a>
@@ -182,7 +182,7 @@ export default function ConvidarAmigos({
           {podeCompartilhar && (
             <button
               onClick={compartilhar}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-700 px-5 py-2.5 text-sm font-medium text-zinc-100 transition hover:border-emerald-700"
+              className="action-collage action-collage--paper inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-zinc-700 px-5 py-2.5 text-sm font-medium text-zinc-100 transition hover:border-emerald-700"
             >
               <Icon name="compartilhar" size={16} /> Mais opções de compartilhar
             </button>

@@ -159,7 +159,7 @@ export default function AvisoDeChamada() {
       <div className="flex shrink-0 gap-2">
         <button
           onClick={() => dispensar(true)}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#dc2626] text-white hover:bg-[#ef4444]"
+          className="action-collage action-collage--seal flex h-10 w-10 items-center justify-center rounded-full bg-[#dc2626] text-white hover:bg-[#ef4444]"
           aria-label="Recusar"
           title="Recusar"
         >
@@ -171,7 +171,7 @@ export default function AvisoDeChamada() {
             dispensar(true);
             router.push(destino);
           }}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
+          className="action-collage action-collage--seal flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
           aria-label="Atender"
           title="Atender"
         >

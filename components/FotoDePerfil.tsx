@@ -74,7 +74,7 @@ export default function FotoDePerfil({
               type="button"
               onClick={tirar}
               disabled={ocupado}
-              className="rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400 transition hover:text-clay-300"
+              className="action-collage action-collage--paper rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400 transition hover:text-clay-300"
             >
               Tirar foto
             </button>

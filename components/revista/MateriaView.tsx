@@ -233,7 +233,7 @@ export default function MateriaView({ m }: { m: Materia }) {
                 href={ingresso.ingresso.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-zinc-50 transition hover:bg-zinc-800"
+                className="action-collage mt-4 inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-zinc-50 transition hover:bg-zinc-800"
               >
                 <Icon name="ticket" size={14} /> Ingressos — {ingresso.ingresso.rotulo}
               </a>
@@ -262,7 +262,7 @@ export default function MateriaView({ m }: { m: Materia }) {
                 <li key={x.verbete}>
                   <Link
                     href={`/revista/${m.tema}/${slugDaPauta(x.verbete)}`}
-                    className="group flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-sm text-zinc-200 transition hover:bg-zinc-800"
+                    className="action-collage action-collage--paper group flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-sm text-zinc-200 transition hover:bg-zinc-800"
                   >
                     <span className="truncate group-hover:text-emerald-400">{x.verbete.replace(/ \(.+\)$/, '')}</span>
                     <span className="shrink-0 font-mono text-[9.5px] uppercase text-zinc-500">{FORMATOS[x.formato].rotulo}</span>

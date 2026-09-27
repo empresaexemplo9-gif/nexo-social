@@ -158,7 +158,7 @@ export default function ContaPage() {
               />
             </dl>
           )}
-          <button onClick={reset} className="mt-4 text-xs text-zinc-500 underline hover:text-zinc-50">
+          <button onClick={reset} className="action-collage action-collage--paper mt-4 text-xs text-zinc-500 underline hover:text-zinc-50">
             Limpar preferências
           </button>
         </section>

@@ -131,11 +131,11 @@ export default function LoginPage() {
                     key={type}
                     type="button"
                     onClick={() => setAccountType(type)}
-                    className={`rounded-xl border px-3 py-2 text-xs font-medium transition ${
+                    className={"action-collage " + (`rounded-xl border px-3 py-2 text-xs font-medium transition ${
                       accountType === type
                         ? 'border-emerald-600 bg-emerald-950/40 text-emerald-400'
                         : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:text-zinc-50'
-                    }`}
+                    }`)}
                   >
                     {type === 'pessoal' ? '👤 Conta Pessoal' : '🏢 Organização'}
                   </button>
@@ -193,7 +193,7 @@ export default function LoginPage() {
         <div className="text-center">
           <button
             onClick={() => { setIsRegistering(!isRegistering); setMessage(''); }}
-            className="text-xs text-zinc-400 underline transition hover:text-emerald-400"
+            className="action-collage action-collage--paper text-xs text-zinc-400 underline transition hover:text-emerald-400"
           >
             {isRegistering ? 'Já possui conta? Fazer login' : 'Não tem conta? Criar agora'}
           </button>

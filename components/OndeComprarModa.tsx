@@ -55,7 +55,7 @@ export default function OndeComprarModa() {
                   href={e.ingresso.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-50 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-clay-500"
+                  className="action-collage inline-flex items-center gap-1.5 rounded-xl bg-zinc-50 px-3.5 py-2 text-xs font-semibold text-zinc-950 transition hover:bg-clay-500"
                 >
                   <Icon name="ticket" size={14} /> {e.ingresso.acao ?? (e.gratuito ? 'Garantir' : 'Comprar')} — {e.ingresso.rotulo}
                 </a>
@@ -64,7 +64,7 @@ export default function OndeComprarModa() {
                     href={e.oficial.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-xl border border-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-clay-500 hover:text-clay-400"
+                    className="action-collage action-collage--paper inline-flex items-center gap-1 rounded-xl border border-zinc-800 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-clay-500 hover:text-clay-400"
                   >
                     {e.oficial.rotulo} <Icon name="external" size={11} />
                   </a>
@@ -91,7 +91,7 @@ export default function OndeComprarModa() {
               href={p.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-start justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 transition hover:border-clay-500"
+              className="action-collage group flex items-start justify-between gap-2 rounded-xl border border-zinc-800 bg-zinc-900 px-3.5 py-2.5 transition hover:border-clay-500"
             >
               <span>
                 <span className="block text-sm font-semibold text-zinc-50 group-hover:text-clay-400">{p.nome}</span>

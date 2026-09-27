@@ -111,7 +111,7 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
             type="button"
             onClick={() => setTam((t) => Math.max(0, t - 1))}
             aria-label="Diminuir letra"
-            className="h-8 rounded-lg px-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800"
+            className="action-collage action-collage--paper h-8 rounded-lg px-2 text-xs font-semibold text-zinc-300 hover:bg-zinc-800"
           >
             A−
           </button>
@@ -119,7 +119,7 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
             type="button"
             onClick={() => setTam((t) => Math.min(TAMANHOS.length - 1, t + 1))}
             aria-label="Aumentar letra"
-            className="h-8 rounded-lg px-2 text-sm font-semibold text-zinc-300 hover:bg-zinc-800"
+            className="action-collage action-collage--paper h-8 rounded-lg px-2 text-sm font-semibold text-zinc-300 hover:bg-zinc-800"
           >
             A+
           </button>
@@ -138,9 +138,9 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
                 coverUrl: capa ?? null,
               })
             }
-            className={`ml-1 inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition ${
+            className={"action-collage " + (`ml-1 inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-semibold transition ${
               naEstante ? 'bg-emerald-950 text-emerald-400' : 'bg-emerald-400 text-zinc-950 hover:bg-emerald-300'
-            }`}
+            }`)}
           >
             <Icon name={naEstante ? 'check' : 'bookmark'} size={13} />
             {naEstante ? 'Na estante' : 'Estou lendo'}
@@ -162,7 +162,7 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
               type="button"
               onClick={() => setCap((c) => Math.max(0, c - 1))}
               disabled={cap <= 0}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition hover:border-emerald-400 disabled:opacity-30"
+              className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3.5 py-2 text-xs font-semibold text-zinc-200 transition hover:border-emerald-400 disabled:opacity-30"
             >
               <Icon name="chevronRight" size={14} className="rotate-180" /> Anterior
             </button>

@@ -83,13 +83,13 @@ export default function Descobrir() {
         setChave(id);
       }}
       aria-pressed={chave === id}
-      className={`rounded-lg px-3.5 py-2 text-xs font-medium transition ${
+      className={"action-collage " + (`rounded-lg px-3.5 py-2 text-xs font-medium transition ${
         chave === id
           ? 'bg-emerald-400 text-zinc-950 shadow-glow'
           : meu
             ? 'border border-zinc-700 bg-zinc-900 text-zinc-200 hover:border-emerald-400/50 hover:text-emerald-400'
             : 'border border-dashed border-zinc-700 text-zinc-400 hover:border-clay-500 hover:text-clay-300'
-      }`}
+      }`)}
     >
       {label}
     </button>
@@ -135,9 +135,9 @@ export default function Descobrir() {
               type="button"
               aria-selected={aba === a.id}
               onClick={() => setAba(a.id)}
-              className={`group inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+              className={"action-collage " + (`group inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
                 aba === a.id ? 'bg-zinc-50 text-zinc-950' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-50'
-              }`}
+              }`)}
             >
               <Icon name={a.icone} size={16} className="transition group-hover:-rotate-6" /> {a.rotulo}
             </button>
@@ -156,9 +156,9 @@ export default function Descobrir() {
                     type="button"
                     aria-pressed={estilo === e.value}
                     onClick={() => void save({ estiloIndicacao: e.value })}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                    className={"action-collage " + (`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                       estilo === e.value ? 'bg-emerald-400 text-zinc-950' : 'text-zinc-400 hover:text-zinc-50'
-                    }`}
+                    }`)}
                   >
                     {e.label}
                   </button>
@@ -168,7 +168,7 @@ export default function Descobrir() {
                 type="button"
                 onClick={() => void save({ idiomaIndicacao: (idioma === 'pt' ? 'todos' : 'pt') as IdiomaIndicacao })}
                 aria-pressed={idioma === 'pt'}
-                className="rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-emerald-400/50"
+                className="action-collage rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-emerald-400/50"
               >
                 {idioma === 'pt' ? 'Português primeiro' : 'Qualquer idioma'}
               </button>
@@ -193,7 +193,7 @@ export default function Descobrir() {
             <button
               type="button"
               onClick={() => setTodos((t) => !t)}
-              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-xs font-medium text-zinc-500 transition hover:text-clay-400"
+              className="action-collage action-collage--paper inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-xs font-medium text-zinc-500 transition hover:text-clay-400"
             >
               <Icon name={todos ? 'close' : 'plus'} size={13} /> {todos ? 'Só os meus' : `Explorar outros (${outros.length})`}
             </button>

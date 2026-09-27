@@ -113,7 +113,7 @@ export default function AgendaTimeline({ events }: { events: EventItem[] }) {
 
       {state === 'loading' && <p role="status" className="text-sm text-zinc-400">Carregando seus compromissos…</p>}
       {state === 'anon' && <p className="text-sm text-zinc-400"><Link href="/conta" className="font-semibold text-emerald-400 underline">Entre na sua conta</Link> para ver seus compromissos e convites.</p>}
-      {state === 'error' && <div role="alert" className="text-sm text-clay-300">Não foi possível carregar seus compromissos. <button type="button" onClick={() => { setState('loading'); void load(); }} className="font-semibold underline">Tentar novamente</button></div>}
+      {state === 'error' && <div role="alert" className="text-sm text-clay-300">Não foi possível carregar seus compromissos. <button type="button" onClick={() => { setState('loading'); void load(); }} className="action-collage action-collage--paper font-semibold underline">Tentar novamente</button></div>}
       {feedback && <p role="status" className="text-sm text-zinc-300">{feedback}</p>}
 
       {pending.length > 0 && <div className="space-y-3">

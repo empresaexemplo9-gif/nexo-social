@@ -90,7 +90,7 @@ export default function HomeView({ events }: Props) {
             <button
               type="button"
               onClick={alternarMontagem}
-              className="group inline-flex items-center gap-2 rounded-full border border-dashed border-zinc-700 px-5 py-2.5 text-sm font-medium text-zinc-400 transition hover:border-clay-500 hover:text-clay-300"
+              className="action-collage action-collage--paper action-collage--seal group inline-flex items-center gap-2 rounded-full border border-dashed border-zinc-700 px-5 py-2.5 text-sm font-medium text-zinc-400 transition hover:border-clay-500 hover:text-clay-300"
             >
               <Icon name="palette" size={15} className="transition duration-500 group-hover:rotate-45" /> Montar minha home
             </button>

@@ -129,7 +129,7 @@ export default function LiveAlerts() {
         {permissao === 'default' && (
           <button
             onClick={pedirPermissao}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-zinc-700 px-3.5 py-2 text-xs font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
+            className="action-collage action-collage--paper inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-zinc-700 px-3.5 py-2 text-xs font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
           >
             <Icon name="alert" size={13} /> Avisar quando começar
           </button>
@@ -174,7 +174,7 @@ export default function LiveAlerts() {
                   setTocando({ titulo: i.titulo, url: i.embedUrl, externo: i.url });
                   document.getElementById('player-aovivo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }}
-                className="rounded-2xl border border-red-900/50 bg-red-950/10 p-4 text-left transition hover:border-red-800"
+                className="action-collage rounded-2xl border border-red-900/50 bg-red-950/10 p-4 text-left transition hover:border-red-800"
               >
                 {conteudo}
               </button>

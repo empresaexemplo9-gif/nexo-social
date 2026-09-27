@@ -118,7 +118,7 @@ export default function AdminPage() {
           <p className="text-xs text-zinc-500">Painel exclusivo de <span className="font-mono">{ADMIN_EMAIL}</span>.</p>
           <div className="flex justify-center gap-3 pt-2">
             <Link href="/login" className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">Entrar</Link>
-            <Link href="/" className="rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-50">Voltar</Link>
+            <Link href="/" className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-50">Voltar</Link>
           </div>
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function AdminPage() {
             <button
               onClick={handleSeed}
               disabled={busy}
-              className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-emerald-500 hover:text-emerald-400 disabled:opacity-50"
+              className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-emerald-500 hover:text-emerald-400 disabled:opacity-50"
               title="Popular o banco com o dataset inicial"
             >
               Popular banco
@@ -169,9 +169,9 @@ export default function AdminPage() {
               <button
                 key={tab}
                 onClick={() => { setActiveTab(tab); setMessage(''); }}
-                className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+                className={"action-collage " + (`rounded-xl px-4 py-2 text-xs font-semibold transition ${
                   activeTab === tab ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-50'
-                }`}
+                }`)}
               >
                 {label}
               </button>

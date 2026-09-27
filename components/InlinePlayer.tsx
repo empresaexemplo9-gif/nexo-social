@@ -166,7 +166,7 @@ export default function InlinePlayer({ req, onClose }: { req: PlayRequest; onClo
             </p>
           )}
           <div className="flex flex-wrap justify-center gap-2">
-            <button onClick={resolver} className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200">
+            <button onClick={resolver} className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-3 py-1.5 text-xs text-zinc-200">
               Tentar de novo
             </button>
             {externo && (
@@ -174,7 +174,7 @@ export default function InlinePlayer({ req, onClose }: { req: PlayRequest; onClo
                 href={externo}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-100"
+                className="action-collage inline-flex items-center gap-1.5 rounded-xl bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-100"
               >
                 Abrir no YouTube <Icon name="external" size={12} />
               </a>
@@ -196,7 +196,7 @@ export default function InlinePlayer({ req, onClose }: { req: PlayRequest; onClo
             Abrir no YouTube <Icon name="external" size={11} />
           </a>
         )}
-        <button onClick={onClose} className="shrink-0 text-xs text-zinc-500 transition hover:text-zinc-200">
+        <button onClick={onClose} className="action-collage action-collage--paper shrink-0 text-xs text-zinc-500 transition hover:text-zinc-200">
           Fechar
         </button>
       </div>

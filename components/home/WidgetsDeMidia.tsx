@@ -128,9 +128,9 @@ export function GratisWidget() {
             type="button"
             onClick={() => setAba(a.id)}
             aria-pressed={aba === a.id}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+            className={"action-collage " + (`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
               aba === a.id ? 'bg-zinc-50 text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-clay-500 hover:text-clay-300'
-            }`}
+            }`)}
           >
             <Icon name={a.icone} size={13} /> {a.rotulo}
           </button>
@@ -175,9 +175,9 @@ export function RevistaWidget() {
               type="button"
               onClick={() => setTema(t)}
               aria-pressed={atual === t}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              className={"action-collage " + (`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                 atual === t ? 'bg-zinc-50 text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-clay-500 hover:text-clay-300'
-              }`}
+              }`)}
             >
               {getTopic(t)?.label}
             </button>

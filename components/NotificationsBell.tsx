@@ -124,7 +124,7 @@ export default function NotificationsBell({ lateral = false, rotulo }: { lateral
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`relative flex items-center gap-3 rounded-xl p-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-50 ${rotulo ? 'w-full px-3 text-sm' : ''}`}
+        className={"action-collage " + (`relative flex items-center gap-3 rounded-xl p-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-50 ${rotulo ? 'w-full px-3 text-sm' : ''}`)}
         aria-label={unread ? `Notificações: ${unread} novas` : 'Notificações'}
         title="Notificações"
       >
@@ -148,7 +148,7 @@ export default function NotificationsBell({ lateral = false, rotulo }: { lateral
             <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
               <span className="text-sm font-semibold text-zinc-100">Notificações</span>
               {temNaoLidas && (
-                <button onClick={markAll} className="text-[11px] text-emerald-400 hover:underline">
+                <button onClick={markAll} className="action-collage action-collage--paper text-[11px] text-emerald-400 hover:underline">
                   marcar como lidas
                 </button>
               )}
@@ -177,7 +177,7 @@ export default function NotificationsBell({ lateral = false, rotulo }: { lateral
                         <button
                           onClick={() => responder(n, false)}
                           disabled={respondendo === n.id}
-                          className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:border-clay-600 hover:text-clay-300 disabled:opacity-60"
+                          className="action-collage action-collage--paper inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:border-clay-600 hover:text-clay-300 disabled:opacity-60"
                         >
                           <Icon name="thumbDown" size={14} /> {n.type === 'convite_grupo' ? 'Recusar' : 'Não concordo'}
                         </button>

@@ -117,7 +117,7 @@ export default async function ConvitePage({ params }: { params: { token: string 
                 </Link>
                 <Link
                   href={`/login?next=${encodeURIComponent(aqui)}`}
-                  className="block w-full rounded-xl border border-zinc-800 py-3 text-sm text-zinc-300 transition hover:text-zinc-50"
+                  className="action-collage action-collage--paper block w-full rounded-xl border border-zinc-800 py-3 text-sm text-zinc-300 transition hover:text-zinc-50"
                 >
                   Já tenho conta — entrar
                 </Link>

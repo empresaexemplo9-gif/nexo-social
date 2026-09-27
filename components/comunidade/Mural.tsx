@@ -152,9 +152,9 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
               role="radio"
               aria-checked={tipo === t.id}
               onClick={() => setTipo(t.id)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+              className={"action-collage " + (`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                 tipo === t.id ? 'bg-emerald-500 text-zinc-950' : 'border border-zinc-800 text-zinc-300 hover:text-zinc-50'
-              }`}
+              }`)}
             >
               <Icon name={t.icone} size={13} /> {t.rotulo}
             </button>
@@ -280,7 +280,7 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
                           href={p.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-emerald-700 hover:text-emerald-300"
+                          className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-emerald-700 hover:text-emerald-300"
                         >
                           <Icon name="external" size={13} /> Abrir link
                         </a>
@@ -288,7 +288,7 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
                       {p.podeApagar && (
                         <button
                           onClick={() => apagar(p)}
-                          className="ml-auto rounded-xl p-1.5 text-zinc-500 transition hover:text-clay-300"
+                          className="action-collage action-collage--paper ml-auto rounded-xl p-1.5 text-zinc-500 transition hover:text-clay-300"
                           aria-label="Apagar publicação"
                           title="Apagar"
                         >
@@ -309,7 +309,7 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
       {!fim && (
         <button
           onClick={() => carregar(posts[posts.length - 1]?.createdAt)}
-          className="w-full rounded-2xl border border-zinc-800 py-2.5 text-sm text-zinc-300 transition hover:text-zinc-50"
+          className="action-collage action-collage--paper w-full rounded-2xl border border-zinc-800 py-2.5 text-sm text-zinc-300 transition hover:text-zinc-50"
         >
           Ver publicações mais antigas
         </button>

@@ -47,7 +47,7 @@ export default function EventosDoTema({ tema, events }: { tema: CategorySlug; ev
       {tema === 'moda' && (
         <Link
           href="/tema/moda#ingressos"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-clay-500/50 px-3.5 py-2 text-xs font-semibold text-clay-400 transition hover:bg-clay-500 hover:text-zinc-900"
+          className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-clay-500/50 px-3.5 py-2 text-xs font-semibold text-clay-400 transition hover:bg-clay-500 hover:text-zinc-900"
         >
           <Icon name="ticket" size={14} /> Onde comprar ingressos de moda (SPFW, Rio Fashion Week, Casa de Criadores…)
         </Link>

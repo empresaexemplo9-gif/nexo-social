@@ -107,7 +107,7 @@ function MatchCard({ match, onPlay }: { match: Match; onPlay: (req: PlayRequest)
             href={ticketSearchForMatch(match.home, match.competition)[0].url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
+            className="action-collage action-collage--paper inline-flex shrink-0 items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
           >
             <Icon name="ticket" size={11} /> Ingressos
           </a>
@@ -121,7 +121,7 @@ function MatchCard({ match, onPlay }: { match: Match; onPlay: (req: PlayRequest)
                 block: 'start',
               })
             }
-            className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500 hover:text-white"
+            className="action-collage inline-flex shrink-0 items-center gap-1 rounded-xl bg-red-500/15 px-2.5 py-1 text-[11px] font-semibold text-red-300 transition hover:bg-red-500 hover:text-white"
           >
             <Icon name="broadcast" size={11} /> Onde assistir
           </button>
@@ -129,7 +129,7 @@ function MatchCard({ match, onPlay }: { match: Match; onPlay: (req: PlayRequest)
         {match.highlightUrl && youtubeEmbed(match.highlightUrl) && (
           <button
             onClick={() => onPlay({ titulo: `${match.home} x ${match.away}`, url: match.highlightUrl!, externo: match.highlightUrl! })}
-            className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-zinc-800 px-2.5 py-1 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
+            className="action-collage inline-flex shrink-0 items-center gap-1 rounded-xl bg-zinc-800 px-2.5 py-1 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
           >
             <Icon name="play" size={11} /> Melhores momentos
           </button>
@@ -218,11 +218,11 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
           <button
             key={m.id}
             onClick={() => setSport(m.id)}
-            className={`inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-semibold transition ${
+            className={"action-collage " + (`inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-semibold transition ${
               sport === m.id
                 ? 'bg-emerald-500 text-zinc-950'
                 : 'border border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:text-zinc-50'
-            }`}
+            }`)}
           >
             <Icon name={m.icon} size={14} /> {m.label}
           </button>
@@ -235,7 +235,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
         <div className="rounded-2xl border border-red-900/60 bg-red-950/25 p-5 text-sm text-red-200">
           <p className="font-semibold">Não foi possível carregar o quadro.</p>
           <p className="mt-1 text-xs">{erro}</p>
-          <button onClick={() => load(sport)} className="mt-3 rounded-xl border border-red-800 px-3 py-1.5 text-xs">
+          <button onClick={() => load(sport)} className="action-collage action-collage--paper mt-3 rounded-xl border border-red-800 px-3 py-1.5 text-xs">
             Tentar de novo
           </button>
         </div>
@@ -291,9 +291,9 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                   <button
                     key={id}
                     onClick={() => setAba(id)}
-                    className={`rounded-2xl px-3.5 py-2 text-xs font-semibold transition ${
+                    className={"action-collage " + (`rounded-2xl px-3.5 py-2 text-xs font-semibold transition ${
                       aba === id ? 'bg-zinc-100 text-zinc-950' : 'border border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:text-zinc-50'
-                    }`}
+                    }`)}
                   >
                     {label}
                   </button>
@@ -301,7 +301,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
               </div>
               <button
                 onClick={() => load(sport)}
-                className="inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-200"
+                className="action-collage action-collage--paper inline-flex items-center gap-1.5 text-xs text-zinc-500 transition hover:text-zinc-200"
               >
                 <Icon name="refresh" size={13} /> Atualizar
               </button>
@@ -470,7 +470,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                     {b.youtube && (
                       <button
                         onClick={() => play({ titulo: `${b.label} — ao vivo`, canal: b.youtube, externo: b.url })}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-800 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
+                        className="action-collage inline-flex items-center gap-1.5 rounded-xl bg-zinc-800 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
                       >
                         <Icon name="play" size={11} /> Assistir aqui
                       </button>
@@ -510,7 +510,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                       ? window.open(youtubeSearch(l.query), '_blank', 'noopener,noreferrer')
                       : play({ titulo: `${l.name} — melhores momentos`, busca: l.query, externo: youtubeSearch(l.query) })
                   }
-                  className="group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 text-left transition hover:border-clay-700/60"
+                  className="action-collage group rounded-2xl border border-zinc-800/80 bg-zinc-900/50 p-4 text-left transition hover:border-clay-700/60"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
@@ -536,7 +536,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                   href={c.site}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-full border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-[11px] text-zinc-400 transition hover:border-zinc-700 hover:text-zinc-200"
+                  className="action-collage action-collage--seal rounded-full border border-zinc-800 bg-zinc-950/60 px-2.5 py-1 text-[11px] text-zinc-400 transition hover:border-zinc-700 hover:text-zinc-200"
                 >
                   {c.label}
                 </a>

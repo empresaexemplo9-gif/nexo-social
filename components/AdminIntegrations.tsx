@@ -136,7 +136,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
         <div className="flex gap-2">
           <button
             onClick={load}
-            className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500"
+            className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-zinc-500"
           >
             Atualizar
           </button>
@@ -225,7 +225,7 @@ export default function AdminIntegrations({ demo }: { demo: boolean }) {
                   <button
                     onClick={() => runTest(p.id)}
                     disabled={busy[p.id]}
-                    className="rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-emerald-600 hover:text-emerald-400 disabled:opacity-50"
+                    className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-200 transition hover:border-emerald-600 hover:text-emerald-400 disabled:opacity-50"
                   >
                     {busy[p.id] ? 'Testando…' : 'Testar conexão'}
                   </button>

@@ -168,7 +168,7 @@ export default function ComunidadeHub() {
                   <button
                     onClick={() => responder(g, false)}
                     disabled={ocupado === g.id}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-clay-600 hover:text-clay-300 disabled:opacity-60"
+                    className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-4 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-clay-600 hover:text-clay-300 disabled:opacity-60"
                   >
                     <Icon name="thumbDown" size={16} /> Recusar
                   </button>
@@ -219,12 +219,12 @@ export default function ComunidadeHub() {
               <button
                 type="button"
                 onClick={() => seletorDeImagem.current?.click()}
-                className="rounded-xl border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-emerald-700"
+                className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-3 py-2 text-xs font-medium text-zinc-200 transition hover:border-emerald-700"
               >
                 {imagem ? 'Trocar imagem' : 'Imagem do grupo (opcional)'}
               </button>
               {imagem && (
-                <button type="button" onClick={() => setImagem(null)} className="rounded-xl px-2 py-2 text-xs text-zinc-500 hover:text-clay-300">
+                <button type="button" onClick={() => setImagem(null)} className="action-collage action-collage--paper rounded-xl px-2 py-2 text-xs text-zinc-500 hover:text-clay-300">
                   Tirar
                 </button>
               )}
@@ -251,7 +251,7 @@ export default function ComunidadeHub() {
             <button
               type="button"
               onClick={() => setCriando(false)}
-              className="rounded-2xl border border-zinc-800 px-5 py-2.5 text-sm text-zinc-400 transition hover:text-zinc-100"
+              className="action-collage action-collage--paper rounded-2xl border border-zinc-800 px-5 py-2.5 text-sm text-zinc-400 transition hover:text-zinc-100"
             >
               Cancelar
             </button>

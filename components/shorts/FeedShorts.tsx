@@ -48,7 +48,7 @@ function FileiraDeFiltros({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-w-0 flex-1">
       {pontas.esq && (
-        <button type="button" onClick={() => rolar(-1)} aria-label="Ver temas anteriores" className={`${seta} left-0`}>
+        <button type="button" onClick={() => rolar(-1)} aria-label="Ver temas anteriores" className={"action-collage " + (`${seta} left-0`)}>
           <Icon name="chevronRight" size={16} className="rotate-180" />
         </button>
       )}
@@ -63,7 +63,7 @@ function FileiraDeFiltros({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       {pontas.dir && (
-        <button type="button" onClick={() => rolar(1)} aria-label="Ver mais temas" className={`${seta} right-0`}>
+        <button type="button" onClick={() => rolar(1)} aria-label="Ver mais temas" className={"action-collage " + (`${seta} right-0`)}>
           <Icon name="chevronRight" size={16} />
         </button>
       )}
@@ -301,9 +301,9 @@ export default function FeedShorts() {
               type="button"
               onClick={() => escolher(c)}
               aria-pressed={filtro === c}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              className={"action-collage " + (`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
                 filtro === c ? 'bg-zinc-50 text-zinc-950' : 'border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-clay-500 hover:text-clay-300'
-              }`}
+              }`)}
             >
               {rotuloDe(c)}
             </button>
@@ -313,9 +313,9 @@ export default function FeedShorts() {
           type="button"
           onClick={() => setPainel((v) => !v)}
           aria-expanded={painel}
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+          className={"action-collage " + (`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
             painel ? 'bg-clay-500 text-zinc-900' : 'border border-clay-500/60 bg-zinc-900 text-clay-400 hover:bg-clay-500 hover:text-zinc-900'
-          }`}
+          }`)}
         >
           <Icon name="grade" size={13} /> Todos os temas
         </button>
@@ -332,13 +332,13 @@ export default function FeedShorts() {
                     type="button"
                     onClick={() => escolher(i.chave)}
                     aria-pressed={filtro === i.chave}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    className={"action-collage " + (`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                       filtro === i.chave
                         ? 'bg-zinc-50 text-zinc-950'
                         : chaves.includes(i.chave)
                           ? 'border border-emerald-400/50 bg-zinc-900 text-emerald-400 hover:border-clay-500 hover:text-clay-400'
                           : 'border border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-clay-500 hover:text-clay-400'
-                    }`}
+                    }`)}
                   >
                     {i.rotulo}
                   </button>
@@ -369,10 +369,10 @@ export default function FeedShorts() {
                 : 'Nenhum short destes interesses por enquanto. Tente outro filtro ou volte daqui a pouco.'}
             </p>
             <div className="flex flex-wrap justify-center gap-2">
-              <button type="button" onClick={() => void buscar(rodada + 1, true)} className="rounded-full bg-zinc-50 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-clay-500">
+              <button type="button" onClick={() => void buscar(rodada + 1, true)} className="action-collage action-collage--seal rounded-full bg-zinc-50 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-clay-500">
                 Tentar de novo
               </button>
-              <button type="button" onClick={() => setPainel(true)} className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-semibold text-zinc-300 hover:border-clay-500 hover:text-clay-400">
+              <button type="button" onClick={() => setPainel(true)} className="action-collage action-collage--seal rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-semibold text-zinc-300 hover:border-clay-500 hover:text-clay-400">
                 Escolher outro tema
               </button>
             </div>
@@ -409,7 +409,7 @@ export default function FeedShorts() {
                     type="button"
                     onClick={alternarSom}
                     aria-label={mudo ? 'Ligar o som' : 'Tirar o som'}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 backdrop-blur transition hover:scale-110 hover:bg-clay-500"
+                    className="action-collage action-collage--seal flex h-11 w-11 items-center justify-center rounded-full bg-black/45 backdrop-blur transition hover:scale-110 hover:bg-clay-500"
                   >
                     <Icon name={mudo ? 'mudo' : 'volume'} size={20} />
                   </button>
@@ -418,9 +418,9 @@ export default function FeedShorts() {
                     onClick={() => salvar(s.id)}
                     aria-pressed={salvos.includes(s.id)}
                     aria-label={salvos.includes(s.id) ? 'Tirar dos salvos' : 'Salvar'}
-                    className={`flex h-11 w-11 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${
+                    className={"action-collage " + (`flex h-11 w-11 items-center justify-center rounded-full backdrop-blur transition hover:scale-110 ${
                       salvos.includes(s.id) ? 'bg-clay-500 text-white' : 'bg-black/45 hover:bg-clay-500'
-                    }`}
+                    }`)}
                   >
                     <Icon name="heart" size={20} />
                   </button>
@@ -428,7 +428,7 @@ export default function FeedShorts() {
                     type="button"
                     onClick={() => void compartilhar(s)}
                     aria-label="Compartilhar"
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 backdrop-blur transition hover:scale-110 hover:bg-emerald-400"
+                    className="action-collage action-collage--seal flex h-11 w-11 items-center justify-center rounded-full bg-black/45 backdrop-blur transition hover:scale-110 hover:bg-emerald-400"
                   >
                     <Icon name="compartilhar" size={19} />
                   </button>
@@ -447,7 +447,7 @@ export default function FeedShorts() {
                   <button
                     type="button"
                     onClick={alternarSom}
-                    className="absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur transition hover:bg-clay-500"
+                    className="action-collage action-collage--seal absolute left-1/2 top-4 -translate-x-1/2 rounded-full bg-black/55 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur transition hover:bg-clay-500"
                   >
                     Toque para ouvir
                   </button>
@@ -461,7 +461,7 @@ export default function FeedShorts() {
                   onClick={() => irPara(Math.max(0, i - 1))}
                   disabled={i === 0}
                   aria-label="Short anterior"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 text-zinc-300 transition hover:border-emerald-400 hover:text-emerald-400 disabled:opacity-30"
+                  className="action-collage action-collage--seal flex h-11 w-11 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 text-zinc-300 transition hover:border-emerald-400 hover:text-emerald-400 disabled:opacity-30"
                 >
                   <Icon name="chevronRight" size={18} className="-rotate-90" />
                 </button>
@@ -470,7 +470,7 @@ export default function FeedShorts() {
                   onClick={() => irPara(i + 1)}
                   disabled={i >= itens.length - 1}
                   aria-label="Próximo short"
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 text-zinc-300 transition hover:border-emerald-400 hover:text-emerald-400 disabled:opacity-30"
+                  className="action-collage action-collage--seal flex h-11 w-11 items-center justify-center rounded-full border border-zinc-800 bg-zinc-900 text-zinc-300 transition hover:border-emerald-400 hover:text-emerald-400 disabled:opacity-30"
                 >
                   <Icon name="chevronRight" size={18} className="rotate-90" />
                 </button>

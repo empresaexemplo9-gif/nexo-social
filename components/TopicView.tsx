@@ -55,9 +55,9 @@ export default function TopicView({ slug, contents, events }: Props) {
             </div>
             <button
               onClick={toggleFollow}
-              className={`whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
+              className={"action-collage " + (`whitespace-nowrap rounded-xl px-5 py-2.5 text-sm font-semibold transition ${
                 following ? 'border border-zinc-700 text-zinc-100 hover:border-zinc-500' : `${topic.accent.solid} text-zinc-950 hover:opacity-90`
-              }`}
+              }`)}
             >
               {following ? '✓ Seguindo este tema' : '+ Seguir este tema'}
             </button>

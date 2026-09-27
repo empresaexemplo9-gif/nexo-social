@@ -210,7 +210,7 @@ export default function GrupoView({ id }: { id: string }) {
           <button
             onClick={() => responder(false)}
             disabled={ocupado}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-300 hover:border-clay-600 hover:text-clay-300 disabled:opacity-60"
+            className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-300 hover:border-clay-600 hover:text-clay-300 disabled:opacity-60"
           >
             <Icon name="thumbDown" size={16} /> Recusar
           </button>
@@ -354,7 +354,7 @@ export default function GrupoView({ id }: { id: string }) {
                 <button type="submit" disabled={ocupado} className="rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-4 py-2 text-xs font-semibold text-zinc-950">
                   Salvar
                 </button>
-                <button type="button" onClick={() => setEditando(false)} className="rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
+                <button type="button" onClick={() => setEditando(false)} className="action-collage action-collage--paper rounded-xl border border-zinc-800 px-4 py-2 text-xs text-zinc-400">
                   Cancelar
                 </button>
               </div>
@@ -377,14 +377,14 @@ export default function GrupoView({ id }: { id: string }) {
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <button
             onClick={() => ligar({ tipo: 'grupo' }, true)}
-            className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
+            className="action-collage action-collage--paper inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
             title="Chamada de vídeo com o grupo"
           >
             <Icon name="video" size={16} /> Vídeo
           </button>
           <button
             onClick={() => ligar({ tipo: 'grupo' }, false)}
-            className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
+            className="action-collage action-collage--paper inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-4 py-3 text-sm font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
             title="Chamada de voz com o grupo"
           >
             <Icon name="phone" size={16} /> Voz
@@ -422,11 +422,11 @@ export default function GrupoView({ id }: { id: string }) {
             </button>
             <button
               onClick={() => ligar(chegando.modo, false)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100"
+              className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100"
             >
               <Icon name="phone" size={16} /> Só voz
             </button>
-            <button onClick={() => setChegando(null)} className="rounded-xl px-3 py-2 text-sm text-zinc-400 hover:text-clay-300">
+            <button onClick={() => setChegando(null)} className="action-collage action-collage--paper rounded-xl px-3 py-2 text-sm text-zinc-400 hover:text-clay-300">
               Agora não
             </button>
           </div>
@@ -451,7 +451,7 @@ export default function GrupoView({ id }: { id: string }) {
             </button>
             <button
               onClick={() => ligar({ tipo: 'grupo' }, false)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100"
+              className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100"
             >
               <Icon name="phone" size={16} /> Só voz
             </button>
@@ -480,9 +480,9 @@ export default function GrupoView({ id }: { id: string }) {
                   setAba(k);
                   if (k === 'fotos') setViuFotos(true);
                 }}
-                className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
+                className={"action-collage " + (`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
                   aba === k ? 'border-emerald-500 text-emerald-300' : 'border-transparent text-zinc-400 hover:text-zinc-100'
-                }`}
+                }`)}
               >
                 <Icon name={icone} size={15} /> {rotulo}
               </button>
@@ -520,7 +520,7 @@ export default function GrupoView({ id }: { id: string }) {
                     <span className="flex shrink-0 items-center">
                       <button
                         onClick={() => ligar({ tipo: 'dupla', outroId: m.userId }, true)}
-                        className="rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
+                        className="action-collage action-collage--paper rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
                         aria-label={`Chamada de vídeo com ${m.name}`}
                         title={`Chamada de vídeo com ${m.name}`}
                       >
@@ -528,7 +528,7 @@ export default function GrupoView({ id }: { id: string }) {
                       </button>
                       <button
                         onClick={() => ligar({ tipo: 'dupla', outroId: m.userId }, false)}
-                        className="rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
+                        className="action-collage action-collage--paper rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
                         aria-label={`Ligar para ${m.name}`}
                         title={`Ligar para ${m.name} (voz)`}
                       >
@@ -539,7 +539,7 @@ export default function GrupoView({ id }: { id: string }) {
                   {dono && m.userId !== meuId && (
                     <button
                       onClick={() => remover(m)}
-                      className="rounded-lg p-1 text-zinc-600 opacity-100 transition hover:text-clay-300 sm:opacity-0 sm:group-hover:opacity-100"
+                      className="action-collage action-collage--paper rounded-lg p-1 text-zinc-600 opacity-100 transition hover:text-clay-300 sm:opacity-0 sm:group-hover:opacity-100"
                       aria-label={m.status === 'convidado' ? `Cancelar convite de ${m.name}` : `Tirar ${m.name} do grupo`}
                       title={m.status === 'convidado' ? 'Cancelar convite' : 'Tirar do grupo'}
                     >
@@ -552,7 +552,7 @@ export default function GrupoView({ id }: { id: string }) {
             {podeConvidar && (
               <button
                 onClick={() => setConvidar(true)}
-                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-700 py-2 text-xs text-zinc-300 transition hover:border-emerald-700 hover:text-emerald-300"
+                className="action-collage action-collage--paper mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-700 py-2 text-xs text-zinc-300 transition hover:border-emerald-700 hover:text-emerald-300"
               >
                 <Icon name="plus" size={13} /> Convidar amigos
               </button>
@@ -567,35 +567,35 @@ export default function GrupoView({ id }: { id: string }) {
                     setEdicao({ name: grupo.name, description: grupo.description ?? '' });
                     setEditando(true);
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60"
+                  className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60"
                 >
                   <Icon name="palette" size={14} /> Editar nome e descrição
                 </button>
-                <button onClick={trocarTipo} disabled={ocupado} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-zinc-300 hover:bg-zinc-800/60">
+                <button onClick={trocarTipo} disabled={ocupado} className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-zinc-300 hover:bg-zinc-800/60">
                   <Icon name={grupo.privacy === 'fechado' ? 'globe' : 'lock'} size={14} />
                   {grupo.privacy === 'fechado' ? 'Tornar aberto (todos convidam)' : 'Tornar fechado (só eu convido)'}
                 </button>
                 <button
                   onClick={() => seletorDeImagem.current?.click()}
                   disabled={ocupado}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60"
+                  className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60"
                 >
                   <Icon name="image" size={14} /> {grupo.imagePath ? 'Trocar imagem do grupo' : 'Adicionar imagem do grupo'}
                 </button>
                 {grupo.imagePath && (
-                  <button onClick={tirarImagem} disabled={ocupado} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60">
+                  <button onClick={tirarImagem} disabled={ocupado} className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60">
                     <Icon name="close" size={14} /> Tirar imagem do grupo
                   </button>
                 )}
-                <button onClick={novoLink} disabled={ocupado} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60">
+                <button onClick={novoLink} disabled={ocupado} className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60">
                   <Icon name="link" size={14} /> Gerar novo link de convite
                 </button>
-                <button onClick={apagarGrupo} disabled={ocupado} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-clay-300 hover:bg-clay-950/30">
+                <button onClick={apagarGrupo} disabled={ocupado} className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-clay-300 hover:bg-clay-950/30">
                   <Icon name="trash" size={14} /> Apagar grupo
                 </button>
               </>
             ) : (
-              <button onClick={sair} disabled={ocupado} className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-clay-300 hover:bg-clay-950/30">
+              <button onClick={sair} disabled={ocupado} className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-clay-300 hover:bg-clay-950/30">
                 <Icon name="logOut" size={14} /> Sair do grupo
               </button>
             )}

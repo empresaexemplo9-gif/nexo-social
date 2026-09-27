@@ -33,7 +33,7 @@ export default function BuscarMaisEventos({ tema }: { tema: string }) {
           href={l.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:border-clay-500 hover:text-clay-400"
+          className="action-collage action-collage--seal inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-zinc-300 transition hover:border-clay-500 hover:text-clay-400"
         >
           {l.rotulo} <Icon name="external" size={11} />
         </a>

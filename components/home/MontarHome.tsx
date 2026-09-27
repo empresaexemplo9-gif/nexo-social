@@ -135,14 +135,14 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
                 type="button"
                 onClick={() => setGaleria((g) => !g)}
                 aria-expanded={galeria}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400"
+                className="action-collage inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400"
               >
                 <Icon name="plus" size={14} /> Adicionar widget
               </button>
               <button
                 type="button"
                 onClick={() => mudar(widgetsPadrao())}
-                className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-zinc-400 transition hover:text-zinc-50"
+                className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-zinc-400 transition hover:text-zinc-50"
               >
                 <Icon name="refresh" size={13} /> Restaurar padrão
               </button>
@@ -249,12 +249,12 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
                   <Icon name={info.icone} size={15} className="text-emerald-400" />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-xs font-semibold text-zinc-100">{info.titulo}</span>
-                <button type="button" className={BOTAO} onClick={() => mover(w.id, i - 1)} disabled={i === 0} aria-label={`Subir ${info.titulo}`}>
+                <button type="button" className={"action-collage " + (BOTAO)} onClick={() => mover(w.id, i - 1)} disabled={i === 0} aria-label={`Subir ${info.titulo}`}>
                   <Icon name="chevronRight" size={14} className="-rotate-90" />
                 </button>
                 <button
                   type="button"
-                  className={BOTAO}
+                  className={"action-collage " + (BOTAO)}
                   onClick={() => mover(w.id, i + 1)}
                   disabled={i === lista.length - 1}
                   aria-label={`Descer ${info.titulo}`}
@@ -263,7 +263,7 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
                 </button>
                 <button
                   type="button"
-                  className={`${BOTAO} hidden xl:inline-flex`}
+                  className={"action-collage " + (`${BOTAO} hidden xl:inline-flex`)}
                   onClick={() => alternarTamanho(w.id)}
                   aria-label={`Tamanho de ${info.titulo}: ${w.tamanho === 'inteira' ? 'inteira' : 'metade'}`}
                 >
@@ -274,7 +274,7 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
                 </button>
                 <button
                   type="button"
-                  className={`${BOTAO} hover:!bg-clay-950 hover:!text-clay-300`}
+                  className={"action-collage " + (`${BOTAO} hover:!bg-clay-950 hover:!text-clay-300`)}
                   onClick={() => esconder(w.id)}
                   aria-label={`Esconder ${info.titulo}`}
                 >
@@ -314,7 +314,7 @@ function CartaoDaGaleria({ id, onAdicionar }: { id: string; onAdicionar: () => v
     <button
       type="button"
       onClick={onAdicionar}
-      className="group flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-left transition duration-300 hover:-translate-y-0.5 hover:border-emerald-400/50 hover:bg-zinc-900 hover:shadow-soft"
+      className="action-collage group flex items-start gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-left transition duration-300 hover:-translate-y-0.5 hover:border-emerald-400/50 hover:bg-zinc-900 hover:shadow-soft"
     >
       <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-950 text-emerald-400 transition group-hover:-rotate-6 group-hover:bg-clay-500 group-hover:text-zinc-900">
         <Icon name={info.icone} size={17} />

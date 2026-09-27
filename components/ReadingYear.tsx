@@ -20,7 +20,7 @@ function Stars({ value, onChange }: { value: number | null; onChange: (n: number
           key={n}
           onClick={() => onChange(n)}
           aria-label={`${n} de 5`}
-          className={n <= (value ?? 0) ? 'text-clay-300' : 'text-zinc-700 hover:text-zinc-500'}
+          className={"action-collage " + (n <= (value ?? 0) ? 'text-clay-300' : 'text-zinc-700 hover:text-zinc-500')}
         >
           <Icon name={n <= (value ?? 0) ? 'starFilled' : 'star'} size={14} />
         </button>
@@ -66,7 +66,7 @@ function EntryRow({ entry }: { entry: ReadingEntry }) {
 
         <button
           onClick={() => setAberto((v) => !v)}
-          className="shrink-0 rounded-lg p-1.5 text-zinc-500 transition hover:text-zinc-200"
+          className="action-collage action-collage--paper shrink-0 rounded-lg p-1.5 text-zinc-500 transition hover:text-zinc-200"
           aria-label="Detalhes"
         >
           <Icon name="chevronRight" size={15} className={aberto ? 'rotate-90 transition' : 'transition'} />
@@ -91,7 +91,7 @@ function EntryRow({ entry }: { entry: ReadingEntry }) {
           )}
           <button
             onClick={() => remove(entry.id)}
-            className="ml-auto inline-flex items-center gap-1 text-[11px] text-zinc-500 transition hover:text-red-300"
+            className="action-collage action-collage--paper ml-auto inline-flex items-center gap-1 text-[11px] text-zinc-500 transition hover:text-red-300"
           >
             <Icon name="trash" size={12} /> Remover
           </button>

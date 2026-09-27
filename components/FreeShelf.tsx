@@ -86,7 +86,7 @@ function BookCard({ book }: { book: FreeBook }) {
               href={f.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
+              className="action-collage action-collage--paper inline-flex items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
             >
               <Icon name="download" size={11} /> {f.label}
             </a>
@@ -109,11 +109,11 @@ function BookCard({ book }: { book: FreeBook }) {
               })
             }
             disabled={Boolean(registrado)}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition ${
+            className={"action-collage " + (`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition ${
               registrado
                 ? 'cursor-default bg-emerald-950/50 text-emerald-400'
                 : 'bg-zinc-800 text-zinc-100 hover:bg-emerald-500 hover:text-zinc-950'
-            }`}
+            }`)}
           >
             <Icon name={registrado ? 'check' : 'plus'} size={12} />
             {registrado ? 'Na estante' : 'Quero ler'}
@@ -182,7 +182,7 @@ function AudioCard({ book }: { book: AudioBook }) {
         {book.feedUrl ? (
           <button
             onClick={ouvir}
-            className="inline-flex items-center gap-1 rounded-xl bg-zinc-800 px-2.5 py-1 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
+            className="action-collage inline-flex items-center gap-1 rounded-xl bg-zinc-800 px-2.5 py-1 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
           >
             <Icon name="play" size={11} /> {estado === 'carregando' ? 'Abrindo…' : 'Ouvir aqui'}
           </button>
@@ -191,7 +191,7 @@ function AudioCard({ book }: { book: AudioBook }) {
             href={book.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
+            className="action-collage action-collage--paper inline-flex items-center gap-1 rounded-xl border border-zinc-700 px-2.5 py-1 text-[11px] font-medium text-zinc-200 transition hover:border-emerald-700 hover:text-emerald-300"
           >
             <Icon name="external" size={11} /> Ouvir no LibriVox
           </a>
@@ -210,11 +210,11 @@ function AudioCard({ book }: { book: AudioBook }) {
             })
           }
           disabled={Boolean(registrado)}
-          className={`ml-auto inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition ${
+          className={"action-collage " + (`ml-auto inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition ${
             registrado
               ? 'cursor-default bg-emerald-950/50 text-emerald-400'
               : 'bg-zinc-800 text-zinc-100 hover:bg-emerald-500 hover:text-zinc-950'
-          }`}
+          }`)}
         >
           <Icon name={registrado ? 'check' : 'plus'} size={12} />
           {registrado ? 'Na estante' : 'Quero ouvir'}
@@ -258,9 +258,9 @@ function AudioCard({ book }: { book: AudioBook }) {
                   key={c.mp3}
                   onClick={() => setFaixa(i)}
                   title={c.titulo}
-                  className={`rounded-lg px-2 py-0.5 text-[10px] transition ${
+                  className={"action-collage " + (`rounded-lg px-2 py-0.5 text-[10px] transition ${
                     i === faixa ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-800 text-zinc-400 hover:text-zinc-100'
-                  }`}
+                  }`)}
                 >
                   {i + 1}
                 </button>
@@ -314,11 +314,11 @@ export default function FreeShelf() {
             <button
               key={p}
               onClick={() => setPeriodo(p)}
-              className={`rounded-2xl px-4 py-2 text-xs font-semibold transition ${
+              className={"action-collage " + (`rounded-2xl px-4 py-2 text-xs font-semibold transition ${
                 periodo === p
                   ? 'bg-emerald-500 text-zinc-950'
                   : 'border border-zinc-800 bg-zinc-900/60 text-zinc-300 hover:text-zinc-50'
-              }`}
+              }`)}
             >
               {p === 'semana' ? 'Da semana' : 'Do mês'}
             </button>
@@ -337,7 +337,7 @@ export default function FreeShelf() {
         <div className="rounded-2xl border border-red-900/60 bg-red-950/25 p-5 text-sm text-red-200">
           <p className="font-semibold">Não foi possível carregar a estante.</p>
           <p className="mt-1 text-xs">{erro}</p>
-          <button onClick={() => load(periodo)} className="mt-3 rounded-xl border border-red-800 px-3 py-1.5 text-xs">
+          <button onClick={() => load(periodo)} className="action-collage action-collage--paper mt-3 rounded-xl border border-red-800 px-3 py-1.5 text-xs">
             Tentar de novo
           </button>
         </div>

@@ -112,7 +112,7 @@ export default function PessoaPicker({
             <button
               type="button"
               onClick={() => onChange(value.filter((x) => x.id !== p.id))}
-              className="rounded-full p-0.5 hover:bg-emerald-500/20"
+              className="action-collage action-collage--paper action-collage--seal rounded-full p-0.5 hover:bg-emerald-500/20"
               aria-label={`Tirar ${p.name}`}
             >
               <Icon name="close" size={12} />
@@ -169,7 +169,7 @@ export default function PessoaPicker({
                   aria-selected={false}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => escolher(p)}
-                  className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition hover:bg-zinc-800/60"
+                  className="action-collage action-collage--paper flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition hover:bg-zinc-800/60"
                 >
                   <Avatar nome={p.name} path={p.avatarPath} tamanho={32} />
                   <span className="min-w-0 flex-1">

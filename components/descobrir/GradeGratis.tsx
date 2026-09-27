@@ -113,7 +113,7 @@ export default function GradeGratis({
           <button
             type="button"
             onClick={() => setRodada((x) => (x + 1) % r.rodadas)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-clay-500/40 px-3 py-2 font-medium text-clay-300 transition hover:bg-clay-950"
+            className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-lg border border-clay-500/40 px-3 py-2 font-medium text-clay-300 transition hover:bg-clay-950"
           >
             <Icon name="refresh" size={13} /> Outras descobertas
           </button>

@@ -85,11 +85,11 @@ function Chips({
             type="button"
             aria-pressed={active}
             onClick={() => onToggle(o.id)}
-            className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition ${
+            className={"action-collage " + (`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition ${
               active
                 ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-200 shadow-[0_0_14px_-4px_rgba(43,82,136,0.39)]'
                 : 'border-zinc-800 bg-zinc-950/60 text-zinc-300 hover:border-emerald-400/40 hover:text-zinc-50'
-            }`}
+            }`)}
           >
             <Icon name={active ? 'check' : 'plus'} size={13} className={active ? '' : 'text-zinc-500'} />
             {o.label}
@@ -378,7 +378,7 @@ export default function Questionnaire() {
               <a
                 key={s.id}
                 href={`#q-${s.id}`}
-                className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-zinc-300 transition hover:bg-zinc-900 hover:text-emerald-300"
+                className="action-collage action-collage--paper flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-zinc-300 transition hover:bg-zinc-900 hover:text-emerald-300"
               >
                 <span className="font-mono text-[10px] text-zinc-500">{String(i + 1).padStart(2, '0')}</span>
                 <Icon name={s.icon} size={14} className={respondidas[s.id] ? 'text-emerald-400' : 'text-zinc-600'} />
@@ -415,11 +415,11 @@ export default function Questionnaire() {
                   type="button"
                   aria-pressed={active}
                   onClick={() => toggleTema(t.slug)}
-                  className={`flex items-center gap-3 rounded-xl border p-3.5 text-left transition ${
+                  className={"action-collage " + (`flex items-center gap-3 rounded-xl border p-3.5 text-left transition ${
                     active
                       ? `${t.accent.border} ${t.accent.bg} shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]`
                       : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
-                  }`}
+                  }`)}
                 >
                   <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${t.accent.bg} ${t.accent.text}`}>
                     <Icon name={t.icon} size={19} />
@@ -484,11 +484,11 @@ export default function Questionnaire() {
                       mexeu();
                       setMusicHits(o.value);
                     }}
-                    className={`rounded-xl border p-3.5 text-left transition ${
+                    className={"action-collage " + (`rounded-xl border p-3.5 text-left transition ${
                       musicHits === o.value
                         ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
                         : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
-                    }`}
+                    }`)}
                   >
                     <span className="block text-sm font-semibold text-zinc-50">{o.label}</span>
                     <span className="mt-1 block text-xs text-zinc-400">{o.hint}</span>
@@ -509,11 +509,11 @@ export default function Questionnaire() {
                       mexeu();
                       setMusicMix(o.value);
                     }}
-                    className={`rounded-xl border p-3.5 text-left transition ${
+                    className={"action-collage " + (`rounded-xl border p-3.5 text-left transition ${
                       musicMix === o.value
                         ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
                         : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
-                    }`}
+                    }`)}
                   >
                     <span className="block text-sm font-semibold text-zinc-50">{o.label}</span>
                     <span className="mt-1 block text-xs text-zinc-400">{o.hint}</span>
@@ -549,11 +549,11 @@ export default function Questionnaire() {
                     mexeu();
                     setEstiloIndicacao(o.value);
                   }}
-                  className={`rounded-xl border p-3.5 text-left transition ${
+                  className={"action-collage " + (`rounded-xl border p-3.5 text-left transition ${
                     estiloIndicacao === o.value
                       ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
                       : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
-                  }`}
+                  }`)}
                 >
                   <span className="block text-sm font-semibold text-zinc-50">{o.label}</span>
                   <span className="mt-1 block text-xs text-zinc-400">{o.hint}</span>
@@ -574,11 +574,11 @@ export default function Questionnaire() {
                     mexeu();
                     setIdiomaIndicacao(o.value);
                   }}
-                  className={`rounded-xl border p-3.5 text-left transition ${
+                  className={"action-collage " + (`rounded-xl border p-3.5 text-left transition ${
                     idiomaIndicacao === o.value
                       ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
                       : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
-                  }`}
+                  }`)}
                 >
                   <span className="block text-sm font-semibold text-zinc-50">{o.label}</span>
                   <span className="mt-1 block text-xs text-zinc-400">{o.hint}</span>
@@ -598,11 +598,11 @@ export default function Questionnaire() {
                   type="button"
                   aria-pressed={active}
                   onClick={() => toggle(hobbies, setHobbies, h.id)}
-                  className={`flex items-center gap-2 rounded-xl border p-3 text-left text-xs font-medium transition ${
+                  className={"action-collage " + (`flex items-center gap-2 rounded-xl border p-3 text-left text-xs font-medium transition ${
                     active
                       ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-200 shadow-[0_0_14px_-4px_rgba(43,82,136,0.39)]'
                       : 'border-zinc-800 bg-zinc-950/60 text-zinc-300 hover:border-emerald-400/40'
-                  }`}
+                  }`)}
                 >
                   <Icon name={h.icon} size={17} className="shrink-0" /> {h.label}
                 </button>
@@ -618,7 +618,7 @@ export default function Questionnaire() {
                 type="button"
                 onClick={detectCity}
                 disabled={detecting}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/20 disabled:opacity-60"
+                className="action-collage inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-400/20 disabled:opacity-60"
               >
                 <Icon name="mapPin" size={16} /> {detecting ? 'Detectando…' : 'Detectar minha cidade'}
               </button>
@@ -631,11 +631,11 @@ export default function Questionnaire() {
                   type="button"
                   aria-pressed={city === c.name}
                   onClick={() => chooseCity(city === c.name ? null : c.name)}
-                  className={`rounded-lg border px-3 py-2 text-left text-xs font-medium transition ${
+                  className={"action-collage " + (`rounded-lg border px-3 py-2 text-left text-xs font-medium transition ${
                     city === c.name
                       ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-200'
                       : 'border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:border-emerald-400/40 hover:text-zinc-100'
-                  }`}
+                  }`)}
                 >
                   {c.name}
                 </button>
@@ -650,11 +650,11 @@ export default function Questionnaire() {
                     type="button"
                     aria-pressed={radiusKm === r}
                     onClick={() => chooseRadius(r)}
-                    className={`rounded-lg px-3.5 py-1.5 font-mono text-xs font-medium transition ${
+                    className={"action-collage " + (`rounded-lg px-3.5 py-1.5 font-mono text-xs font-medium transition ${
                       radiusKm === r
                         ? 'bg-emerald-400 font-semibold text-zinc-950 shadow-glow'
                         : 'border border-zinc-800 bg-zinc-950/60 text-zinc-400 hover:text-zinc-100'
-                    }`}
+                    }`)}
                   >
                     {r} km
                   </button>
@@ -672,11 +672,11 @@ export default function Questionnaire() {
                 type="button"
                 aria-pressed={frequency === f.value}
                 onClick={() => chooseFrequency(f.value)}
-                className={`rounded-xl border p-4 text-left transition ${
+                className={"action-collage " + (`rounded-xl border p-4 text-left transition ${
                   frequency === f.value
                     ? 'border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_18px_-6px_rgba(43,82,136,0.33)]'
                     : 'border-zinc-800 bg-zinc-950/60 hover:border-zinc-600'
-                }`}
+                }`)}
               >
                 <span className="block text-sm font-semibold text-zinc-50">{f.label}</span>
                 <span className="mt-1 block text-xs text-zinc-400">{f.hint}</span>

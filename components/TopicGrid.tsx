@@ -74,7 +74,7 @@ export default function TopicGrid({ events }: Props) {
             <button
               onClick={() => setOpen(isOpen ? null : topic.slug)}
               aria-expanded={isOpen}
-              className="flex w-full items-center gap-4 p-5 text-left transition hover:bg-zinc-800/40"
+              className="action-collage action-collage--paper flex w-full items-center gap-4 p-5 text-left transition hover:bg-zinc-800/40"
             >
               <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border ${topic.accent.border} ${topic.accent.bg} ${topic.accent.text}`}>
                 <Icon name={topic.icon} size={22} />
@@ -142,7 +142,7 @@ export default function TopicGrid({ events }: Props) {
                   </Link>
                   <Link
                     href={`/shorts?filtro=tema:${topic.slug}`}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-clay-500 hover:text-clay-300"
+                    className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-300 transition hover:border-clay-500 hover:text-clay-300"
                   >
                     <Icon name="shorts" size={14} /> Shorts
                   </Link>
@@ -157,7 +157,7 @@ export default function TopicGrid({ events }: Props) {
       <button
         type="button"
         onClick={() => setVerOutros((v) => !v)}
-        className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-zinc-700 px-4 py-2 text-xs font-medium text-zinc-400 transition hover:border-clay-500 hover:text-clay-300"
+        className="action-collage action-collage--paper action-collage--seal inline-flex items-center gap-1.5 rounded-full border border-dashed border-zinc-700 px-4 py-2 text-xs font-medium text-zinc-400 transition hover:border-clay-500 hover:text-clay-300"
       >
         <Icon name={verOutros ? 'close' : 'plus'} size={13} />
         {verOutros ? 'Só os que eu sigo' : `Outros temas (${ordered.length - seguidos.length})`}

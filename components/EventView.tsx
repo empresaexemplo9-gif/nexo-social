@@ -121,7 +121,7 @@ export default function EventView({ event, related }: Props) {
                           key={l.label}
                           href={l.url}
                           {...(l.url.startsWith('/') ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-200 transition hover:-translate-y-0.5 hover:border-clay-500 hover:text-clay-300"
+                          className="action-collage action-collage--seal inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs font-medium text-zinc-200 transition hover:-translate-y-0.5 hover:border-clay-500 hover:text-clay-300"
                         >
                           <Icon name={l.icon} size={14} /> {l.label}
                         </a>
@@ -137,9 +137,9 @@ export default function EventView({ event, related }: Props) {
               <div className="flex flex-wrap gap-3 pt-2">
                 <button
                   onClick={() => setConfirmed((v) => !v)}
-                  className={`rounded-xl px-6 py-2.5 text-sm font-semibold transition ${
+                  className={"action-collage " + (`rounded-xl px-6 py-2.5 text-sm font-semibold transition ${
                     confirmed ? 'border border-emerald-700 text-emerald-400' : 'bg-emerald-500 text-zinc-950 hover:bg-emerald-400'
-                  }`}
+                  }`)}
                 >
                   {confirmed ? '✓ Presença confirmada' : 'Confirmar presença'}
                 </button>
@@ -150,7 +150,7 @@ export default function EventView({ event, related }: Props) {
                 <button
                   type="button"
                   onClick={compartilhar}
-                  className="rounded-xl border border-zinc-700 px-6 py-2.5 text-sm font-semibold text-zinc-100 transition hover:border-clay-500 hover:text-clay-300"
+                  className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-6 py-2.5 text-sm font-semibold text-zinc-100 transition hover:border-clay-500 hover:text-clay-300"
                 >
                   <Icon name="external" size={16} /> {compartilhado || 'Compartilhar'}
                 </button>
@@ -158,7 +158,7 @@ export default function EventView({ event, related }: Props) {
                   href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-zinc-700 px-6 py-2.5 text-sm font-semibold text-zinc-100 transition hover:border-clay-500 hover:text-clay-300"
+                  className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-6 py-2.5 text-sm font-semibold text-zinc-100 transition hover:border-clay-500 hover:text-clay-300"
                 >
                   <Icon name="mapPin" size={16} /> Ver rota no mapa
                 </a>
