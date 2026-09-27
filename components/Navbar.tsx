@@ -36,6 +36,14 @@ const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/busca', label: 'Buscar', icon: 'search' },
 ];
 
+// Acabamentos inspirados na coleção de adesivos, com rótulos da plataforma.
+const ADESIVOS: Record<string, string> = {
+  '/': 'paper', '/descobrir': 'cobalt', '/shorts': 'red',
+  '/revista': 'ink', '/agenda': 'paper', '/comunidade': 'lilac',
+  '/esporte': 'lime', '/livros': 'paper', '/bom-dia': 'sun',
+  '/questionario': 'ink', '/busca': 'cobalt',
+};
+
 function ativo(pathname: string, href: string): boolean {
   return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -101,7 +109,7 @@ function ConteudoMenu({
     <>
       <nav aria-label="Navegação principal" className="flex-1 space-y-1 overflow-y-auto px-3 py-3">
         {PRINCIPAIS.map((l) => (
-          <Link key={l.href} href={l.href} onClick={onNavegar} className={item(ativo(pathname, l.href))} title={l.label}>
+          <Link key={l.href} href={l.href} onClick={onNavegar} className={`${item(ativo(pathname, l.href))} menu-sticker menu-sticker--${ADESIVOS[l.href]}`} aria-current={ativo(pathname, l.href) ? 'page' : undefined} aria-label={l.label} title={l.label}>
             <Icon name={l.icon} size={19} className="shrink-0" />
             <span className="rotulo-menu truncate">{l.label}</span>
           </Link>
@@ -115,7 +123,9 @@ function ConteudoMenu({
               onAbrirTemas();
             }}
             aria-expanded={temasAbertos}
-            className={`${item(pathname.startsWith('/tema'))} w-full`}
+            className={`${item(pathname.startsWith('/tema'))} menu-sticker menu-sticker--holo w-full`}
+            data-active={pathname.startsWith('/tema') || undefined}
+            aria-label="Temas"
             title="Temas"
           >
             <Icon name="star" size={19} className="shrink-0" />
