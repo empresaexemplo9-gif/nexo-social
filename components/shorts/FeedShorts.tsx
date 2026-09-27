@@ -203,6 +203,14 @@ export default function FeedShorts() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, filtro, chaves.join(',')]);
 
+  // Atualiza as próximas indicações sem interromper o vídeo atual.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!document.hidden && ready) void buscar(rodada + 1, false);
+    }, 30 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [buscar, ready, rodada]);
+
   // Qual short está na tela.
   useEffect(() => {
     const raiz = caixa.current;

@@ -1,3 +1,5 @@
+import { getSession } from '@/lib/api-helpers';
+import { preferenciasYoutube } from '@/lib/youtube-conta';
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { descreverChave, montarFeed, type Feed } from '@/lib/shorts';
@@ -26,6 +28,8 @@ const montar = unstable_cache(
  * Feed de Shorts dos interesses da pessoa, para tocar no feed vertical.
  */
 export async function GET(request: Request) {
+  const { user } = await getSession();
+  if (!user || user.is_anonymous) return NextResponse.json({ error: 'Faça login.' }, { status: 401 });
   const p = new URL(request.url).searchParams;
   const chaves = Array.from(
     new Set(
@@ -37,14 +41,18 @@ export async function GET(request: Request) {
   )
     .sort()
     .slice(0, 24);
-  if (!chaves.length) return NextResponse.json({ error: 'Nenhum interesse válido.' }, { status: 400 });
+  if (!chaves.length) chaves.push('tema:musica');
   const rodada = Math.abs(Number.parseInt(p.get('rodada') || '0', 10) || 0) % 20;
+  const personalPromise = preferenciasYoutube(user.id, true, rodada);
   const feed = await montar(chaves, rodada, new Date().toISOString().slice(0, 10)).catch((e) => {
     if (e instanceof FeedVazio) return e.feed;
-    throw e;
+    return { itens: [], fonte: 'busca' as const, avisos: ['Busca temporariamente indisponível.'] };
   });
+  const personal = await personalPromise;
+  const merged = [...personal.videos.map(v => ({ id: v.id, titulo: v.title, canal: v.channel, capa: v.thumb || '', de: 'youtube:conta' })), ...feed.itens];
+  const itens = merged.filter((v,i) => merged.findIndex(x => x.id === v.id) === i);
   return NextResponse.json(
-    { ...feed, rodada, rotulos: Object.fromEntries(chaves.map((c) => [c, descreverChave(c)!.rotulo])) },
-    { headers: { 'Cache-Control': feed.itens.length && feed.fonte === 'busca' ? 'public, s-maxage=1800, stale-while-revalidate=43200' : 'no-store' } },
+    { ...feed, itens, personalizado: personal.videos.length > 0, atualizadoEm: new Date().toISOString(), rodada, rotulos: {...Object.fromEntries(chaves.map((c) => [c, descreverChave(c)!.rotulo])), 'youtube:conta': 'Sua conta do YouTube'} },
+    { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

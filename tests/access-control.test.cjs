@@ -89,3 +89,12 @@ test('admin retains access; session cleanup cookies survive login redirects', as
   for (const path of ['/admin', '/api/admin/events']) assert.equal((await app.run(path)).headers.get('x-middleware-next'), '1');
   assert.equal((await load({ refresh: true }).run('/')).cookies.get('session').value, 'renewed');
 });
+
+test('Spotify and its catalog are restricted to platform superadmins', async () => {
+  for (const path of ['/api/spotify/entrar', '/api/spotify/retorno', '/api/spotify/token', '/api/spotify/sair', '/api/playlist']) {
+    assert.equal((await load().run(path)).status, 401, path);
+    assert.equal((await load({ user: { email: 'member@example.com' } }).run(path)).status, 403, path);
+    assert.equal((await load({ user: { email: 'admin@example.com' } }).run(path)).headers.get('x-middleware-next'), '1', path);
+  }
+  assert.equal((await load({ user: { email: 'member@example.com' } }).run('/api/musica')).headers.get('x-middleware-next'), '1');
+});

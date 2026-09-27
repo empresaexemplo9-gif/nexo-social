@@ -6,6 +6,7 @@ import Icon from './icons';
 import { usePreferences } from '@/lib/preferences';
 import { MUSIC_GENRES, genreLabel } from '@/lib/taxonomy';
 import { useSpotify } from './spotify/SpotifyProvider';
+import YoutubePlaylist from './YoutubePlaylist';
 import PlayerEmbutido from './spotify/PlayerEmbutido';
 
 interface Faixa {
@@ -208,7 +209,7 @@ function PainelSpotify() {
  * troca na hora. Tudo toca aqui dentro: quem entra com o Spotify Premium ouve
  * completo; os demais, as prévias do player embutido.
  */
-export default function ProfilePlaylist() {
+function SpotifyPlaylist() {
   const { prefs, ready } = usePreferences();
   const generos = useMemo(
     () => (prefs.musicGenres ?? []).filter((g) => MUSIC_GENRES.some((m) => m.id === g)),
@@ -499,4 +500,10 @@ export default function ProfilePlaylist() {
       )}
     </div>
   );
+}
+
+export default function ProfilePlaylist() {
+  const { autorizado } = useSpotify();
+  if (autorizado === null) return <p className="text-sm text-zinc-400">Montando sua trilha…</p>;
+  return autorizado ? <SpotifyPlaylist /> : <YoutubePlaylist />;
 }

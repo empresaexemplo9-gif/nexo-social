@@ -1,4 +1,5 @@
 import React from 'react';
+import YoutubeAccount from '@/components/YoutubeAccount';
 import Navbar from '@/components/Navbar';
 import FeedShorts from '@/components/shorts/FeedShorts';
 
@@ -13,6 +14,7 @@ export default function ShortsPage() {
     <div className="font-sans text-zinc-100 antialiased">
       <Navbar />
       <main className="mx-auto w-full max-w-3xl px-3 pt-3 sm:px-6 lg:pt-6">
+        <YoutubeAccount />
         <FeedShorts />
       </main>
     </div>

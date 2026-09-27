@@ -2,6 +2,8 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../icons';
+import { supabase } from '@/lib/supabase';
+import { isPlatformAdmin } from '@/lib/auth';
 import BarraDoPlayer from './BarraDoPlayer';
 
 /*
@@ -92,6 +94,7 @@ export interface AlvoDeReproducao {
 }
 
 interface Contexto {
+  autorizado: boolean | null;
   status: StatusSpotify;
   nome: string | null;
   reproducao: Reproducao | null;
@@ -167,6 +170,24 @@ function converter(s: SdkEstado | null): Reproducao | null {
 }
 
 export function SpotifyProvider({ children }: { children: React.ReactNode }) {
+  const [autorizado, setAutorizado] = useState<boolean | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    let verificacao = 0;
+    const verificar = async () => {
+      const atual = ++verificacao;
+      try {
+        const { data } = await supabase!.auth.getUser();
+        if (vivo && atual === verificacao) setAutorizado(isPlatformAdmin(data.user?.email));
+      } catch { if (vivo && atual === verificacao) setAutorizado(false); }
+    };
+    void verificar();
+    const listener = supabase?.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') { verificacao++; setAutorizado(false); return; }
+      setTimeout(() => { if (vivo) void verificar(); }, 0);
+    });
+    return () => { vivo = false; listener?.data.subscription.unsubscribe(); };
+  }, []);
   const [status, setStatus] = useState<StatusSpotify>('desligado');
   const [nome, setNome] = useState<string | null>(null);
   const [reproducao, setReproducao] = useState<Reproducao | null>(null);
@@ -178,6 +199,7 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
 
   /** Token da pessoa, renovado pelo servidor quando está para vencer. */
   const pegarToken = useCallback(async (): Promise<string | null> => {
+    if (!autorizado) return null;
     if (token.current && token.current.expiraEm > Date.now() + 60_000) return token.current.valor;
     try {
       const res = await fetch('/api/spotify/token', { cache: 'no-store' });
@@ -193,17 +215,18 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
     } catch {
       return null;
     }
-  }, []);
+  }, [autorizado]);
 
   // Aviso do login que acabou de terminar — e limpa a URL.
   useEffect(() => {
+    if (autorizado === null) return;
     const url = new URL(window.location.href);
     const desfecho = url.searchParams.get('spotify');
     if (!desfecho) return;
     url.searchParams.delete('spotify');
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-    if (AVISOS[desfecho]) setAviso(AVISOS[desfecho]);
-  }, []);
+    if (autorizado && AVISOS[desfecho]) setAviso(AVISOS[desfecho]);
+  }, [autorizado]);
 
   useEffect(() => {
     if (!aviso) return;
@@ -213,7 +236,7 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
 
   // Liga o player quando há conta do Spotify ligada neste navegador.
   useEffect(() => {
-    if (!temContaLigada()) return;
+    if (!autorizado || !temContaLigada()) return;
     let vivo = true;
     let espera: ReturnType<typeof setTimeout> | undefined;
 
@@ -277,12 +300,13 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
       player.current = null;
       dispositivo.current = null;
     };
-  }, [pegarToken]);
+  }, [pegarToken, autorizado]);
 
   const entrar = useCallback((volta?: string) => {
+    if (!autorizado) return;
     const destino = volta ?? `${window.location.pathname}${window.location.search}${window.location.hash}`;
     window.location.href = `/api/spotify/entrar?volta=${encodeURIComponent(destino)}`;
-  }, []);
+  }, [autorizado]);
 
   const sair = useCallback(async () => {
     player.current?.disconnect();
@@ -358,15 +382,15 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const valor = useMemo<Contexto>(
-    () => ({ status, nome, reproducao, entrar, sair, tocar, alternar, proxima, anterior, buscar, fechar }),
-    [status, nome, reproducao, entrar, sair, tocar, alternar, proxima, anterior, buscar, fechar],
+    () => ({ autorizado, status, nome, reproducao, entrar, sair, tocar, alternar, proxima, anterior, buscar, fechar }),
+    [autorizado, status, nome, reproducao, entrar, sair, tocar, alternar, proxima, anterior, buscar, fechar],
   );
 
   return (
     <SpotifyCtx.Provider value={valor}>
       {children}
-      {status === 'pronto' && reproducao && <BarraDoPlayer />}
-      {aviso && (
+      {autorizado && status === 'pronto' && reproducao && <BarraDoPlayer />}
+      {autorizado && aviso && (
         <div
           role="status"
           className={`fixed inset-x-4 top-4 z-[70] mx-auto flex max-w-lg items-start gap-3 rounded-2xl border p-4 text-sm shadow-2xl backdrop-blur-xl sm:inset-x-auto sm:right-6 ${

@@ -59,7 +59,8 @@ export async function middleware(request: NextRequest) {
     if (error || !user || user.is_anonymous) return deny();
 
     const adminPage = path === '/admin' || path.startsWith('/admin/');
-    const adminApi = path === '/api/admin' || path.startsWith('/api/admin/');
+    const adminApi = path === '/api/admin' || path.startsWith('/api/admin/')
+      || path === '/api/spotify' || path.startsWith('/api/spotify/') || path === '/api/playlist';
     if ((adminPage || adminApi) && !isPlatformAdmin(user.email)) {
       return finish(adminApi
         ? NextResponse.json({ error: 'Acesso restrito ao administrador.' }, { status: 403 })

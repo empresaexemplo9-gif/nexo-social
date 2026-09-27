@@ -1,3 +1,4 @@
+import { requireAdmin } from '@/lib/api-helpers';
 import { NextResponse } from 'next/server';
 import { unstable_cache } from 'next/cache';
 import { isSpotifyConfigured, trilhaDoGenero, type JeitoDeOuvir } from '@/lib/spotify';
@@ -41,6 +42,8 @@ const trilhaEmCache = unstable_cache(
  * gênero custa algumas buscas, e o perfil pode ter dezoito.
  */
 export async function GET(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
   if (!isSpotifyConfigured()) {
     return NextResponse.json(
       {
@@ -79,7 +82,7 @@ export async function GET(request: Request) {
         note: 'Reprodução pelo player do Spotify: no plano gratuito toca com anúncios.',
       },
       // A resposta é igual para todos no mesmo dia: a CDN também pode guardar.
-      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=43200' } },
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (e: any) {
     return NextResponse.json(
