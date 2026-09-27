@@ -3,10 +3,10 @@ import { createServerClient } from '@supabase/ssr';
 import { isPlatformAdmin } from '@/lib/auth';
 import { resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config';
 
-// Apenas a entrada, o cadastro e os arquivos do app são públicos.
+// Entrada, política de privacidade, cadastro e arquivos do app são públicos.
 // Não liberar por extensão: uma rota interna pode terminar em .png ou .svg.
 const publicPaths = new Set([
-  '/login', '/offline', '/api/signup', '/manifest.webmanifest', '/sw.js',
+  '/login', '/privacidade', '/offline', '/api/signup', '/manifest.webmanifest', '/sw.js',
   '/favicon.ico', '/favicon-32.png', '/favicon-48.png', '/apple-touch-icon.png',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png',
   '/logo.png', '/logo.svg',

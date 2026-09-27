@@ -190,6 +190,10 @@ export default function LoginPage() {
           </button>
         </form>
 
+        <p className="text-center text-xs text-zinc-400">
+          Saiba como seus dados são usados na <Link href="/privacidade" className="underline hover:text-zinc-50">Política de Privacidade</Link>.
+        </p>
+
         <div className="text-center">
           <button
             onClick={() => { setIsRegistering(!isRegistering); setMessage(''); }}
