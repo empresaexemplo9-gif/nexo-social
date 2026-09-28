@@ -12,7 +12,7 @@ import 'server-only';
 // unidades/dia; cada busca custa 100) se a página falhar. Canal, ao vivo e
 // estatísticas continuam pela API.
 
-import { buscarNoYoutubeAberto, type FiltroDeBusca, type VideoDaBusca } from './youtube-aberto';
+import { buscarNoYoutubeAberto, type FiltroDeBusca, type VideoDaBusca, priorizarPortugues } from './youtube-aberto';
 
 const API = 'https://www.googleapis.com/youtube/v3';
 
@@ -82,6 +82,7 @@ async function searchVideoPelaApi(query: string): Promise<ResolvedVideo | null> 
       videoSyndicated: 'true',
       safeSearch: 'moderate',
       relevanceLanguage: 'pt',
+      regionCode: 'BR',
     },
     86400,
   );
@@ -174,7 +175,8 @@ export async function searchVideos(query: string, max = 8, extras: Record<string
     if (erroAberto) throw erroAberto;
     return [];
   }
-  return searchVideosPelaApi(query, max, extras);
+  const apiVideos = await searchVideosPelaApi(query, Math.max(max, 12), extras);
+  return (await priorizarPortugues(apiVideos.map(v => ({ ...v, titulo: v.title, canal: v.channel })))).slice(0, max);
 }
 
 /** Melhor vídeo para um termo (mesma ordem: página de resultados, depois API). */
