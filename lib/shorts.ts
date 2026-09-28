@@ -140,7 +140,7 @@ async function porCanais(chave: string): Promise<Short[]> {
     handles.map(async (h) => {
       const canal = await canalPorHandle(h);
       if (!canal) return [];
-      const videos = await videosDoCanal(canal, 'shorts', 21600);
+      const videos = await videosDoCanal(canal, 'shorts', 600);
       return videos.map((v) => ({ id: v.id, titulo: v.titulo, canal: v.canal, capa: v.capa, de: chave }));
     }),
   );

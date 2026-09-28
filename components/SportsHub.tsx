@@ -1,5 +1,7 @@
 'use client';
 
+import FootballLive from './FootballLive';
+import YoutubeAccount from './YoutubeAccount';
 import React, { useCallback, useEffect, useState } from 'react';
 import Icon from './icons';
 import { formatEventDateLong, relativeLabel } from '@/lib/datetime';
@@ -81,7 +83,7 @@ function MatchCard({ match, onPlay }: { match: Match; onPlay: (req: PlayRequest)
         {aoVivo ? (
           <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-300">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
-            AO VIVO
+            PARTIDA EM ANDAMENTO
           </span>
         ) : (
           <span className="shrink-0 text-[10px] text-zinc-500">
@@ -212,6 +214,8 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
 
   return (
     <div className="space-y-8">
+      <YoutubeAccount />
+      {sport === 'futebol' && <FootballLive />}
       {/* Modalidades */}
       <div className="flex flex-wrap gap-2">
         {(modalidades.length ? modalidades : []).map((m) => (
@@ -249,7 +253,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
           </div>
 
           {/* Ao vivo agora nos canais oficiais gratuitos */}
-          {videos && videos.aoVivo.length > 0 && (
+          {sport !== 'futebol' && videos && videos.aoVivo.length > 0 && (
             <section id="ao-vivo-canais" className="scroll-mt-24 space-y-3">
               <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-50">
                 <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" /> Ao vivo agora, de graça
@@ -283,7 +287,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
               <div className={`flex gap-2 ${semPlacar ? 'hidden' : ''}`}>
                 {(
                   [
-                    ['agora', `Agora e hoje${board.aoVivo.length ? ` (${board.aoVivo.length} ao vivo)` : ''}`],
+                    ['agora', `Agora e hoje${board.aoVivo.length ? ` (${board.aoVivo.length} em andamento)` : ''}`],
                     ['proximos', `Próximos (${board.proximos.length})`],
                     ['resultados', `Resultados (${board.resultados.length})`],
                   ] as const

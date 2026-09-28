@@ -34,7 +34,7 @@ export async function videosDoEsporte(sport: SportId): Promise<{ aoVivo: Transmi
 
   const [aoVivo, porCanal] = await Promise.all([
     Promise.all(
-      canais.map(async (b) => {
+      (sport === 'futebol' ? [] : canais).map(async (b) => {
         const v = await aoVivoDoCanal(b.youtube!);
         return v ? { id: v.id, titulo: v.titulo, canal: b.label, handle: b.youtube! } : null;
       }),

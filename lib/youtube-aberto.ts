@@ -260,7 +260,7 @@ async function paginaDeResultados(termo: string, filtro: FiltroDeBusca): Promise
   const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(termo)}&sp=${SP[filtro]}&hl=pt-BR&gl=BR`;
   // `revalidate` e não `no-store`: a busca também roda na geração estática
   // (ISR) das matérias da revista, onde um fetch sem cache derruba a página.
-  const res = await fetch(url, { next: { revalidate: 21600 }, signal: AbortSignal.timeout(10000), headers: CABECALHOS_DE_NAVEGADOR });
+  const res = await fetch(url, { next: { revalidate: 600 }, signal: AbortSignal.timeout(10000), headers: CABECALHOS_DE_NAVEGADOR });
   if (!res.ok) throw new Error(`YouTube respondeu ${res.status}`);
   const dados = extrairDadosIniciais(await res.text());
   if (!dados) throw new Error('Página de resultados do YouTube sem dados');
@@ -283,8 +283,8 @@ const buscaGuardada = unstable_cache(
     if (!r.length) throw new Error('Nenhum vídeo na página de resultados');
     return r;
   },
-  ['youtube-busca-aberta-v1'],
-  { revalidate: 21600 },
+  ['youtube-busca-aberta-v2'],
+  { revalidate: 600 },
 );
 
 export async function buscarNoYoutubeAberto(termo: string, filtro: FiltroDeBusca = 'qualquer', max = 12): Promise<VideoDaBusca[]> {

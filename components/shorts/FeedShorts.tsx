@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../icons';
+import { loadShortFeed, markShortSeen, nextShortRound } from '@/lib/shorts-client';
 import { usePreferences } from '@/lib/preferences';
 import { CHAVES_DE_PARTIDA, chavesDoPerfil } from '@/lib/interesses';
 import { TOPICS } from '@/lib/data';
@@ -115,6 +116,8 @@ export default function FeedShorts() {
   const [mudo, setMudo] = useState(true);
   const [salvos, setSalvos] = useState<string[]>([]);
   const [aviso, setAviso] = useState('');
+  const [feedNotice, setFeedNotice] = useState('');
+  const [owner, setOwner] = useState('visitante');
   const [altura, setAltura] = useState<number | null>(null);
   const [painel, setPainel] = useState(false);
 
@@ -126,7 +129,7 @@ export default function FeedShorts() {
   useEffect(() => {
     setSalvos(lerSalvos());
     const q = new URLSearchParams(window.location.search);
-    inicial.current = q.get('v');
+    inicial.current = /^[\w-]{11}$/.test(q.get('v') || '') ? q.get('v') : null;
     const pedido = q.get('filtro');
     if (pedido && /^(tema|hobby|musica|filme|livro):[a-z-]{2,30}$/.test(pedido)) {
       setExtra(pedido);
@@ -163,10 +166,9 @@ export default function FeedShorts() {
       if (substituir) setEstado('carregando');
       try {
         const lista = filtro === 'todos' ? chaves : [filtro];
-        const res = await fetch(`/api/shorts?chaves=${encodeURIComponent(lista.join(','))}&rodada=${r}`);
-        const j = await res.json().catch(() => ({}));
+        const j = await loadShortFeed(lista, r, filtro === 'todos');
         if (meu !== pedido.current) return;
-        if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
+        setOwner(j.owner); setFeedNotice(j.notice);
         setRotulos((x) => ({ ...x, ...(j.rotulos ?? {}) }));
         setItens((antes) => {
           let novos: Short[] = j.itens ?? [];
@@ -196,20 +198,29 @@ export default function FeedShorts() {
 
   useEffect(() => {
     if (!ready) return;
-    setRodada(0);
+    const next = nextShortRound();
+    setRodada(next);
     setAtivo(0);
     caixa.current?.scrollTo({ top: 0 });
-    void buscar(0, true);
+    void buscar(next, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, filtro, chaves.join(',')]);
 
-  // Atualiza as próximas indicações sem interromper o vídeo atual.
+  // Append updates without interrupting the current video.
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (!document.hidden && ready) void buscar(rodada + 1, false);
-    }, 30 * 60 * 1000);
-    return () => clearInterval(timer);
-  }, [buscar, ready, rodada]);
+    const refresh = () => { if (!document.hidden && ready && !carregando.current) { const next = nextShortRound(); setRodada(next); void buscar(next, false); } };
+    const timer = setInterval(refresh, 5 * 60 * 1000);
+    document.addEventListener('visibilitychange', refresh);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', refresh); };
+  }, [buscar, ready]);
+
+  // Record only videos actually visible for two seconds, not the entire fetched batch.
+  useEffect(() => {
+    const id = itens[ativo]?.id;
+    if (!id || estado !== 'ok' || document.visibilityState !== 'visible') return;
+    const timer = setTimeout(() => markShortSeen(owner, id), 2000);
+    return () => clearTimeout(timer);
+  }, [ativo, itens, owner, estado]);
 
   // Qual short está na tela.
   useEffect(() => {
@@ -300,6 +311,10 @@ export default function FeedShorts() {
 
   return (
     <div className="relative">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <p role="status" className="text-xs text-zinc-400">{feedNotice || 'Novidades dos seus interesses. Os vídeos vistos neste navegador ficam fora das próximas sugestões.'}</p>
+        <button className="action-collage rounded-lg px-3 py-2 text-xs" disabled={estado === 'carregando'} onClick={() => { const next = nextShortRound(); setRodada(next); setAtivo(0); caixa.current?.scrollTo({ top: 0 }); void buscar(next, true); }}>Atualizar Shorts</button>
+      </div>
       {/* Filtros: os interesses do perfil + qualquer tema pelo painel */}
       <div className="flex items-start gap-2">
         <FileiraDeFiltros>
@@ -374,7 +389,7 @@ export default function FeedShorts() {
             <p className="max-w-sm text-sm text-zinc-400">
               {estado === 'erro'
                 ? `Não deu para carregar os Shorts agora (${aviso}).`
-                : 'Nenhum short destes interesses por enquanto. Tente outro filtro ou volte daqui a pouco.'}
+                : 'Você já viu os Shorts disponíveis neste momento, ou não há novidades para este filtro. Atualize ou escolha outro tema.'}
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               <button type="button" onClick={() => void buscar(rodada + 1, true)} className="action-collage action-collage--seal rounded-full bg-zinc-50 px-4 py-2 text-xs font-semibold text-zinc-950 hover:bg-clay-500">

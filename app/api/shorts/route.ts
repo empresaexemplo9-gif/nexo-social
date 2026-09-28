@@ -19,8 +19,8 @@ const montar = unstable_cache(
     if (!feed.itens.length || feed.fonte === 'canais') throw new FeedVazio(feed);
     return feed;
   },
-  ['shorts-v2'],
-  { revalidate: 43200 },
+  ['shorts-v3'],
+  { revalidate: 600 },
 );
 
 /**
@@ -42,9 +42,9 @@ export async function GET(request: Request) {
     .sort()
     .slice(0, 24);
   if (!chaves.length) chaves.push('tema:musica');
-  const rodada = Math.abs(Number.parseInt(p.get('rodada') || '0', 10) || 0) % 20;
-  const personalPromise = preferenciasYoutube(user.id, true, rodada);
-  const feed = await montar(chaves, rodada, new Date().toISOString().slice(0, 10)).catch((e) => {
+  const rodada = Math.abs(Number.parseInt(p.get('rodada') || '0', 10) || 0) % 10000;
+  const personalPromise = p.get('personalizado') === '0' ? Promise.resolve({ conectado: false, videos: [], indisponivel: false }) : preferenciasYoutube(user.id, true, rodada);
+  const feed = await montar(chaves, rodada, new Date().toISOString().slice(0, 13)).catch((e) => {
     if (e instanceof FeedVazio) return e.feed;
     return { itens: [], fonte: 'busca' as const, avisos: ['Busca temporariamente indisponível.'] };
   });
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
   const merged = [...personal.videos.map(v => ({ id: v.id, titulo: v.title, canal: v.channel, capa: v.thumb || '', de: 'youtube:conta' })), ...feed.itens];
   const itens = merged.filter((v,i) => merged.findIndex(x => x.id === v.id) === i);
   return NextResponse.json(
-    { ...feed, itens, personalizado: personal.videos.length > 0, atualizadoEm: new Date().toISOString(), rodada, rotulos: {...Object.fromEntries(chaves.map((c) => [c, descreverChave(c)!.rotulo])), 'youtube:conta': 'Sua conta do YouTube'} },
+    { ...feed, itens, owner: user.id, notice: personal.indisponivel ? 'Não foi possível consultar suas inscrições e curtidas. Mostrando seus interesses.' : personal.videos.length ? 'Das suas curtidas e inscrições no YouTube, com novidades dos seus interesses.' : personal.conectado ? 'Sem Shorts novos disponíveis na sua conta. Mostrando seus interesses.' : '', personalizado: personal.videos.length > 0, atualizadoEm: new Date().toISOString(), rodada, rotulos: {...Object.fromEntries(chaves.map((c) => [c, descreverChave(c)!.rotulo])), 'youtube:conta': 'Sua conta do YouTube'} },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }

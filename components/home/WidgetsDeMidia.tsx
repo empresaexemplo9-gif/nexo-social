@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '../icons';
+import { loadShortFeed, nextShortRound } from '@/lib/shorts-client';
 import { SectionHeader } from '../InterestsView';
 import GradeGratis, { type AreaGratis } from '../descobrir/GradeGratis';
 import RevistaDoTema from '../revista/RevistaDoTema';
@@ -29,8 +30,7 @@ export function ShortsWidget() {
 
   useEffect(() => {
     let vivo = true;
-    fetch(`/api/shorts?chaves=${encodeURIComponent(chaves.join(','))}&rodada=0`)
-      .then((r) => (r.ok ? r.json() : { itens: [] }))
+    loadShortFeed(chaves, nextShortRound())
       .then((j) => vivo && setItens(j.itens ?? []))
       .catch(() => vivo && setItens([]));
     return () => {
