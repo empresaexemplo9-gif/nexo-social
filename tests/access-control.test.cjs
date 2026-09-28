@@ -98,3 +98,16 @@ test('Spotify and its catalog are restricted to platform superadmins', async () 
   }
   assert.equal((await load({ user: { email: 'member@example.com' } }).run('/api/musica')).headers.get('x-middleware-next'), '1');
 });
+
+test('YouTube browser authorization returns visitors to login without exposing callback codes', async () => {
+  for (const path of ['/api/youtube/entrar', '/api/youtube/retorno?code=private-code&state=state']) {
+    const response = await load().run(path);
+    const location = new URL(response.headers.get('location'));
+    assert.equal(response.status, 307);
+    assert.equal(location.pathname, '/login');
+    assert.equal(location.searchParams.get('next'), '/conta?youtube=sessao_expirada#youtube');
+    assert.equal(location.href.includes('private-code'), false);
+  }
+  assert.equal((await load().run('/api/youtube/conta')).status, 401);
+  assert.equal((await load().run('/api/youtube/sair')).status, 401);
+});

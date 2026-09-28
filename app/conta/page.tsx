@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import FotoDePerfil from '@/components/FotoDePerfil';
+import YoutubeAccount from '@/components/YoutubeAccount';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
 import { ensureProfile } from '@/lib/provisioning';
@@ -132,6 +133,11 @@ export default function ContaPage() {
               Abrir Painel Admin →
             </Link>
           )}
+        </section>
+
+        <section id="youtube" className="scroll-mt-8 space-y-3">
+          <h2 className="text-lg font-semibold text-zinc-50">Minha conta do YouTube</h2>
+          <YoutubeAccount />
         </section>
 
         {/* Preferências */}

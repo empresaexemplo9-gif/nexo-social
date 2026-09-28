@@ -28,6 +28,11 @@ export async function middleware(request: NextRequest) {
     return result;
   };
   const deny = (unavailable = false) => {
+    if (path === '/api/youtube/entrar' || path === '/api/youtube/retorno') {
+      const login = new URL('/login', request.url);
+      login.searchParams.set('next', '/conta?youtube=sessao_expirada#youtube');
+      return finish(NextResponse.redirect(login));
+    }
     if (isApi) {
       return finish(NextResponse.json(
         { error: unavailable ? 'Não foi possível validar sua sessão. Tente novamente.' : 'Faça login para acessar a plataforma.' },

@@ -207,3 +207,51 @@ BANDSINTOWN_APP_ID=
 - **Degradação suave**: se a API falhar, o app deve continuar mostrando o
   catálogo próprio (é assim que `lib/repo.ts` já funciona hoje).
 - **Atribuição**: alguns serviços exigem citar a fonte na interface. Verifique.
+
+## Conectar a conta pessoal do YouTube com OAuth Google
+
+A entrada fica em **Minha Conta → Minha conta do YouTube**, na trilha musical
+para membros e nos Shorts. O botão **Continuar com Google** abre a autorização
+oficial e retorna à página de origem. Funciona para membros e administradores;
+não é necessário conceder acesso administrativo à plataforma.
+
+No projeto **nexo-social** da Vercel, configure para Production:
+
+- `YOUTUBE_OAUTH_CLIENT_ID` e `YOUTUBE_OAUTH_CLIENT_SECRET`: par do cliente Google
+  do tipo **Aplicativo da Web** já criado. Alternativamente, um par completo
+  `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` ou
+  `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` é reconhecido, nessa ordem.
+- `YOUTUBE_OAUTH_REDIRECT_URI`:
+  `https://nexo-social-two.vercel.app/api/youtube/retorno`.
+- `YOUTUBE_SESSION_SECRET`: segredo aleatório para cifrar cookies. Sem ele, o
+  servidor utiliza `SUPABASE_SERVICE_ROLE_KEY`, se configurado. Não altere a chave
+  de sessão sem considerar que as conexões existentes precisarão ser refeitas.
+
+O mesmo retorno exato deve estar nos **URIs de redirecionamento autorizados**
+do cliente no Google Cloud. A API **YouTube Data API v3** deve estar habilitada,
+com o escopo `https://www.googleapis.com/auth/youtube.readonly`. Se a tela de
+consentimento estiver em testes, apenas os usuários de teste cadastrados podem
+concluir o fluxo; para público externo, siga as exigências de publicação e
+verificação exibidas no Google Auth Platform. Configurar a marca, privacidade e
+termos no Google não substitui a instalação das credenciais no servidor.
+
+As páginas públicas para a tela de consentimento são `/privacidade` e `/termos`.
+Nunca grave Client Secret, tokens ou arquivos de credencial no repositório.
+Após mudar variáveis da Vercel, faça um novo deployment de Production.
+
+### Validação
+
+1. Entre com um membro da plataforma e abra `/conta#youtube`.
+2. Clique em **Continuar com Google**, escolha a conta e autorize a leitura.
+3. Confira o retorno à mesma página e a mensagem de conexão concluída.
+4. A trilha e os Shorts passam a consultar curtidas e inscrições dessa conta.
+5. Teste **Desconectar YouTube**: a autorização é revogada e o cookie removido.
+
+O administrador vê o diagnóstico de presença das variáveis no próprio cartão,
+sem valores secretos. Usuários comuns não recebem esse diagnóstico. O fluxo
+protege `state`, PKCE, associação ao usuário da plataforma e destino de retorno;
+tokens ficam em cookies cifrados HttpOnly e não aparecem nas respostas JSON.
+Uma conexão sem refresh token dura somente até o vencimento do access token.
+O OAuth não autentica o iframe do YouTube nem contorna restrições de reprodução.
+
+Referência: https://developers.google.com/youtube/v3/guides/auth/server-side-web-apps
