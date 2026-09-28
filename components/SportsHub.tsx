@@ -314,7 +314,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
             {board.fonte !== 'live' && board.avisos.length > 0 && (
               <div className="rounded-2xl border border-clay-800/50 bg-clay-950/20 p-4 text-xs text-clay-200">
                 <p className="mb-1 flex items-center gap-2 font-semibold">
-                  <Icon name="alert" size={13} /> Placar parcialmente indisponível
+                  <Icon name="alert" size={13} /> {board.fonte === 'indisponivel' ? 'Placar temporariamente indisponível' : 'Agenda disponível com cobertura parcial'}
                 </p>
                 {board.avisos.map((a) => (
                   <p key={a} className="text-[11px] leading-relaxed">
@@ -322,7 +322,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                   </p>
                 ))}
                 <p className="mt-1.5 text-[11px] text-clay-300/80">
-                  As transmissões e o acervo abaixo continuam funcionando normalmente.
+                  Consulte também os sites oficiais das competições abaixo. As transmissões e o acervo são independentes do placar.
                 </p>
               </div>
             )}
@@ -347,7 +347,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                   />
                 )}
                 {aba === 'proximos' && (
-                  <MatchGrid matches={board.proximos} onPlay={play} vazio="Nenhuma partida futura na agenda das fontes." />
+                  <MatchGrid matches={board.proximos} onPlay={play} vazio={board.fonte === 'indisponivel' ? 'Não foi possível consultar a agenda agora. Tente atualizar ou consulte os sites oficiais abaixo.' : 'Nenhuma partida futura retornada pelas fontes disponíveis.'} />
                 )}
                 {aba === 'resultados' && (
                   <MatchGrid matches={board.resultados} onPlay={play} vazio="Nenhum resultado recente disponível." />
