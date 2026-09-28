@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 interface Account {
   configurado: boolean;
   conectado: boolean;
+  temporariamenteIndisponivel?: boolean;
   setup?: { credenciais: boolean; chaveSessao: boolean; retorno: string | null; dominioCorreto: boolean };
 }
 const results: Record<string, string> = {
@@ -57,6 +58,15 @@ export default function YoutubeAccount() {
     return () => { active = false; window.clearTimeout(timeout); controller.abort(); };
   }, [attempt]);
 
+  useEffect(() => {
+    const update = (event: Event) => {
+      const data = (event as CustomEvent<Account>).detail;
+      if (data) { setAccount(data); setError(''); }
+    };
+    window.addEventListener('nexo:youtube-session', update);
+    return () => window.removeEventListener('nexo:youtube-session', update);
+  }, []);
+
   async function disconnect() {
     setBusy(true); setError('');
     try {
@@ -70,13 +80,14 @@ export default function YoutubeAccount() {
 
   return <div className="card-soft space-y-3 p-4 text-sm" aria-label="Conexão com o YouTube">
     <p className="font-semibold">{account?.conectado ? 'Sua conta do YouTube está conectada' : 'Conecte sua conta do YouTube'}</p>
-    <p className="text-xs text-zinc-400">Use suas curtidas e inscrições para personalizar músicas e Shorts no Nexo Social. A autorização abre na tela segura do Google e retorna para cá. Sua senha não é compartilhada com o aplicativo.</p>
+    <p className="text-xs text-zinc-400">Use suas curtidas e inscrições para personalizar músicas e Shorts no Nexo Social. A autorização abre na tela segura do Google em outra aba. Depois de autorizar, volte para esta aba. Sua senha não é compartilhada com o aplicativo.</p>
     {!account && !error && <p role="status">Verificando conexão…</p>}
     {account?.conectado ? <button disabled={busy} type="button" onClick={() => void disconnect()} className="action-collage rounded-lg border px-3 py-2 disabled:opacity-50">{busy ? 'Desconectando…' : 'Desconectar YouTube'}</button>
-      : account?.configurado ? <a href={`/api/youtube/entrar?next=${encodeURIComponent(next)}`} className="action-collage inline-flex items-center gap-2 rounded-lg border px-4 py-3 font-semibold">Continuar com Google</a>
+      : account?.configurado ? <a target="_blank" rel="noopener noreferrer" href={`/api/youtube/entrar?next=${encodeURIComponent(next)}`} className="action-collage inline-flex items-center gap-2 rounded-lg border px-4 py-3 font-semibold">Continuar com Google</a>
       : account && <p role="status" className="text-xs text-zinc-400">A conexão está aguardando configuração da administração. Você pode continuar usando as sugestões pelos interesses do seu perfil.</p>}
     {error && <div role="alert" className="space-y-2"><p>{error}</p><button type="button" onClick={() => setAttempt(a => a + 1)} className="underline">Tentar novamente</button> <Link href="/login?next=%2Fconta%23youtube" className="underline">Entrar na plataforma</Link></div>}
     {message && <p role="status">{message}</p>}
+    {account?.temporariamenteIndisponivel && <p role="status">Sua conexão está salva. O YouTube está temporariamente indisponível; tentaremos novamente automaticamente.</p>}
     {account?.setup && !account.configurado && <details className="rounded-lg border border-zinc-700 p-3 text-xs">
       <summary className="cursor-pointer font-semibold">Configuração do administrador</summary>
       <ul className="mt-2 list-disc space-y-2 pl-4">

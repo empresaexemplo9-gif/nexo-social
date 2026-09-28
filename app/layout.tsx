@@ -1,4 +1,6 @@
 import React from 'react';
+import MediaSessionMaintenance from '@/components/MediaSessionMaintenance';
+import ExternalNavigation from '@/components/ExternalNavigation';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import { Barlow, Barlow_Condensed, Caveat_Brush, JetBrains_Mono } from 'next/font/google';
@@ -133,6 +135,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </ReadingProvider>
           </AgendaProvider>
         </PreferencesProvider>
+        <MediaSessionMaintenance />
+        <ExternalNavigation />
         <PWARegister />
       </body>
     </html>

@@ -286,8 +286,8 @@ async function fetchSportsdb(comp: Competition): Promise<Match[]> {
   const [past, next] = await Promise.all([
     request('eventspastleague.php'), request('eventsnextleague.php'),
   ]);
-  return [...new Map([...parseSportsdb(past, comp, true), ...parseSportsdb(next, comp, false)]
-    .map(match => [match.id, match])).values()];
+  return Array.from(new Map([...parseSportsdb(past, comp, true), ...parseSportsdb(next, comp, false)]
+    .map(match => [match.id, match])).values());
 }
 
 // ---------------------------------------------------------------------------

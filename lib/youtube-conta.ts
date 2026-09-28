@@ -75,7 +75,10 @@ function expiresAt(value: unknown) {
 export async function youtubeAccess(uid: string): Promise<string | null> {
   const s = unseal<Session>(cookies().get(SESSION)?.value);
   if (!s || s.uid !== uid || !youtubeContaConfigurada()) return null;
-  if (s.expires > Date.now()+60000) return s.access;
+  if (s.expires > Date.now()+60000) {
+    save(s); // Janela persistente renovada enquanto a conexão estiver em uso.
+    return s.access;
+  }
   if (!s.refresh) { clear(); return null; }
   try {
     const res = await exchange({grant_type:'refresh_token',refresh_token:s.refresh});
@@ -177,8 +180,12 @@ export async function youtubeAccount(request: Request, action: string) {
     retorno: redirect?.href ?? null,
     dominioCorreto: redirect?.origin === origin,
   } : undefined;
+  const access = await youtubeAccess(user.id);
+  const stored = unseal<Session>(cookies().get(SESSION)?.value);
+  // Falha temporária de renovação não significa revogação. invalid_grant limpa o cookie.
+  const saved = stored?.uid === user.id && Boolean(stored.refresh);
   return json({configurado: configured && Boolean(redirect) && redirect?.origin === origin,
-    conectado:Boolean(await youtubeAccess(user.id)), setup});
+    conectado: Boolean(access) || saved, temporariamenteIndisponivel: !access && saved, setup});
 }
 
 /** Dados pessoais nunca entram no cache compartilhado. A seleção é nossa, não o feed privado do YouTube. */

@@ -95,3 +95,14 @@ test('disconnect rejects cross-origin requests and clears already revoked tokens
  assert.equal((await a.request('sair','',{method:'POST',headers:{origin:'https://evil.example'}})).status,403);
  assert.equal(await a.api.youtubeAccess('user-a'),'access');assert.equal((await a.request('sair')).status,200);assert.equal(await a.api.youtubeAccess('user-a'),null);
 });
+
+test('temporary refresh failures preserve connection and recover without consent',async()=>{
+ const options={};const a=setup(options);await a.callback(await a.start());
+ a.advance(3600001);options.tokenError='temporarily_unavailable';
+ const status=await(await a.request('conta')).json();
+ assert.equal(status.conectado,true);assert.equal(status.temporariamenteIndisponivel,true);
+ assert.ok(a.jar.get('nexo_youtube'));options.tokenError=undefined;
+ assert.equal(await a.api.youtubeAccess('user-a'),'access');
+ options.tokenError='invalid_grant';a.advance(3600001);
+ assert.equal((await(await a.request('conta')).json()).conectado,false);
+});

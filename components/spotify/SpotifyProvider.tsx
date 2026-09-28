@@ -132,11 +132,6 @@ const AVISOS: Record<string, { texto: string; erro: boolean }> = {
   off: { texto: 'O login com Spotify ainda não foi configurado na plataforma.', erro: true },
 };
 
-/** O servidor deixa este cookie (sem nada secreto) quando há conta ligada. */
-function temContaLigada(): boolean {
-  return document.cookie.split('; ').some((c) => c.startsWith('nexo_spotify_on='));
-}
-
 function carregarSdk(): Promise<void> {
   if (window.Spotify) return Promise.resolve();
   return new Promise((ok, falha) => {
@@ -196,25 +191,38 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
   const player = useRef<SdkPlayer | null>(null);
   const dispositivo = useRef<string | null>(null);
   const token = useRef<{ valor: string; expiraEm: number } | null>(null);
+  const tokenRequest = useRef<Promise<string | null> | null>(null);
+  const [sessionVersion, setSessionVersion] = useState(0);
 
   /** Token da pessoa, renovado pelo servidor quando está para vencer. */
   const pegarToken = useCallback(async (): Promise<string | null> => {
     if (!autorizado) return null;
     if (token.current && token.current.expiraEm > Date.now() + 60_000) return token.current.valor;
-    try {
-      const res = await fetch('/api/spotify/token', { cache: 'no-store' });
-      const json = await res.json();
-      if (!json.conectado) {
-        token.current = null;
-        setStatus('desligado');
-        return null;
-      }
-      token.current = { valor: json.token, expiraEm: json.expiraEm };
-      setNome(json.nome ?? null);
-      return json.token;
-    } catch {
-      return null;
-    }
+    if (tokenRequest.current) return tokenRequest.current;
+    const pending = (async () => {
+      try {
+        const res = await fetch('/api/spotify/token', { cache: 'no-store', signal: AbortSignal.timeout(15000) });
+        // 5xx, timeout e indisponibilidade não apagam uma autorização persistente.
+        if (!res.ok) return null;
+        const json = await res.json();
+        if (json.conectado === false) {
+          token.current = null;
+          setNome(null);
+          setStatus('desligado');
+          player.current?.disconnect();
+          player.current = null;
+          dispositivo.current = null;
+          setReproducao(null);
+          return null;
+        }
+        if (!json.token || !Number.isFinite(json.expiraEm)) return null;
+        token.current = { valor: json.token, expiraEm: json.expiraEm };
+        setNome(json.nome ?? null);
+        return json.token as string;
+      } catch { return null; }
+    })();
+    tokenRequest.current = pending;
+    try { return await pending; } finally { tokenRequest.current = null; }
   }, [autorizado]);
 
   // Aviso do login que acabou de terminar — e limpa a URL.
@@ -236,7 +244,7 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
 
   // Liga o player quando há conta do Spotify ligada neste navegador.
   useEffect(() => {
-    if (!autorizado || !temContaLigada()) return;
+    if (!autorizado) { token.current = null; setNome(null); setStatus('desligado'); return; }
     let vivo = true;
     let espera: ReturnType<typeof setTimeout> | undefined;
 
@@ -271,7 +279,11 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
       p.addListener('initialization_error', () => setStatus('sem-suporte'));
       p.addListener('authentication_error', () => {
         token.current = null;
-        setStatus('desligado');
+        setStatus('conectando');
+        // Evita recriar o SDK em loop se o provedor recusar o mesmo token.
+        p.disconnect();
+        if (player.current === p) player.current = null;
+        dispositivo.current = null;
       });
       // O Spotify só libera o player fora do app para Premium.
       p.addListener('account_error', () => {
@@ -300,15 +312,35 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
       player.current = null;
       dispositivo.current = null;
     };
-  }, [pegarToken, autorizado]);
+  }, [pegarToken, autorizado, sessionVersion]);
+
+  // Recupera o login concluído em outra aba e renova o token ao retomar o app.
+  useEffect(() => {
+    if (!autorizado) return;
+    let alive = true;
+    const check = () => {
+      if (document.hidden) return;
+      void pegarToken().then(t => { if (alive && t && !player.current) setSessionVersion(v => v + 1); });
+    };
+    const timer = window.setInterval(check, 5 * 60 * 1000);
+    window.addEventListener('focus', check);
+    window.addEventListener('online', check);
+    document.addEventListener('visibilitychange', check);
+    return () => { alive = false; window.clearInterval(timer); window.removeEventListener('focus', check); window.removeEventListener('online', check); document.removeEventListener('visibilitychange', check); };
+  }, [autorizado, pegarToken]);
 
   const entrar = useCallback((volta?: string) => {
     if (!autorizado) return;
     const destino = volta ?? `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    window.location.href = `/api/spotify/entrar?volta=${encodeURIComponent(destino)}`;
+    window.open(`/api/spotify/entrar?volta=${encodeURIComponent(destino)}`, '_blank', 'noopener,noreferrer');
+    setAviso({ texto: 'Conclua o login do Spotify na nova aba e volte para cá. Se ela não abrir, permita pop-ups para este site.', erro: false });
   }, [autorizado]);
 
   const sair = useCallback(async () => {
+    try {
+      const response = await fetch('/api/spotify/sair', { method: 'POST' });
+      if (!response.ok) throw new Error('Falha ao desconectar');
+    } catch { setAviso({ texto: 'Não foi possível desconectar agora. Sua conexão foi mantida; tente novamente.', erro: true }); return; }
     player.current?.disconnect();
     player.current = null;
     dispositivo.current = null;
@@ -316,7 +348,7 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
     setReproducao(null);
     setNome(null);
     setStatus('desligado');
-    await fetch('/api/spotify/sair', { method: 'POST' }).catch(() => undefined);
+
   }, []);
 
   const tocar = useCallback(

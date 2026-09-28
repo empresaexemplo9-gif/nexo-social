@@ -149,14 +149,22 @@ function opcoes(req: NextRequest, caminho: string, maxAge: number, httpOnly = tr
  * Spotify. Por padrão é o próprio domínio em que a pessoa está; em previews da
  * Vercel (domínio muda a cada deploy) fixe com SPOTIFY_REDIRECT_URI.
  */
-function enderecoDeRetorno(req: NextRequest): string {
-  return (process.env.SPOTIFY_REDIRECT_URI || '').trim() || `${req.nextUrl.origin}/api/spotify/retorno`;
+function enderecoDeRetorno(req: NextRequest): string | null {
+  try {
+    const url = new URL((process.env.SPOTIFY_REDIRECT_URI || '').trim() || `${req.nextUrl.origin}/api/spotify/retorno`);
+    if (url.protocol !== 'https:' || url.origin !== req.nextUrl.origin ||
+        url.pathname !== '/api/spotify/retorno' || url.username || url.password || url.search || url.hash) return null;
+    return url.href;
+  } catch { return null; }
 }
 
 /** Só caminhos internos: nada de `//outro-site` ou URL absoluta. */
 export function voltaSegura(v: string | null | undefined): string {
   if (!v || !v.startsWith('/') || v.startsWith('//') || v.startsWith('/\\') || v.length > 300) return '/';
-  return v;
+  try {
+    const url = new URL(v, 'https://nexo.invalid');
+    return url.origin === 'https://nexo.invalid' ? `${url.pathname}${url.search}${url.hash}` : '/';
+  } catch { return '/'; }
 }
 
 function urlDeVolta(req: NextRequest, volta: string, desfecho: Desfecho): URL {
@@ -193,6 +201,7 @@ async function pedirToken(corpo: Record<string, string>): Promise<RespostaToken>
       },
       body: new URLSearchParams(segredo ? corpo : { ...corpo, client_id: id }).toString(),
       cache: 'no-store',
+      signal: AbortSignal.timeout(12000),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok || !json.access_token) {
@@ -228,7 +237,8 @@ async function quemEntrou(token: string): Promise<{ status: number; nome: string
 export function iniciarLogin(req: NextRequest): NextResponse {
   const volta = voltaSegura(req.nextUrl.searchParams.get('volta'));
   const id = idDoApp();
-  if (!id || !chave()) return NextResponse.redirect(urlDeVolta(req, volta, 'off'));
+  const redirect = enderecoDeRetorno(req);
+  if (!redirect || !id || !chave()) return NextResponse.redirect(urlDeVolta(req, volta, 'off'));
 
   const estado = randomBytes(16).toString('base64url');
   // Sem o segredo do app, PKCE: 64 caracteres aleatórios; o Spotify recebe só
@@ -239,7 +249,7 @@ export function iniciarLogin(req: NextRequest): NextResponse {
     response_type: 'code',
     client_id: id,
     scope: ESCOPOS,
-    redirect_uri: enderecoDeRetorno(req),
+    redirect_uri: redirect,
     state: estado,
     ...(verificador
       ? { code_challenge_method: 'S256', code_challenge: createHash('sha256').update(verificador).digest('base64url') }
@@ -269,13 +279,15 @@ export async function concluirLogin(req: NextRequest): Promise<NextResponse> {
   if (!pedido || !p.get('state') || p.get('state') !== pedido.s) return terminar('falhou');
   if (p.get('error')) return terminar(p.get('error') === 'access_denied' ? 'recusado' : 'falhou');
 
+  const redirect = enderecoDeRetorno(req);
+  if (!redirect) return terminar('off');
   const code = p.get('code');
   if (!code) return terminar('falhou');
 
   const troca = await pedirToken({
     grant_type: 'authorization_code',
     code,
-    redirect_uri: enderecoDeRetorno(req),
+    redirect_uri: redirect,
     ...(pedido.c ? { code_verifier: pedido.c } : {}),
   });
   if (!troca.ok || !troca.tokens.refresh_token) return terminar('falhou');
@@ -318,7 +330,9 @@ export async function tokenDoPlayer(req: NextRequest): Promise<NextResponse> {
   }
 
   if (sessao.e > Date.now() + 60_000) {
-    return NextResponse.json({ conectado: true, token: sessao.a, expiraEm: sessao.e, nome: sessao.n }, { headers: SEM_CACHE });
+    const res = NextResponse.json({ conectado: true, token: sessao.a, expiraEm: sessao.e, nome: sessao.n }, { headers: SEM_CACHE });
+    gravarSessao(req, res, sessao); // Renova também o prazo dos cookies e o sinal do player.
+    return res;
   }
 
   const renovado = await pedirToken({ grant_type: 'refresh_token', refresh_token: sessao.r });
