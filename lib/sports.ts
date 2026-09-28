@@ -3,7 +3,7 @@
 // Duas fontes abertas, nenhuma exige cadastro:
 //   - ESPN (site.api.espn.com) — placar, agenda e status ao vivo. Endpoint
 //     público, identificado por slug de competição (eng.1, nba, f1...).
-//   - TheSportsDB (chave pública de teste "3") — cobre o que a ESPN não cobre
+//   - TheSportsDB (chave pública "123") — cobre o que a ESPN não cobre
 //     (vôlei, MotoGP) e, principalmente, traz o link de melhores momentos de
 //     cada partida no campo strVideo.
 //
@@ -132,7 +132,12 @@ export interface Match {
 }
 
 const UA = 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)';
-const SPORTSDB = 'https://www.thesportsdb.com/api/v1/json/3';
+const SPORTSDB = `https://www.thesportsdb.com/api/v1/json/${process.env.THESPORTSDB_API_KEY?.trim() || '123'}`;
+// IDs conferidos na API; all_leagues é limitado no plano gratuito.
+const SPORTSDB_IDS: Record<string, string> = {
+  champions: '4480', libertadores: '4501', brasileirao: '4351', premier: '4328',
+  laliga: '4335', seriea: '4332', bundesliga: '4331', ligue1: '4334', nba: '4387', f1: '4370',
+};
 
 async function openFetch(url: string, revalidate: number): Promise<Response> {
   return fetch(url, {
@@ -238,44 +243,51 @@ async function sportsdbLeagueId(name: string): Promise<string | null> {
 }
 
 function parseSportsdb(rows: any[], comp: Competition, encerrado: boolean): Match[] {
-  return (rows ?? []).map((e: any): Match => {
-    const num = (v: unknown) => (v === undefined || v === null || v === '' ? null : Number(v));
-    const startsAt = e.strTimestamp
-      ? new Date(e.strTimestamp.replace(' ', 'T') + (e.strTimestamp.endsWith('Z') ? '' : 'Z')).toISOString()
-      : new Date(`${e.dateEvent}T${e.strTime || '00:00:00'}Z`).toISOString();
-    return {
-      id: `sdb-${e.idEvent}`,
-      sport: comp.sport,
-      competition: comp.label,
-      competitionId: comp.id,
-      home: e.strHomeTeam || e.strEvent || '—',
-      away: e.strAwayTeam || '',
-      homeLogo: e.strHomeTeamBadge ?? null,
-      awayLogo: e.strAwayTeamBadge ?? null,
-      homeScore: num(e.intHomeScore),
-      awayScore: num(e.intAwayScore),
-      startsAt,
-      state: encerrado ? 'encerrado' : 'agendado',
-      detail: encerrado ? 'Encerrado' : (e.strStatus ?? ''),
-      venue: e.strVenue ?? null,
-      highlightUrl: e.strVideo || null,
-      thumb: e.strThumb ?? null,
+  return rows.flatMap((e: any): Match[] => {
+    if (!e?.idEvent || /postponed|cancelled|canceled|abandoned/i.test(e.strStatus || '')) return [];
+    const raw = e.strTimestamp || (e.dateEvent ? `${e.dateEvent}T${e.strTime || '00:00:00'}` : '');
+    const timestamp = raw.replace(' ', 'T');
+    const date = new Date(/[zZ]$|[+-]\d{2}:?\d{2}$/.test(timestamp) ? timestamp : timestamp + 'Z');
+    if (!Number.isFinite(date.getTime())) return [];
+    const num = (v: unknown) => {
+      if (v === undefined || v === null || v === '') return null;
+      const n = Number(v); return Number.isFinite(n) ? n : null;
     };
+    const homeScore = num(e.intHomeScore), awayScore = num(e.intAwayScore);
+    // Past endpoints may contain postponed or unplayed fixtures.
+    const finished = /^(Match Finished|FT|AET|AP|Finished)$/i.test(e.strStatus || '')
+      || (encerrado && date.getTime() < Date.now() && homeScore !== null && awayScore !== null);
+    if (!finished && date.getTime() < Date.now()) return [];
+    return [{
+      id: `sdb-${e.idEvent}`, sport: comp.sport, competition: comp.label, competitionId: comp.id,
+      home: e.strHomeTeam || e.strEvent || '—', away: e.strAwayTeam || '',
+      homeLogo: e.strHomeTeamBadge ?? null, awayLogo: e.strAwayTeamBadge ?? null,
+      homeScore: finished ? homeScore : null, awayScore: finished ? awayScore : null,
+      startsAt: date.toISOString(), state: finished ? 'encerrado' : 'agendado',
+      detail: finished ? 'Encerrado' : '', venue: e.strVenue ?? null,
+      highlightUrl: e.strVideo || null, thumb: e.strThumb ?? null,
+    }];
   });
 }
 
 async function fetchSportsdb(comp: Competition): Promise<Match[]> {
   if (!comp.sportsdbLeague) return [];
-  const id = await sportsdbLeagueId(comp.sportsdbLeague);
-  if (!id) return [];
-  const [past, next] = await Promise.allSettled([
-    openFetch(`${SPORTSDB}/eventspastleague.php?id=${id}`, 1800).then((r) => r.json()),
-    openFetch(`${SPORTSDB}/eventsnextleague.php?id=${id}`, 1800).then((r) => r.json()),
+  const id = SPORTSDB_IDS[comp.id] || await sportsdbLeagueId(comp.sportsdbLeague);
+  if (!id) throw Error('Competição não disponível na fonte alternativa.');
+  const request = async (endpoint: string) => {
+    const response = await openFetch(`${SPORTSDB}/${endpoint}?id=${id}`, 1800);
+    if (!response.ok) throw Error('Agenda temporariamente indisponível.');
+    const data = await response.json();
+    if (!Object.prototype.hasOwnProperty.call(data, 'events') || (data.events !== null && !Array.isArray(data.events))) {
+      throw Error('Resposta inválida da agenda.');
+    }
+    return data.events || [];
+  };
+  const [past, next] = await Promise.all([
+    request('eventspastleague.php'), request('eventsnextleague.php'),
   ]);
-  const out: Match[] = [];
-  if (past.status === 'fulfilled') out.push(...parseSportsdb(past.value?.events ?? [], comp, true));
-  if (next.status === 'fulfilled') out.push(...parseSportsdb(next.value?.events ?? [], comp, false));
-  return out;
+  return [...new Map([...parseSportsdb(past, comp, true), ...parseSportsdb(next, comp, false)]
+    .map(match => [match.id, match])).values()];
 }
 
 // ---------------------------------------------------------------------------
@@ -311,7 +323,26 @@ export async function buildSportsBoard(sport: SportId): Promise<SportsBoard> {
   let tentativas = 0;
 
   const jobs = comps.map(async (c) => {
-    if (c.espnPath) return { comp: c, matches: await fetchEspn(c) };
+    if (c.espnPath) {
+      try {
+        const matches = await fetchEspn(c);
+        // The daily scoreboard alone does not provide the upcoming schedule.
+        if (c.sportsdbLeague && !matches.some(m => m.state === 'agendado' && new Date(m.startsAt).getTime() > Date.now() + 86400000)) {
+          try {
+            const extra = await fetchSportsdb(c);
+            const key = (m: Match) => `${m.home.toLowerCase()}|${m.away.toLowerCase()}|${m.startsAt.slice(0, 10)}`;
+            const seen = new Set(matches.map(key));
+            matches.push(...extra.filter(m => !seen.has(key(m))));
+          } catch { avisos.push(`${c.label}: agenda complementar temporariamente indisponível.`); }
+        }
+        return { comp: c, matches };
+      } catch {
+        if (!c.sportsdbLeague) throw Error('Placar temporariamente indisponível.');
+        const matches = await fetchSportsdb(c);
+        avisos.push(`${c.label}: agenda e resultados pela fonte alternativa; placar ao vivo indisponível.`);
+        return { comp: c, matches };
+      }
+    }
     if (c.sportsdbLeague) return { comp: c, matches: await fetchSportsdb(c) };
     return { comp: c, matches: [] as Match[] };
   });
@@ -325,18 +356,19 @@ export async function buildSportsBoard(sport: SportId): Promise<SportsBoard> {
       sucessos++;
       todas.push(...r.value.matches);
     } else {
-      const msg = r.reason instanceof Error ? r.reason.message : 'erro desconhecido';
+      const msg = 'Não foi possível atualizar esta competição. Consulte o site oficial abaixo.';
       avisos.push(`${comp.label}: ${msg.slice(0, 120)}`);
     }
   });
 
   const agora = Date.now();
-  const mesmoDia = (iso: string) => Math.abs(new Date(iso).getTime() - agora) < DIA_MS && new Date(iso).toDateString() === new Date(agora).toDateString();
+  const day = (date: Date) => date.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+  const mesmoDia = (iso: string) => day(new Date(iso)) === day(new Date(agora));
   const porData = (a: Match, b: Match) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
 
   const aoVivo = todas.filter((m) => m.state === 'ao-vivo').sort(porData);
   const encerrados = todas.filter((m) => m.state === 'encerrado').sort((a, b) => porData(b, a));
-  const agendados = todas.filter((m) => m.state === 'agendado').sort(porData);
+  const agendados = todas.filter((m) => m.state === 'agendado' && new Date(m.startsAt).getTime() >= agora).sort(porData);
 
   return {
     sport,
@@ -346,7 +378,7 @@ export async function buildSportsBoard(sport: SportId): Promise<SportsBoard> {
     resultados: encerrados.slice(0, 12),
     replays: encerrados.filter((m) => m.highlightUrl).slice(0, 8),
     competicoes: comps,
-    fonte: tentativas === 0 ? 'indisponivel' : sucessos === tentativas ? 'live' : sucessos > 0 ? 'parcial' : 'indisponivel',
+    fonte: tentativas === 0 ? 'indisponivel' : sucessos === tentativas && avisos.length === 0 ? 'live' : sucessos > 0 ? 'parcial' : 'indisponivel',
     avisos: avisos.slice(0, 4),
     atualizadoEm: new Date().toISOString(),
   };
