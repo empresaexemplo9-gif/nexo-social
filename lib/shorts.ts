@@ -13,7 +13,7 @@ import 'server-only';
 import { diaDeHoje, embaralhar, sorteador } from './descoberta-musical';
 import { isYoutubeConfigured, searchVideos } from './youtube';
 import { decodificarEntidades } from './midia';
-import { buscarNoYoutubeAberto, canalPorHandle, videosDoCanal } from './youtube-aberto';
+import { buscarNoYoutubeAberto, canalPorHandle, videosDoCanal, priorizarPortugues } from './youtube-aberto';
 import { FILM_GENRES, HOBBIES, MUSIC_GENRES, BOOK_GENRES, genreLabel } from './taxonomy';
 import { getTopic } from './data';
 
@@ -24,6 +24,7 @@ export interface Short {
   capa: string;
   /** Chave do interesse que trouxe este short ("tema:musica"…). */
   de: string;
+  preferenciaPt?: number;
 }
 
 /** O que buscar no YouTube para cada tema. */
@@ -63,16 +64,16 @@ const TERMO_DO_HOBBY: Record<string, string> = {
  */
 export const CANAIS: Record<string, string[]> = {
   'tema:tecnologia': ['@tecmundo', '@canaltech', '@manualdomundo'],
-  'tema:musica': ['@kondzilla', '@nprmusic', '@multishow'],
-  'tema:esporte': ['@CazeTV', '@nba', '@FIFA'],
+  'tema:musica': ['@kondzilla', '@multishow', '@nprmusic'],
+  'tema:esporte': ['@CazeTV', '@getv', '@canalgoat', '@nba', '@FIFA'],
   'tema:cinema': ['@NetflixBrasil', '@omelete', '@primevideobr'],
   'tema:games': ['@PlayStation', '@Xbox', '@nintendobrasil'],
   'tema:gastronomia': ['@tastemadebr', '@panelinha', '@tudogostoso'],
   'tema:viagem': ['@NatGeo', '@lonelyplanet'],
   'tema:bem-estar': ['@drauziovarella', '@yogawithadriene'],
   'tema:moda': ['@VogueBrasil', '@vogue'],
-  'tema:cultura': ['@MoMAvideos', '@tateshots'],
-  'tema:arte': ['@MoMAvideos', '@proko'],
+  'tema:cultura': ['@tvcultura', '@manualdomundo', '@MoMAvideos', '@tateshots'],
+  'tema:arte': ['@tvcultura', '@MoMAvideos', '@proko'],
   'tema:livros': ['@tatianagfeltrin', '@penguinbooks'],
   'hobby:cozinhar': ['@tastemadebr', '@tudogostoso'],
   'hobby:jogar': ['@PlayStation', '@Xbox'],
@@ -119,7 +120,7 @@ export function descreverChave(chave: string): { rotulo: string; termo: string }
 async function porBusca(chave: string, termo: string): Promise<Short[]> {
   try {
     const abertos = await buscarNoYoutubeAberto(termo, 'shorts', 30);
-    if (abertos.length) return abertos.map((v) => ({ id: v.id, titulo: v.titulo, canal: v.canal, capa: v.capa, de: chave }));
+    if (abertos.length) return abertos.map((v) => ({ id: v.id, titulo: v.titulo, canal: v.canal, capa: v.capa, preferenciaPt: ('preferenciaPt' in v ? Number(v.preferenciaPt) : 0), de: chave }));
   } catch {
     // tenta a API
   }
@@ -144,7 +145,7 @@ async function porCanais(chave: string): Promise<Short[]> {
       return videos.map((v) => ({ id: v.id, titulo: v.titulo, canal: v.canal, capa: v.capa, de: chave }));
     }),
   );
-  return listas.flat();
+  return priorizarPortugues(listas.flat());
 }
 
 // ---------------------------------------------------------------------------
@@ -205,7 +206,14 @@ export async function montarFeed(chaves: string[], rodada: number): Promise<Feed
   );
 
   // Intercala: um de cada interesse por vez, cada lista embaralhada.
-  const filas = listas.map((l) => embaralhar([...l], rand));
+  const filas = listas.map(l => {
+    const shuffled = embaralhar([...l], rand);
+    const pt = shuffled.filter(v => (v.preferenciaPt || 0) > 0);
+    const original = shuffled.filter(v => !(v.preferenciaPt || 0));
+    const mixed: Short[] = [];
+    while (pt.length || original.length) mixed.push(...pt.splice(0, 3), ...original.splice(0, 1));
+    return mixed;
+  });
   const vistos = new Set<string>();
   const itens: Short[] = [];
   for (let i = 0; filas.some((f) => i < f.length); i++) {
