@@ -20,7 +20,7 @@ export default function FootballLive() {
       const res = await fetch('/api/esporte/transmissoes', { cache: 'no-store' });
       if (!res.ok) throw new Error(); const json = await res.json();
       if (!Array.isArray(json.broadcasts) || !Array.isArray(json.channels)) throw new Error();
-      if (current === sequence.current) { setData(json); setError(false); setNow(Date.now()); }
+      if (current === sequence.current) { setData(json); setError(false); setNow(Date.now()); setSelected(previous => previous && json.broadcasts.some((v: Broadcast) => v.id === previous.id && v.state === 'live') ? previous : null); }
     } catch { if (current === sequence.current) setError(true); }
     finally { if (current === sequence.current) setLoading(false); }
   }, []);
@@ -33,7 +33,8 @@ export default function FootballLive() {
   useEffect(() => { if (selected) player.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, [selected?.id]);
   const stale = error || Boolean(data && now - Date.parse(data.checkedAt) > 180000);
   const lives = data?.broadcasts.filter(v => v.state === 'live') ?? [];
-  const options = data?.broadcasts.filter(v => channel === 'all' || v.channel === channel) ?? [];
+  const options = lives.filter(v => channel === 'all' || v.channel === channel);
+  if (stale || !lives.length) return null;
   return <section id="ao-vivo-canais" aria-label="Transmissões de futebol" className="card-soft scroll-mt-24 space-y-4 p-5">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div><h2 className="text-2xl font-bold text-zinc-50">Futebol: escolha a transmissão</h2><p className="mt-1 text-sm text-zinc-400">Canais oficiais gratuitos. Disponibilidade e reprodução dependem dos direitos de cada jogo e região.</p></div>
