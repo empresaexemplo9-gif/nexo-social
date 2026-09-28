@@ -6,7 +6,7 @@ import 'server-only';
 
 import { broadcastersOf } from './sports-media';
 import type { SportId } from './sports';
-import { aoVivoDoCanal, canalPorHandle, videosDoCanal } from './youtube-aberto';
+import { aoVivoDoCanal, canalPorHandle, videosDoCanal, priorizarPortugues } from './youtube-aberto';
 
 export interface TransmissaoAoVivo {
   id: string;
@@ -67,6 +67,6 @@ export async function videosDoEsporte(sport: SportId): Promise<{ aoVivo: Transmi
 
   return {
     aoVivo: aoVivo.filter((v): v is TransmissaoAoVivo => Boolean(v)),
-    destaques: destaques.slice(0, 16),
+    destaques: (await priorizarPortugues(destaques)).slice(0, 16),
   };
 }
