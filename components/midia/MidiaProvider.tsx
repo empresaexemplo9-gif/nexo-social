@@ -3,6 +3,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import Icon from '../icons';
 import Leitor from './Leitor';
+import LivroArquivo from './LivroArquivo';
 import type { ItemDeMidia } from '@/lib/midia';
 
 /*
@@ -141,10 +142,11 @@ function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => voi
               />
             </div>
           )}
-          {m.tipo === 'archive' && (
+          {m.tipo === 'archive' && m.formato === 'texto' && <LivroArquivo key={m.id} id={m.id} titulo={item.titulo} />}
+          {m.tipo === 'archive' && m.formato !== 'texto' && (
             <div
               className={
-                m.formato === 'video' ? 'aspect-video w-full bg-black' : m.formato === 'audio' ? 'h-[420px] w-full' : 'h-full min-h-[70vh] w-full'
+                m.formato === 'video' ? 'aspect-video w-full bg-black' : 'h-[420px] w-full'
               }
             >
               <iframe

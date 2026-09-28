@@ -37,10 +37,10 @@ class SemItens extends Error {
 const montar = unstable_cache(
   async (area: AreaGratis, chave: string, estilo: EstiloDeIndicacao, idioma: IdiomaDeIndicacao, rodada: number, _dia: string) => {
     const r = await indicacoesGratis({ area, chave, estilo, idioma, rodada });
-    if (!r.itens.length || r.buscaExterna) throw new SemItens(r);
+    if (!r.itens.length || r.buscaExterna || r.avisos.length) throw new SemItens(r);
     return r;
   },
-  ['gratis-v2'],
+  ['gratis-v3-multifonte'],
   { revalidate: 43200 },
 );
 
@@ -77,6 +77,6 @@ export async function GET(request: Request) {
   });
   return NextResponse.json(
     { ...r, rodada, rodadas: RODADAS },
-    { headers: { 'Cache-Control': r.itens.length && !r.buscaExterna ? 'public, s-maxage=1800, stale-while-revalidate=43200' : 'no-store' } },
+    { headers: { 'Cache-Control': r.itens.length && !r.buscaExterna && !r.avisos.length ? 'public, s-maxage=1800, stale-while-revalidate=43200' : 'no-store' } },
   );
 }

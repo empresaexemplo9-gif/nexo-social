@@ -40,6 +40,7 @@ export default function GradeGratis({
   colunas?: string;
 }) {
   const [rodada, setRodada] = useState(0);
+  const [tentativa, setTentativa] = useState(0);
   const [guardado, setEstado] = useState<Estado>({ tipo: 'carregando' });
 
   useEffect(() => setRodada(0), [area, chave, estilo, idioma]);
@@ -60,14 +61,15 @@ export default function GradeGratis({
       .then(async (res) => {
         const j = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(j.error || `HTTP ${res.status}`);
-        guardadas.set(url, j);
+        if (!Array.isArray(j.itens)) throw new Error('Resposta inválida do catálogo.');
+        if (j.itens.length && !j.avisos?.length) guardadas.set(url, j);
         if (vivo) setEstado({ tipo: 'ok', r: j, url });
       })
       .catch((e) => vivo && setEstado({ tipo: 'erro', msg: e.message || 'Falha ao buscar.', url }));
     return () => {
       vivo = false;
     };
-  }, [url]);
+  }, [url, tentativa]);
 
   const retrato = area === 'livros' || area === 'audiolivros';
 
@@ -102,13 +104,17 @@ export default function GradeGratis({
         </div>
       ) : (
         <p className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 text-sm text-zinc-400">
-          {area === 'hobbies'
+          {area === 'livros' && r.avisos?.length
+            ? 'As fontes de livros estão indisponíveis agora. Tente novamente em instantes.'
+            : area === 'hobbies'
             ? 'Os tutoriais tocam aqui dentro quando o YouTube está ligado à plataforma.'
             : 'Nada gratuito deste gênero nos acervos abertos agora.'}
         </p>
       )}
 
       <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+        {(!itens.length || Boolean(r.avisos?.length)) && <button type="button" onClick={() => { guardadas.delete(url); setTentativa(v => v + 1); }} className="action-collage px-3 py-2">Tentar novamente</button>}
+        {area === 'livros' && itens.length > 0 && Boolean(r.avisos?.length) && <span>Algumas fontes estão indisponíveis; exibindo os livros das demais.</span>}
         {r.rodadas > 1 && !limite && (
           <button
             type="button"

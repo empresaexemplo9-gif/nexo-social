@@ -16,7 +16,7 @@ interface Aba {
 
 const ABAS: Aba[] = [
   { id: 'filmes', rotulo: 'Filmes & séries', icone: 'film', apoio: 'Domínio público do Internet Archive e, quando falta, filmes completos do YouTube.' },
-  { id: 'livros', rotulo: 'Livros', icone: 'book', apoio: 'Obras livres do Projeto Gutenberg, lidas no leitor da plataforma.' },
+  { id: 'livros', rotulo: 'Livros', icone: 'book', apoio: 'Livros gratuitos da Open Library, Internet Archive e Projeto Gutenberg. Abra para ler aqui.' },
   { id: 'audiolivros', rotulo: 'Audiolivros', icone: 'headphones', apoio: 'LibriVox pelo Internet Archive e audiolivros completos do YouTube.' },
   { id: 'hobbies', rotulo: 'Hobbies', icone: 'palette', apoio: 'Tutoriais para praticar o que você gosta de fazer.' },
 ];

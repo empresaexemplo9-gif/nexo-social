@@ -107,6 +107,12 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
           {Math.min(cap, total - 1) + 1}/{total}
         </span>
         <div className="ml-auto flex items-center gap-1">
+          <button type="button" className="action-collage px-2 py-1 text-xs" onClick={() => {
+            const texto = [livro.titulo, livro.autor ?? '', ...livro.capitulos.flatMap(c => [c.titulo, ...c.paragrafos]), `Fonte: ${livro.link}`].join('\n\n');
+            const url = URL.createObjectURL(new Blob([texto], { type: 'text/plain;charset=utf-8' }));
+            const a = document.createElement('a'); a.href = url; a.download = `livro-${id}.txt`; document.body.appendChild(a); a.click(); a.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+          }}>Baixar texto</button>
           <button
             type="button"
             onClick={() => setTam((t) => Math.max(0, t - 1))}

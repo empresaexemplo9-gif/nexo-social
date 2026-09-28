@@ -1,4 +1,5 @@
 import 'server-only';
+import { livrosOpenLibrary, livrosInternetArchive } from './livros-abertos';
 
 // Tudo o que dá para assistir, ler e ouvir DE GRAÇA dentro da plataforma, a
 // partir dos gêneros e hobbies que a pessoa escolheu.
@@ -35,7 +36,7 @@ export interface ItemGratis {
   autor: string | null;
   ano: string | null;
   capa: string | null;
-  fonte: 'Internet Archive' | 'Projeto Gutenberg' | 'LibriVox' | 'YouTube';
+  fonte: 'Open Library' | 'Internet Archive' | 'Projeto Gutenberg' | 'LibriVox' | 'YouTube';
   /** Idioma, quando a fonte informa ("pt", "en"…). */
   idioma: string | null;
   link: string;
@@ -82,6 +83,9 @@ const COLECOES_DE_FILME = 'feature_films OR silent_films OR film_noir OR animati
 
 /** Livros: "topic" do Gutendex (casa com assunto e estante do Gutenberg). */
 const LIVROS_GUTENDEX: Record<string, string> = {
+  contos: 'short stories', cronicas: 'chronicles', 'aventura-lit': 'adventure',
+  'terror-lit': 'horror', 'ficcao-cientifica-lit': 'science fiction', teatro: 'drama',
+  filosofia: 'philosophy', infantojuvenil: 'children',
   'ficcao-lit': 'fiction',
   'fantasia-lit': 'fantasy',
   policial: 'detective',
@@ -335,18 +339,20 @@ export async function indicacoesGratis(p: Pedido): Promise<ResultadoGratis> {
   if (p.area === 'livros') {
     const rotulo = genreLabel(BOOK_GENRES, p.chave);
     const topic = LIVROS_GUTENDEX[p.chave] ?? 'fiction';
-    try {
-      const pt = p.idioma === 'pt' ? await buscarNoGutendex({ topic, languages: 'pt' }, 1) : [];
-      const outros = pt.length >= QUANTOS ? [] : await buscarNoGutendex({ topic, languages: p.idioma === 'pt' ? 'en,es,fr' : 'pt,en,es,fr' });
-      const ordenados = [...pt, ...outros].sort((a, b) => (b.download_count ?? 0) - (a.download_count ?? 0));
-      // Em português primeiro quando a pessoa pediu; o resto completa.
-      const escolhidos = aplicarEstilo(ordenados, p.estilo, semente, p.rodada);
-      base = (p.idioma === 'pt' ? [...escolhidos.filter((l) => l.languages?.[0] === 'pt'), ...escolhidos.filter((l) => l.languages?.[0] !== 'pt')] : escolhidos).map(
-        doGutenberg,
-      );
-    } catch (e) {
-      avisos.push((e as Error).message);
-    }
+    const fontes = await Promise.allSettled([
+      livrosOpenLibrary(p.chave, p.idioma === 'pt'),
+      livrosInternetArchive(p.chave, p.idioma === 'pt'),
+      p.chave === 'traducoes' ? Promise.resolve([]) : buscarNoGutendex({ topic, ...(p.idioma === 'pt' ? { languages: 'pt' } : {}) }, 1).then(livros => livros.map(doGutenberg)),
+    ]);
+    const nomes = ['Open Library', 'Internet Archive', 'Projeto Gutenberg'];
+    const encontrados: ItemGratis[] = [];
+    fontes.forEach((fonte, i) => {
+      if (fonte.status === 'fulfilled') encontrados.push(...fonte.value);
+      else avisos.push(`${nomes[i]} está temporariamente indisponível.`);
+    });
+    const ids = new Set<string>();
+    const unicos = encontrados.filter(l => !ids.has(l.id) && Boolean(ids.add(l.id)));
+    base = aplicarEstilo(unicos, p.estilo, semente, p.rodada);
     // Livro não tem reserva no YouTube para ler; quem quiser ouvir tem a aba de audiolivros.
     return { area: p.area, chave: p.chave, rotulo, itens: base, usouYoutube: false, buscaExterna: null, avisos };
   }

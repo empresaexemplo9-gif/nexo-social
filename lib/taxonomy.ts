@@ -62,6 +62,15 @@ export const BOOK_GENRES: GenreOption[] = [
   { id: 'poesia', label: 'Poesia', query: 'poesia' },
   { id: 'tecnico', label: 'Técnico', query: 'tecnologia programação' },
   { id: 'romance-lit', label: 'Romance', query: 'romance literário' },
+  { id: 'traducoes', label: 'Clássicos traduzidos', query: 'literatura estrangeira traduzida' },
+  { id: 'contos', label: 'Contos', query: 'contos' },
+  { id: 'cronicas', label: 'Crônicas', query: 'crônicas' },
+  { id: 'aventura-lit', label: 'Aventura', query: 'aventura' },
+  { id: 'terror-lit', label: 'Terror & Gótico', query: 'terror gótico' },
+  { id: 'ficcao-cientifica-lit', label: 'Ficção científica', query: 'ficção científica' },
+  { id: 'teatro', label: 'Teatro', query: 'teatro' },
+  { id: 'filosofia', label: 'Filosofia', query: 'filosofia' },
+  { id: 'infantojuvenil', label: 'Infantojuvenil', query: 'literatura infantojuvenil' },
   { id: 'quadrinhos', label: 'Quadrinhos', query: 'graphic novel' },
 ];
 
