@@ -22,7 +22,7 @@ const CHAVE_DISPENSADO = 'nexo:instalar:dispensado';
  * Safari. Então mostramos o passo a passo em vez de um botão que não faria
  * nada.
  */
-export default function InstallApp({ compacto = false }: { compacto?: boolean }) {
+export default function InstallApp({ compacto = false, className = '' }: { compacto?: boolean; className?: string }) {
   const [plat, setPlat] = useState<Plataforma | null>(null);
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [passos, setPassos] = useState(false);
@@ -84,7 +84,7 @@ export default function InstallApp({ compacto = false }: { compacto?: boolean })
       <>
         <button
           onClick={instalar}
-          className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
+          className={`${className || 'action-collage action-collage--paper text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300'} inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold`}
         >
           <Icon name="download" size={13} /> Baixar app
         </button>

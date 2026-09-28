@@ -26,13 +26,13 @@ export default function YoutubePlaylist() {
   }, [index]);
 
   useEffect(() => {
-    useEffect(() => {
     const refresh = () => setRetry(r => r + 1);
     window.addEventListener('nexo:youtube-changed', refresh);
     return () => window.removeEventListener('nexo:youtube-changed', refresh);
   }, []);
 
-  if (!ready) return;
+  useEffect(() => {
+    if (!ready) return;
     const controller = new AbortController();
     setLoading(true); setError(''); setVideos([]); setIndex(null);
     const params = new URLSearchParams({ genre: genre?.id || '', rodada: String(round), hits: prefs.musicHits ? '1' : '0', mix: prefs.musicMix ?? 'misturar' });

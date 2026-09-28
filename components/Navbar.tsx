@@ -36,14 +36,6 @@ const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/busca', label: 'Buscar', icon: 'search' },
 ];
 
-// Acabamentos inspirados na coleção de adesivos, com rótulos da plataforma.
-const ADESIVOS: Record<string, string> = {
-  '/': 'paper', '/descobrir': 'cobalt', '/shorts': 'red',
-  '/revista': 'ink', '/agenda': 'paper', '/comunidade': 'lilac',
-  '/esporte': 'lime', '/livros': 'paper', '/bom-dia': 'sun',
-  '/questionario': 'ink', '/busca': 'cobalt',
-};
-
 function ativo(pathname: string, href: string): boolean {
   return href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -57,7 +49,7 @@ function BotaoMenu({ onClick, aberto, rotulo }: { onClick: () => void; aberto?: 
       aria-label={rotulo}
       aria-expanded={aberto}
       title={rotulo}
-      className="action-collage action-collage--paper flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-zinc-300 transition hover:bg-zinc-900 hover:text-emerald-300"
+      className="menu-denim flex h-10 w-10 shrink-0 items-center justify-center"
     >
       <Icon name="menu" size={22} />
     </button>
@@ -99,17 +91,13 @@ function ConteudoMenu({
   const admin = isPlatformAdmin(email);
   const [temasAbertos, setTemasAbertos] = useState(pathname.startsWith('/tema'));
   const item = (on: boolean) =>
-    `item-menu flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
-      on
-        ? 'bg-emerald-400/10 text-emerald-300 shadow-[inset_2px_0_0_0_rgba(43,82,136,0.5)]'
-        : 'text-zinc-300 hover:bg-zinc-900 hover:text-zinc-50'
-    }`;
+    `item-menu menu-denim flex items-center gap-3 px-3 py-2.5 text-sm ${on ? 'menu-denim--active' : ''}`;
 
   return (
     <>
       <nav aria-label="Navegação principal" className="flex-1 space-y-1 overflow-y-auto px-3 py-3">
         {PRINCIPAIS.map((l) => (
-          <Link key={l.href} href={l.href} onClick={onNavegar} className={`${item(ativo(pathname, l.href))} menu-sticker menu-sticker--${ADESIVOS[l.href]}`} aria-current={ativo(pathname, l.href) ? 'page' : undefined} aria-label={l.label} title={l.label}>
+          <Link key={l.href} href={l.href} onClick={onNavegar} className={item(ativo(pathname, l.href))} aria-current={ativo(pathname, l.href) ? 'page' : undefined} aria-label={l.label} title={l.label}>
             <Icon name={l.icon} size={19} className="shrink-0" />
             <span className="rotulo-menu truncate">{l.label}</span>
           </Link>
@@ -123,7 +111,7 @@ function ConteudoMenu({
               onAbrirTemas();
             }}
             aria-expanded={temasAbertos}
-            className={`${item(pathname.startsWith('/tema'))} menu-sticker menu-sticker--holo w-full`}
+            className={`${item(pathname.startsWith('/tema'))} w-full`}
             data-active={pathname.startsWith('/tema') || undefined}
             aria-label="Temas"
             title="Temas"
@@ -139,11 +127,10 @@ function ConteudoMenu({
                   key={t.slug}
                   href={`/tema/${t.slug}`}
                   onClick={onNavegar}
-                  className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] transition ${
-                    pathname === `/tema/${t.slug}` ? 'bg-zinc-900 text-zinc-50' : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
-                  }`}
+                  className="menu-denim menu-denim--subtle flex items-center gap-2.5 px-2.5 py-2 text-sm"
+                  aria-current={pathname === `/tema/${t.slug}` ? 'page' : undefined}
                 >
-                  <span className={t.accent.text}>
+                  <span>
                     <Icon name={t.icon} size={15} />
                   </span>
                   <span className="truncate">{t.label}</span>
@@ -156,28 +143,28 @@ function ConteudoMenu({
 
       <div className="space-y-1 border-t border-emerald-400/10 px-3 py-3">
         <div className="so-expandida px-1 pb-1">
-          <InstallApp compacto />
+          <InstallApp compacto className="menu-denim" />
         </div>
         {email ? (
           <>
-            <NotificationsBell lateral={lateral} rotulo={lateral ? undefined : 'Notificações'} />
+            <NotificationsBell lateral={lateral} rotulo={lateral ? undefined : 'Notificações'} className="menu-denim" />
             {admin && (
-              <Link href="/admin" onClick={onNavegar} className={`action-collage action-collage--paper ${item(ativo(pathname, '/admin'))}`} title="Painel">
+              <Link href="/admin" onClick={onNavegar} className={item(ativo(pathname, '/admin'))} aria-current={ativo(pathname, '/admin') ? 'page' : undefined} title="Painel">
                 <Icon name="plug" size={19} className="shrink-0" />
                 <span className="rotulo-menu truncate">Painel</span>
               </Link>
             )}
-            <Link href="/conta" onClick={onNavegar} className={`action-collage action-collage--paper ${item(ativo(pathname, '/conta'))}`} title="Minha conta">
+            <Link href="/conta" onClick={onNavegar} className={item(ativo(pathname, '/conta'))} aria-current={ativo(pathname, '/conta') ? 'page' : undefined} title="Minha conta">
               <Icon name="user" size={19} className="shrink-0" />
               <span className="rotulo-menu truncate">Minha conta</span>
             </Link>
-            <button type="button" onClick={onSair} className={`action-collage action-collage--paper ${item(false)} w-full text-zinc-500`} title="Sair">
+            <button type="button" onClick={onSair} className={`${item(false)} w-full`} title="Sair">
               <Icon name="arrowRight" size={19} className="shrink-0" />
               <span className="rotulo-menu">Sair</span>
             </button>
           </>
         ) : (
-          <Link href="/login" onClick={onNavegar} className={`action-collage action-collage--paper ${item(ativo(pathname, '/login'))}`} title="Entrar">
+          <Link href="/login" onClick={onNavegar} className={item(ativo(pathname, '/login'))} title="Entrar">
             <Icon name="user" size={19} className="shrink-0" />
             <span className="rotulo-menu">Entrar</span>
           </Link>
@@ -284,7 +271,7 @@ export default function Navbar() {
           <BotaoMenu onClick={() => setGaveta(true)} aberto={gaveta} rotulo="Abrir o menu" />
           <Marca />
           <div className="ml-auto flex items-center gap-1">
-            <Link href="/busca" className="action-collage action-collage--paper rounded-xl p-2 text-zinc-300 hover:text-zinc-50" aria-label="Buscar">
+            <Link href="/busca" className="menu-denim p-2" aria-label="Buscar">
               <Icon name="search" size={20} />
             </Link>
             {email && <NotificationsBell />}
@@ -310,7 +297,7 @@ export default function Navbar() {
                 type="button"
                 onClick={() => setGaveta(false)}
                 aria-label="Fechar o menu"
-                className="action-collage action-collage--paper flex h-10 w-10 items-center justify-center rounded-xl text-zinc-300 hover:bg-zinc-900 hover:text-emerald-300"
+                className="menu-denim flex h-10 w-10 items-center justify-center"
               >
                 <Icon name="close" size={20} />
               </button>

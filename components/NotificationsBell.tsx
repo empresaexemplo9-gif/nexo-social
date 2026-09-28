@@ -31,7 +31,7 @@ interface Notification {
  * `lateral`: o sino está na barra lateral esquerda, então a lista abre ao lado
  * dele (para a direita e para cima), e não embaixo — senão sairia da tela.
  */
-export default function NotificationsBell({ lateral = false, rotulo }: { lateral?: boolean; rotulo?: string }) {
+export default function NotificationsBell({ lateral = false, rotulo, className = '' }: { lateral?: boolean; rotulo?: string; className?: string }) {
   const [items, setItems] = useState<Notification[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -124,7 +124,7 @@ export default function NotificationsBell({ lateral = false, rotulo }: { lateral
     <div className="relative">
       <button
         onClick={() => setOpen((v) => !v)}
-        className={"action-collage " + (`relative flex items-center gap-3 rounded-xl p-2 text-zinc-300 transition hover:bg-zinc-900 hover:text-zinc-50 ${rotulo ? 'w-full px-3 text-sm' : ''}`)}
+        className={`${className || 'action-collage text-zinc-300 hover:bg-zinc-900 hover:text-zinc-50'} relative flex items-center gap-3 rounded-xl p-2 transition ${rotulo ? 'w-full px-3 text-sm' : ''}`}
         aria-label={unread ? `Notificações: ${unread} novas` : 'Notificações'}
         title="Notificações"
       >

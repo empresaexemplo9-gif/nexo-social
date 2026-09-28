@@ -627,105 +627,74 @@ html {
   .action-patch::after { display: none; }
 }
 
-/* Menu em adesivos editoriais: cada destino conserva sua cor e sua forma. */
-.item-menu.menu-sticker {
-  --sticker-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .09 0 0 0 0 .09 0 0 0 0 .11 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  --sticker-bg: #eee5d3;
-  --sticker-fg: #20221f;
-  --sticker-line: #a99b7f;
+/* Índigo jeans: trama de sarja, fios claros, borda costurada e relevo suave. */
+.menu-denim {
+  --denim-blue: #294f73;
   position: relative;
   isolation: isolate;
+  border: 1px solid #173752;
+  border-radius: 9px;
+  background-color: var(--denim-blue);
+  background-image:
+    linear-gradient(165deg, rgb(210 228 241 / 0.13), transparent 40%, rgb(5 22 42 / 0.22)),
+    repeating-linear-gradient(128deg, rgb(204 222 234 / 0.13) 0 1px, transparent 1px 3px, rgb(6 25 48 / 0.16) 3px 4px, transparent 4px 6px),
+    repeating-linear-gradient(2deg, transparent 0 2px, rgb(209 225 237 / 0.07) 2px 3px, transparent 3px 5px);
+  color: #f6f9fc;
+  box-shadow: inset 0 1px 1px rgb(224 236 246 / 0.26), inset 0 -2px 3px rgb(7 23 41 / 0.3), 0 2px 3px rgb(12 35 55 / 0.2);
+  font-weight: 600;
+  text-shadow: 0 1px 1px rgb(3 19 37 / 0.5);
+  transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.item-menu.menu-denim {
   min-height: 44px;
   margin-block: 7px;
-  padding: 10px 12px;
-  border: 1px solid var(--sticker-line);
-  border-radius: 5px 12px 5px 5px;
-  background-color: var(--sticker-bg);
-  background-image: var(--sticker-grain), linear-gradient(125deg, rgb(255 255 255 / 0.1), transparent 60%);
-  color: var(--sticker-fg);
-  box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.16), 0 2px 0 #d8cebd;
-  font-size: 13px;
-  font-weight: 750;
-  letter-spacing: 0.015em;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  padding: 11px 13px;
+  font-size: 14px;
 }
-.menu-sticker::after {
+.menu-denim::after {
   content: '';
   position: absolute;
-  inset: 3px;
-  border: 1px solid currentColor;
-  border-radius: inherit;
-  opacity: 0.22;
+  inset: 4px;
+  border: 1px dashed rgb(213 225 234 / 0.42);
+  border-radius: 5px;
+  box-shadow: 0 1px 0 rgb(5 22 39 / 0.18);
   pointer-events: none;
 }
-.item-menu.menu-sticker--cobalt {
-  --sticker-bg: #163ac6;
-  --sticker-fg: #fff9ec;
-  --sticker-line: #0c2691;
-  border-radius: 24px;
+.menu-denim--subtle { --denim-blue: #365d7e; }
+.menu-denim[aria-current='page'],
+.menu-denim[data-active='true'],
+.menu-denim--active {
+  --denim-blue: #173d62;
+  box-shadow: inset 4px 0 0 #d4e6f4, inset 0 1px 1px rgb(224 236 246 / 0.28), 0 2px 4px rgb(12 35 55 / 0.25);
 }
-.item-menu.menu-sticker--red {
-  --sticker-bg: #bd251d;
-  --sticker-fg: #fff9ec;
-  --sticker-line: #8c1b15;
-  border-radius: 4px;
-}
-.item-menu.menu-sticker--ink {
-  --sticker-bg: #21231f;
-  --sticker-fg: #fff4db;
-  --sticker-line: #10110e;
-}
-.item-menu.menu-sticker--lilac {
-  --sticker-bg: #d7b8ef;
-  --sticker-fg: #271436;
-  --sticker-line: #a87bc5;
-  border-radius: 5px 18px 5px 18px;
-}
-.item-menu.menu-sticker--lime {
-  --sticker-bg: #dcf044;
-  --sticker-fg: #222810;
-  --sticker-line: #98a827;
-  background-image: linear-gradient(90deg, transparent calc(100% - 12px), #222810 calc(100% - 12px)), var(--sticker-grain);
-}
-.item-menu.menu-sticker--sun {
-  --sticker-bg: #f2cf69;
-  --sticker-fg: #382711;
-  --sticker-line: #b19445;
-  border-radius: 24px 5px 24px 5px;
-}
-.item-menu.menu-sticker--holo {
-  --sticker-fg: #252537;
-  --sticker-line: #a8a9c7;
-  background-image: var(--sticker-grain), linear-gradient(115deg, #e6d7fa, #bce6df 28%, #f7dfb7 54%, #e7c6ed 77%, #bfdaf3);
-}
-.item-menu.menu-sticker[aria-current='page'],
-.item-menu.menu-sticker[data-active='true'] {
-  outline: 2px solid #252537;
-  outline-offset: 2px;
-  box-shadow: inset 5px 0 0 var(--sticker-fg), 0 3px 0 #b7aa94;
-}
-.item-menu.menu-sticker[aria-current='page'] .rotulo-menu {
+.menu-denim[aria-current='page'] .rotulo-menu {
   text-decoration: underline;
   text-underline-offset: 4px;
   text-decoration-thickness: 2px;
 }
-.item-menu.menu-sticker:focus-visible {
-  outline: 3px solid #1745bc;
+.menu-denim:focus-visible {
+  outline: 3px solid #173d62;
   outline-offset: 3px;
 }
 @media (hover: hover) {
-  .item-menu.menu-sticker:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.25), 0 4px 7px rgb(32 27 19 / 0.18); }
+  .menu-denim:hover {
+    --denim-blue: #365f83;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: inset 0 1px 2px rgb(224 236 246 / 0.32), 0 4px 7px rgb(12 35 55 / 0.22);
+  }
 }
-.item-menu.menu-sticker:active { transform: translateY(1px); }
-html[data-lateral='recolhida'] .barra-lateral .menu-sticker { border-radius: 8px; background-image: var(--sticker-grain); }
+.menu-denim:active { transform: translateY(1px); }
+html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; }
 @media (prefers-reduced-motion: reduce) {
-  .item-menu.menu-sticker { transition: none; }
-  .item-menu.menu-sticker:hover, .item-menu.menu-sticker:active { transform: none; }
+  .menu-denim { transition: none; }
+  .menu-denim:hover, .menu-denim:active { transform: none; }
 }
 @media (forced-colors: active) {
-  .item-menu.menu-sticker { background-image: none; border: 1px solid ButtonText; box-shadow: none; }
-  .menu-sticker::after { display: none; }
-  .item-menu.menu-sticker[aria-current='page'] { outline-color: Highlight; }
+  .menu-denim { background-image: none; background-color: ButtonFace; color: ButtonText; border: 1px solid ButtonText; box-shadow: none; text-shadow: none; }
+  .menu-denim::after { display: none; }
+  .menu-denim[aria-current='page'], .menu-denim--active { outline: 2px solid Highlight; }
+  .menu-denim:focus-visible { outline-color: Highlight; }
 }
 
 /* Ações secundárias: impressão editorial, papel recortado e pequenos selos.
