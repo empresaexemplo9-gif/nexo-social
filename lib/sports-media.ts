@@ -30,6 +30,8 @@ export interface Broadcaster {
 }
 
 export const BROADCASTERS: Broadcaster[] = [
+  { id: 'getv', label: 'ge tv', sports: ['futebol'], kind: 'melhores-momentos', url: 'https://www.youtube.com/@getv', youtube: '@getv', note: 'Vídeos e cobertura esportiva em português. Transmissões aparecem apenas quando confirmadas.' },
+  { id: 'goat', label: 'Canal GOAT', sports: ['futebol'], kind: 'melhores-momentos', url: 'https://www.youtube.com/@canalgoat', youtube: '@canalgoat', note: 'Cobertura e melhores momentos em português nos campeonatos disponíveis no canal.' },
   // --- Futebol -------------------------------------------------------------
   {
     id: 'cazetv',
