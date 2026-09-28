@@ -15,12 +15,12 @@ export interface EnsureResult {
   error?: string;
 }
 
-export async function ensureProfile(fullName?: string, tenantName?: string): Promise<EnsureResult> {
+export async function ensureProfile(fullName?: string, tenantName?: string, accountType: 'pessoal' | 'organizacao' = 'pessoal'): Promise<EnsureResult> {
   if (!supabase) return { ok: false, error: 'Supabase não configurado.' };
   try {
     const { data, error } = await supabase.rpc('ensure_my_profile', {
       p_full_name: fullName ?? null,
-      p_account_type: 'pessoal',
+      p_account_type: accountType,
       p_tenant_name: tenantName ?? null,
     });
     if (error) return { ok: false, error: error.message };

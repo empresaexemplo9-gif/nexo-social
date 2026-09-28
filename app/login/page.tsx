@@ -7,14 +7,14 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin, type AccountType } from '@/lib/auth';
 import { describeAuthError } from '@/lib/auth-errors';
 import { ensureProfile } from '@/lib/provisioning';
+import { safeAuthDestination } from '@/lib/auth-redirect';
 
 /**
  * Destino depois de entrar (`?next=`), vindo por exemplo do link de convite de
  * um grupo. Só caminhos internos: `//site` e `/\site` levariam para fora.
  */
 function destinoSeguro(raw: string | null): string | null {
-  if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/\\')) return null;
-  return raw;
+  return safeAuthDestination(raw);
 }
 
 export default function LoginPage() {
@@ -27,6 +27,13 @@ export default function LoginPage() {
     const params = new URLSearchParams(window.location.search);
     setNext(destinoSeguro(params.get('next')));
     if (params.get('cadastro') === '1') setIsRegistering(true);
+    const errors: Record<string, string> = {
+      oauth_cancelled: 'A entrada foi cancelada ou recusada. Tente novamente.',
+      invalid_callback: 'Este link expirou ou foi aberto em outro navegador. Inicie o acesso novamente.',
+      auth_unavailable: 'Não foi possível concluir o acesso. Tente novamente.',
+      profile_unavailable: 'Sua sessão foi validada, mas não foi possível preparar seu perfil. Entre novamente para tentar de novo.',
+    };
+    if (params.get('error')) setMessage(errors[params.get('error')!] ?? 'Não foi possível concluir o acesso.');
   }, []);
   const [accountType, setAccountType] = useState<AccountType>('pessoal');
   const [fullName, setFullName] = useState('');
@@ -35,6 +42,21 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const handleGoogle = async () => {
+    if (!supabase) { setMessage('Login temporariamente indisponível.'); return; }
+    setLoading(true);
+    setMessage('');
+    try {
+      const callback = new URL('/auth/callback', window.location.origin);
+      if (next) callback.searchParams.set('next', next);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google', options: { redirectTo: callback.toString(), queryParams: { prompt: 'select_account' } },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error('Não foi possível iniciar o login com Google.');
+    } catch (err) { setMessage(describeAuthError(err)); setLoading(false); }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,12 +74,11 @@ export default function LoginPage() {
       const tenantName = accountType === 'organizacao' ? organizationName : fullName;
 
       if (isRegistering) {
-        // A conta é criada pelo servidor (já confirmada) — não depende do envio
-        // de e-mail, que é limitado no plano gratuito do Supabase.
+        // O servidor mantém a confirmação de titularidade do e-mail.
         const res = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, fullName, accountType, tenantName }),
+          body: JSON.stringify({ email: email.trim().toLowerCase(), password, fullName, accountType, tenantName, next }),
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'Falha ao criar a conta.');
@@ -72,20 +93,24 @@ export default function LoginPage() {
 
         // Já entra com a conta recém-criada.
         setMessage('✓ Conta criada! Entrando…');
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (signInError) throw signInError;
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
         if (error) throw error;
         setMessage('✓ Autenticação realizada! Preparando sua conta…');
       }
 
       // Idempotente: cria tenant + perfil se estiverem faltando. Conserta tanto
       // contas antigas quanto qualquer falha silenciosa do gatilho de cadastro.
-      const prov = await ensureProfile(fullName, tenantName);
-      if (!prov.ok) console.warn('[auth] provisionamento:', prov.error);
+      const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+      if (sessionError || !user) throw new Error('Não foi possível validar sua sessão. Tente entrar novamente.');
+      const metadata = user.user_metadata ?? {};
+      const prov = await ensureProfile(metadata.full_name || fullName, metadata.tenant_name || tenantName,
+        metadata.account_type === 'organizacao' ? 'organizacao' : accountType);
+      if (!prov.ok) throw new Error('Sua sessão foi validada, mas não foi possível preparar o perfil. Tente entrar novamente.');
 
-      window.location.href = next ?? (isPlatformAdmin(email) ? '/admin' : '/');
+      window.location.href = next ?? (isPlatformAdmin(user.email) ? '/admin' : '/');
     } catch (err: any) {
       // Loga o objeto completo no console do navegador para depuração fina.
       console.error('[auth] falha:', err);
@@ -118,8 +143,15 @@ export default function LoginPage() {
         </div>
 
         {message && (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-center text-xs">{message}</div>
+          <div role="status" aria-live="polite" className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-center text-xs">{message}</div>
         )}
+
+        <button type="button" onClick={handleGoogle} disabled={loading}
+          className="w-full rounded-xl border border-zinc-600 bg-white px-4 py-3 text-sm font-semibold text-zinc-950 disabled:opacity-60">
+          {loading ? 'Aguarde…' : 'Continuar com Google'}
+        </button>
+        <p className="text-center text-xs text-zinc-400">Use sua conta Google ou Gmail. No primeiro acesso, sua conta pessoal é criada automaticamente.</p>
+        <div className="text-center text-xs text-zinc-500">ou continue com e-mail e senha</div>
 
         <form onSubmit={handleAuth} className="space-y-4">
           {isRegistering && (
@@ -167,7 +199,7 @@ export default function LoginPage() {
           <div>
             <label className="mb-1 block text-xs text-zinc-400">E-mail</label>
             <input
-              type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="voce@exemplo.com"
               className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none"
             />
@@ -176,7 +208,7 @@ export default function LoginPage() {
           <div>
             <label className="mb-1 block text-xs text-zinc-400">Senha</label>
             <input
-              type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+              type="password" autoComplete={isRegistering ? 'new-password' : 'current-password'} required value={password} onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••" minLength={6}
               className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none"
             />

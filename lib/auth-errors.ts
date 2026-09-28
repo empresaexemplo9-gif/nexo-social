@@ -8,6 +8,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 const TRANSLATIONS: { match: RegExp; text: string }[] = [
+  { match: /provider is not enabled|unsupported provider/i, text: 'A entrada com Google ainda está sendo configurada. Use e-mail e senha por enquanto.' },
   { match: /invalid login credentials/i, text: 'E-mail ou senha incorretos.' },
   { match: /email not confirmed/i, text: 'E-mail ainda não confirmado. Verifique sua caixa de entrada (e o spam).' },
   { match: /user already registered|already been registered/i, text: 'Este e-mail já possui conta. Use "Fazer login".' },

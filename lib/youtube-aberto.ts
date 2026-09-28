@@ -301,7 +301,7 @@ export async function buscarNoYoutubeAberto(termo: string, filtro: FiltroDeBusca
     if (failure?.status === 'rejected') throw failure.reason;
     return [];
   }
-  const unique = [...new Map(all.map(v => [v.id, v])).values()];
+  const unique = Array.from(new Map(all.map(v => [v.id, v])).values());
   return (await priorizarPortugues(unique)).slice(0, max);
 }
 

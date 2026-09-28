@@ -55,7 +55,7 @@ test('APIs reject visitors with JSON 401, including health and admin', async () 
 });
 test('login, registration and PWA assets remain public even during auth outage', async () => {
   const app = load({ throws: true });
-  for (const path of ['/termos', '/privacidade', '/login', '/login?cadastro=1', '/api/signup', '/offline', '/sw.js', '/manifest.webmanifest', '/icon-192.png', '/bg/hud.svg']) {
+  for (const path of ['/auth/callback?code=valid-code', '/termos', '/privacidade', '/login', '/login?cadastro=1', '/api/signup', '/offline', '/sw.js', '/manifest.webmanifest', '/icon-192.png', '/bg/hud.svg']) {
     assert.equal((await app.run(path)).headers.get('x-middleware-next'), '1', path);
   }
   assert.equal(app.calls(), 0);
