@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import styles from './RevistaDoTema.module.css';
 import Icon from '../icons';
 import { useMidia } from '../midia/MidiaProvider';
 import { getTopic, type CategorySlug } from '@/lib/data';
@@ -67,7 +68,7 @@ export default function RevistaDoTema({ tema, compacta = false }: { tema: Catego
   if (!t) return null;
 
   return (
-    <div ref={caixa} className="space-y-6">
+    <div ref={caixa} className={`${styles.revista} space-y-6`}>
       {!edicao && !erro && (
         <div className="grid gap-4 lg:grid-cols-3" aria-busy="true">
           <div className="h-80 animate-pulse rounded-3xl bg-zinc-800/60 lg:col-span-2" />
@@ -77,11 +78,11 @@ export default function RevistaDoTema({ tema, compacta = false }: { tema: Catego
       {erro && <p className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-5 text-sm text-zinc-400">A revista de {t.label} não carregou agora.</p>}
 
       {edicao?.capa && (
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className={styles.destaques}>
           {/* Capa */}
-          <Link href={link(edicao.capa)} className="card-soft levanta group relative overflow-hidden lg:col-span-2">
-            <div className="grid h-full md:grid-cols-2">
-              <div className="relative min-h-[14rem] overflow-hidden bg-zinc-800">
+          <Link href={link(edicao.capa)} className={`${styles.capa} card-soft levanta group relative overflow-hidden`}>
+            <div className={styles.capaInterior}>
+              <div className={`${styles.imagem} relative overflow-hidden bg-zinc-800`}>
                 {edicao.capa.imagem && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={edicao.capa.imagem} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105" />
@@ -90,9 +91,9 @@ export default function RevistaDoTema({ tema, compacta = false }: { tema: Catego
                   Capa · {edicao.capa.rotuloDoFormato}
                 </span>
               </div>
-              <div className="flex flex-col p-6">
+              <div className="flex min-w-0 flex-col p-6">
                 <p className="rotulo-hud">Revista de {t.label}</p>
-                <h3 className="mt-3 font-display text-4xl font-extrabold leading-[0.95] text-zinc-50 group-hover:text-emerald-400">
+                <h3 className={`${styles.titulo} mt-3 font-display text-4xl font-extrabold leading-[0.95] text-zinc-50 group-hover:text-emerald-400`}>
                   {edicao.capa.titulo}
                 </h3>
                 <p className="mt-3 line-clamp-5 text-sm leading-relaxed text-zinc-300">{edicao.capa.resumo}</p>
@@ -104,7 +105,7 @@ export default function RevistaDoTema({ tema, compacta = false }: { tema: Catego
           </Link>
 
           {/* Você sabia? */}
-          <aside className="relative flex flex-col gap-3 rounded-3xl bg-clay-500 p-6 text-zinc-900 shadow-warm">
+          <aside className="relative min-w-0 flex flex-col gap-3 rounded-3xl bg-clay-500 p-6 text-zinc-900 shadow-warm">
             <p className="font-mao text-3xl leading-none">Você sabia?</p>
             {edicao.vocesabia.length ? (
               edicao.vocesabia.map((v, i) => (
@@ -120,7 +121,7 @@ export default function RevistaDoTema({ tema, compacta = false }: { tema: Catego
       )}
 
       {edicao && edicao.chamadas.length > 0 && (
-        <div className={`grid gap-4 sm:grid-cols-2 ${compacta ? 'xl:grid-cols-4' : 'xl:grid-cols-4'}`}>
+        <div className={styles.chamadas}>
           {edicao.chamadas.map((c) => (
             <Link key={c.slug} href={link(c)} className="card-soft levanta group flex flex-col overflow-hidden">
               <span className="relative block aspect-[16/10] overflow-hidden bg-zinc-800">

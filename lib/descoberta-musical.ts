@@ -18,6 +18,7 @@ export interface Faixa {
   artist: string;
   /** Artista principal, para variar e para barrar os mais tocados. */
   artistaPrincipal: string;
+  artistaPrincipalId?: string;
   album: string;
   image: string | null;
   ano: number | null;
@@ -179,4 +180,9 @@ export function escolherPlaylist(
 /** "2026-09-25" no fuso de Brasília — a seleção vira à meia-noite daqui. */
 export function diaDeHoje(agora = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(agora);
+}
+
+/** Confirma o gênero cadastrado, sem confundir samba com sambalpuri. */
+export function artistaDeSamba(generos: string[]): boolean {
+  return generos.some(g => /\b(samba|pagode|partido alto)\b/.test(normalizar(g)));
 }

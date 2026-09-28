@@ -24,7 +24,7 @@ const trilhaEmCache = unstable_cache(
     }
     return t;
   },
-  ['trilha-genero-v4'],
+  ['trilha-genero-v5'],
   { revalidate: 60 * 60 * 12 },
 );
 

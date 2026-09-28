@@ -1,0 +1,19 @@
+/* O widget pode ocupar meia home mesmo em um monitor largo. */
+.revista { container: revista / inline-size; min-width: 0; }
+.destaques, .capaInterior, .chamadas { display: grid; grid-template-columns: minmax(0, 1fr); }
+.destaques { gap: 1.25rem; align-items: start; }
+.capa { min-width: 0; }
+.imagem { aspect-ratio: 4 / 3; }
+.titulo { overflow-wrap: anywhere; }
+.chamadas { gap: 1rem; }
+@container revista (min-width: 420px) {
+  .chamadas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container revista (min-width: 600px) {
+  .capaInterior { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .imagem { align-self: start; }
+}
+@container revista (min-width: 960px) {
+  .destaques { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .chamadas { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

@@ -15,6 +15,7 @@ import 'server-only';
 // feita só com a busca — ver lib/descoberta-musical.ts.
 
 import {
+  artistaDeSamba,
   embaralhar,
   entre,
   escolherPlaylist,
@@ -67,6 +68,7 @@ async function api(path: string): Promise<any> {
   const res = await fetch(`${API}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: 'no-store',
+    signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -84,6 +86,7 @@ function paraFaixa(t: any): Faixa {
     name: t.name,
     artist: artistas.join(', '),
     artistaPrincipal: artistas[0] ?? '',
+    artistaPrincipalId: t.artists?.[0]?.id,
     album: t.album?.name ?? '',
     image: t.album?.images?.[1]?.url ?? t.album?.images?.[0]?.url ?? null,
     ano: Number.isFinite(ano) && ano > 0 ? ano : null,
@@ -147,8 +150,9 @@ export interface TrilhaDoGenero {
 /**
  * Monta a trilha de UM gênero conforme o jeito de ouvir da pessoa.
  *
- * Tudo sai do filtro `genre:"…"` — que olha o gênero do artista —, então não
- * entra faixa de outro estilo. Não há busca por palavra de reserva: ela é que
+ * Tudo sai do filtro `genre:"…"`; não se
+ * usa busca por palavra de reserva. Samba também confirma o gênero do artista:
+ * a busca pode trazer estilos com nomes parecidos. A busca por palavra é que
  * trazia "Rock With You" (pop) para quem escolheu rock. Se nenhum nome de
  * gênero responder, a trilha vem só com a playlist, sem faixas soltas.
  *
@@ -276,6 +280,23 @@ export async function trilhaDoGenero(
   };
 
   const [listas, playlist] = await Promise.all([montarListas(), escolher()]);
+  // A busca pode confundir samba e sambalpuri. Confirma metadados do artista
+  // principal antes de publicar qualquer faixa nessa aba; ausência não é prova.
+  if (cfg.generos.includes('samba')) {
+    const ids = Array.from(new Set(listas.flatMap(l => l.faixas.map(f => f.artistaPrincipalId)).filter((id): id is string => Boolean(id))));
+    const aceitos = new Set<string>();
+    let cursor = 0;
+    await Promise.all(Array.from({ length: Math.min(4, ids.length) }, async () => {
+      while (cursor < ids.length) {
+        const id = ids[cursor++];
+        try {
+          const artista = await api(`/artists/${encodeURIComponent(id)}`);
+          if (Array.isArray(artista.genres) && artistaDeSamba(artista.genres)) aceitos.add(id);
+        } catch { /* Sem confirmação, não recomenda a faixa como samba. */ }
+      }
+    }));
+    for (const lista of listas) lista.faixas = lista.faixas.filter(f => f.artistaPrincipalId && aceitos.has(f.artistaPrincipalId));
+  }
   if (!genero) avisos.push('Nenhum nome de gênero respondeu ao filtro do Spotify — sem faixas avulsas hoje.');
   return { generoSpotify: genero, playlist, listas: listas.filter((l) => l.faixas.length), avisos };
 }
