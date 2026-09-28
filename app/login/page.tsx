@@ -8,6 +8,7 @@ import { ADMIN_EMAIL, isPlatformAdmin, type AccountType } from '@/lib/auth';
 import { describeAuthError } from '@/lib/auth-errors';
 import { ensureProfile } from '@/lib/provisioning';
 import { safeAuthDestination } from '@/lib/auth-redirect';
+import { getSupabaseEnv } from '@/lib/supabase-config';
 
 /**
  * Destino depois de entrar (`?next=`), vindo por exemplo do link de convite de
@@ -48,6 +49,13 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
     try {
+      const config = getSupabaseEnv();
+      const settingsResponse = await fetch(`${config.url}/auth/v1/settings`, {
+        headers: { apikey: config.anonKey }, cache: 'no-store', signal: AbortSignal.timeout(10000),
+      });
+      if (!settingsResponse.ok) throw new Error('Não foi possível consultar o serviço de login. Tente novamente.');
+      const settings = await settingsResponse.json();
+      if (!settings.external?.google) throw new Error('A entrada com Google ainda está sendo configurada. Use e-mail e senha por enquanto.');
       const callback = new URL('/auth/callback', window.location.origin);
       if (next) callback.searchParams.set('next', next);
       const { data, error } = await supabase.auth.signInWithOAuth({
