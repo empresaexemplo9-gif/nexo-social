@@ -290,5 +290,59 @@ const buscaGuardada = unstable_cache(
 export async function buscarNoYoutubeAberto(termo: string, filtro: FiltroDeBusca = 'qualquer', max = 12): Promise<VideoDaBusca[]> {
   const t = termo.trim().slice(0, 150);
   if (!t) return [];
-  return (await buscaGuardada(t, filtro)).slice(0, max);
+  const lists = await Promise.allSettled([
+    buscaGuardada(t + ' português Brasil', filtro),
+    buscaGuardada(t + ' legendado português', filtro),
+    buscaGuardada(t, filtro),
+  ]);
+  const all = lists.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+  if (!all.length) {
+    const failure = lists.find(r => r.status === 'rejected');
+    if (failure?.status === 'rejected') throw failure.reason;
+    return [];
+  }
+  const unique = [...new Map(all.map(v => [v.id, v])).values()];
+  return (await priorizarPortugues(unique)).slice(0, max);
+}
+
+
+/** Preferência de idioma, sem excluir conteúdo internacional ou confundir legenda com áudio. */
+export async function priorizarPortugues<T extends { id: string; titulo: string; canal: string }>(videos: T[]): Promise<(T & { preferenciaPt: number })[]> {
+  const national = /caz[eé]tv|canal goat|ge tv|espn brasil|sportv|tecmundo|canaltech|manual do mundo|multishow|netflix brasil|omelete|prime video br|tastemade br|tudo ?gostoso|panelinha|drauzio|vogue brasil|tv cultura|tatiana feltrin|lnb|v[oô]lei brasil|flow sport/i;
+  const scores = new Map(videos.map(v => [v.id, national.test(v.canal) ? 3 : /legendad[oa].*(portugu[eê]s|pt.?br)|(?:portugu[eê]s|pt.?br).*legend|dublad[oa]|portugu[eê]s brasileiro/i.test(v.titulo) ? 2 : 0]));
+  const apiKey = process.env.YOUTUBE_API_KEY?.trim();
+  if (apiKey && videos.length) {
+    try {
+      const qs = new URLSearchParams({ key: apiKey, part: 'snippet,contentDetails', id: videos.slice(0, 50).map(v => v.id).join(',') });
+      const res = await fetch('https://www.googleapis.com/youtube/v3/videos?' + qs, { next: { revalidate: 21600 }, signal: AbortSignal.timeout(8000) });
+      if (res.ok) {
+        const data = await res.json();
+        const captions: string[] = [];
+        for (const v of data.items || []) {
+          const audio = String(v.snippet?.defaultAudioLanguage || '').toLowerCase();
+          if (audio === 'pt-br') scores.set(v.id, 5);
+          else if (audio === 'pt' || audio.startsWith('pt-')) scores.set(v.id, 4);
+          else if (v.contentDetails?.caption === 'true') captions.push(v.id);
+        }
+        // caption=true alone does NOT identify the language. Inspect published tracks.
+        await Promise.all(captions.slice(0, 4).map(async id => {
+          try {
+            const page = await fetch('https://www.youtube.com/watch?v=' + id, { next: { revalidate: 21600 }, headers: CABECALHOS, signal: AbortSignal.timeout(5000) });
+            if (!page.ok) return;
+            const tracks = (await page.text()).match(/"captionTracks":(\[[\s\S]*?\])/);
+            if (!tracks) return;
+            const languages = JSON.parse(tracks[1]).map((t: any) => String(t.languageCode).toLowerCase());
+            if (languages.some((l: string) => l === 'pt-br' || l === 'pt')) scores.set(id, Math.max(scores.get(id) || 0, 4));
+          } catch { /* Unknown language stays unclassified. */ }
+        }));
+      }
+    } catch { /* National channel/editorial signals remain useful if metadata fails. */ }
+  }
+  const ordered = videos.map(v => ({ ...v, preferenciaPt: scores.get(v.id) || 0 })).sort((a, b) => b.preferenciaPt - a.preferenciaPt);
+  const preferred = ordered.filter(v => v.preferenciaPt > 0), original = ordered.filter(v => !v.preferenciaPt);
+  const out: typeof ordered = [];
+  while (preferred.length || original.length) {
+    out.push(...preferred.splice(0, 3), ...original.splice(0, 1));
+  }
+  return out;
 }
