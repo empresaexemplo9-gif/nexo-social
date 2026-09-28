@@ -34,7 +34,7 @@ function haQuanto(iso: string | null): string {
 }
 
 const KIND_LABEL: Record<string, string> = {
-  'ao-vivo': 'Ao vivo grátis',
+  'ao-vivo': 'Canal oficial',
   'melhores-momentos': 'Melhores momentos',
   acervo: 'Acervo',
 };
@@ -171,11 +171,17 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
   useEffect(() => {
     let vivo = true;
     setVideos(null);
-    fetch(`/api/esporte/videos?modalidade=${sport}`)
+    const refresh = () => fetch(`/api/esporte/videos?modalidade=${sport}`, { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : { aoVivo: [], destaques: [] }))
       .then((j) => vivo && setVideos(j))
       .catch(() => vivo && setVideos({ aoVivo: [], destaques: [] }));
+    void refresh();
+    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') void refresh(); }, 60000);
+    const visible = () => { if (document.visibilityState === 'visible') { setVideos(v => v ? { ...v, aoVivo: [] } : v); void refresh(); } };
+    document.addEventListener('visibilitychange', visible);
     return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', visible);
       vivo = false;
     };
   }, [sport]);
@@ -473,7 +479,7 @@ export default function SportsHub({ inicial = 'futebol' }: { inicial?: SportId }
                     {/* Canal com handle pode ter a transmissão embutida aqui. */}
                     {b.youtube && (
                       <button
-                        onClick={() => play({ titulo: `${b.label} — ao vivo`, canal: b.youtube, externo: b.url })}
+                        onClick={() => play({ titulo: `${b.label} — canal oficial`, canal: b.youtube, externo: b.url })}
                         className="action-collage inline-flex items-center gap-1.5 rounded-xl bg-zinc-800 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-100 transition hover:bg-emerald-500 hover:text-zinc-950"
                       >
                         <Icon name="play" size={11} /> Assistir aqui
