@@ -1,6 +1,7 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface Account {
   configurado: boolean;
@@ -21,6 +22,8 @@ const results: Record<string, string> = {
 };
 
 export default function YoutubeAccount() {
+  const pathname = usePathname();
+  const isFeed = pathname === '/' || pathname === '/shorts';
   const [account, setAccount] = useState<Account | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -62,6 +65,9 @@ export default function YoutubeAccount() {
       window.location.reload();
     } catch(e) { setError((e as Error).message); setBusy(false); }
   }
+  // Keep account management on /conta; connected feeds should show only their content.
+  if (isFeed && (account?.conectado || (!account && !error))) return null;
+
   return <div className="card-soft space-y-3 p-4 text-sm" aria-label="Conexão com o YouTube">
     <p className="font-semibold">{account?.conectado ? 'Sua conta do YouTube está conectada' : 'Conecte sua conta do YouTube'}</p>
     <p className="text-xs text-zinc-400">Use suas curtidas e inscrições para personalizar músicas e Shorts no Nexo Social. A autorização abre na tela segura do Google e retorna para cá. Sua senha não é compartilhada com o aplicativo.</p>
