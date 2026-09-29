@@ -39,3 +39,9 @@ $$;
 
 REVOKE ALL ON FUNCTION my_contact_count() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION my_contact_count() TO authenticated;
+
+
+-- Convites de grupo por link deixam de existir. Nem mesmo um cliente autenticado
+-- pode chamar os RPCs legados diretamente.
+REVOKE ALL ON FUNCTION join_group_by_token(TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION group_invite_preview(TEXT) FROM PUBLIC, anon, authenticated;
