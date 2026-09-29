@@ -68,8 +68,17 @@ export async function middleware(request: NextRequest) {
         .select('user_id')
         .eq('user_id', user.id)
         .maybeSingle();
-      if (accessError) return deny(true);
-      if (!access) return deny(false, true);
+      if (accessError) {
+        // Compatibilidade durante a implantação inicial: se a tabela de convites
+        // ainda não existe no Supabase, não derruba contas que já existiam.
+        // O cadastro novo continua bloqueado pelo endpoint /api/signup.
+        const code = String((accessError as { code?: string }).code || '');
+        const msg = String((accessError as { message?: string }).message || '');
+        const schemaPending = code === '42P01' || code === 'PGRST205' || /platform_access|schema cache|does not exist/i.test(msg);
+        if (!schemaPending) return deny(true);
+      } else if (!access) {
+        return deny(false, true);
+      }
     }
 
     const adminPage = path === '/admin' || path.startsWith('/admin/');
