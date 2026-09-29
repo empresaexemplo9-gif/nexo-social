@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Icon from '../icons';
 import Avatar from '../Avatar';
 import PessoaPicker, { type Pessoa } from '../PessoaPicker';
@@ -18,7 +17,6 @@ type Contact = {
 type Message = { id: string; body: string; fromMe: boolean; createdAt: string; readAt: string | null };
 
 export default function ChatContatos() {
-  const search = useSearchParams();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [incoming, setIncoming] = useState<Contact[]>([]);
   const [outgoing, setOutgoing] = useState<Contact[]>([]);
@@ -38,10 +36,10 @@ export default function ChatContatos() {
     setContacts(j.contacts ?? []);
     setIncoming(j.incoming ?? []);
     setOutgoing(j.outgoing ?? []);
-    const requested = search?.get('com') || null;
+    const requested = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('com') : null;
     if (requested && (j.contacts ?? []).some((c: Contact) => c.userId === requested)) setSelected(requested);
     else if (!selected && (j.contacts ?? []).length) setSelected(j.contacts[0].userId);
-  }, [search, selected]);
+  }, [selected]);
 
   const loadMessages = useCallback(async () => {
     if (!selected) { setMessages([]); return; }
