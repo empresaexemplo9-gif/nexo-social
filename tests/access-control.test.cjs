@@ -86,3 +86,13 @@ test('missing configuration, network errors and invalid sessions fail closed', a
   assert.equal((await load({ url: '' }).run('/api/me')).status, 503);
   assert.equal((await load({ user: { is_anonymous: true } }).run('/api/me')).status, 401);
 });
+
+test('invitation preview is public but invite management and unrelated paths remain protected', async () => {
+  const app = load({ throws: true });
+  for (const path of ['/convite/' + 'a'.repeat(64), '/convite/arte/0?v=1', '/convite/arte/150']) {
+    assert.equal((await app.run(path)).headers.get('x-middleware-next'), '1');
+  }
+  assert.equal(app.calls(), 0);
+  for (const path of ['/convites', '/convite/admin', '/convite/arte/admin']) assert.equal((await app.run(path)).status, 307);
+  assert.equal((await app.run('/api/invites')).status, 503);
+});

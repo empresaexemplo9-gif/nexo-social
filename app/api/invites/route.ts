@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     credits: balance?.credits ?? 0,
     invites: (invites ?? []).map((i) => ({
       ...i,
-      link: `${origin}/login?cadastro=1&convite=${encodeURIComponent(i.token)}`,
+      link: `${origin}/convite/${encodeURIComponent(i.token)}`,
     })),
   }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
@@ -41,6 +41,6 @@ export async function POST(request: Request) {
     ok: true,
     credits: row.credits_remaining,
     token: row.token,
-    link: `${origin}/login?cadastro=1&convite=${encodeURIComponent(row.token)}`,
+    link: `${origin}/convite/${encodeURIComponent(row.token)}`,
   });
 }

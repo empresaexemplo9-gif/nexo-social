@@ -15,7 +15,7 @@ const publicPaths = new Set([
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (publicPaths.has(path)) return NextResponse.next();
+  if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)) return NextResponse.next();
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });
