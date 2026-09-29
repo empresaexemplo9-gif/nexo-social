@@ -12,6 +12,7 @@ import ConvidarAmigos from './ConvidarAmigos';
 import SalaSincronizada from './SalaSincronizada';
 import Mural from './Mural';
 import FotosEAlbuns from './FotosEAlbuns';
+import ChatDoGrupo from './ChatDoGrupo';
 import { SeloDoTipo } from './EscolherTipo';
 import Chamada, { usePresencaDaChamada } from './Chamada';
 import type { ModoChamada } from '@/lib/chamada';
@@ -28,7 +29,6 @@ interface Detalhe {
     privacy: Privacidade;
     imagePath: string | null;
     ownerId: string;
-    inviteToken: string | null;
   };
   membros: Membro[];
   sala: Sala | null;
@@ -58,7 +58,7 @@ export default function GrupoView({ id }: { id: string }) {
   const [editando, setEditando] = useState(false);
   const [edicao, setEdicao] = useState({ name: '', description: '' });
   const [ocupado, setOcupado] = useState(false);
-  const [aba, setAba] = useState<'mural' | 'fotos'>('mural');
+  const [aba, setAba] = useState<'chat' | 'mural' | 'fotos'>('chat');
   // A aba de fotos só carrega quando é aberta pela primeira vez.
   const [viuFotos, setViuFotos] = useState(false);
   // Fotos mudaram numa aba: a outra recarrega quando for aberta.
@@ -237,12 +237,6 @@ export default function GrupoView({ id }: { id: string }) {
     }
   };
 
-  const novoLink = async () => {
-    if (!window.confirm('Gerar um novo link de convite? O link antigo para de funcionar na hora.')) return;
-    const json = await acao(`/api/comunidade/grupos/${id}`, 'PATCH', { novoLink: true });
-    if (json) setD({ ...d, grupo: { ...grupo, inviteToken: json.inviteToken } });
-  };
-
   /** Liga: avisa quem precisa (o banco não repete o toque) e abre a chamada. */
   const ligar = (modo: ModoChamada, comVideo: boolean) => {
     const ninguemNaChamada = modo.tipo === 'grupo' && naChamadaDoGrupo.length === 0;
@@ -261,8 +255,8 @@ export default function GrupoView({ id }: { id: string }) {
     const proximo: Privacidade = grupo.privacy === 'fechado' ? 'aberto' : 'fechado';
     const pergunta =
       proximo === 'aberto'
-        ? 'Tornar o grupo aberto? Todos os membros passam a poder convidar amigos (e a ver o link de convite).'
-        : 'Tornar o grupo fechado? Só você vai poder convidar. Gere um novo link se quiser invalidar o que os membros já têm.';
+        ? 'Tornar o grupo aberto? Todos os membros passam a poder convidar outras contas já cadastradas.'
+        : 'Tornar o grupo fechado? Só você poderá convidar contas já cadastradas.';
     if (!window.confirm(pergunta)) return;
     const json = await acao(`/api/comunidade/grupos/${id}`, 'PATCH', { privacy: proximo });
     if (json) setD({ ...d, grupo: { ...grupo, privacy: json.grupo.privacy } });
@@ -301,6 +295,11 @@ export default function GrupoView({ id }: { id: string }) {
     const pergunta = m.status === 'convidado' ? `Cancelar o convite de ${m.name}?` : `Tirar ${m.name} do grupo?`;
     if (!window.confirm(pergunta)) return;
     if (await acao(`/api/comunidade/grupos/${id}/membros?userId=${m.userId}`, 'DELETE')) carregar();
+  };
+
+  const adicionarContato = async (m: Membro) => {
+    const json = await acao('/api/comunidade/contatos', 'POST', { userId: m.userId });
+    if (json) setErro(json.status === 'aceito' ? `${m.name} já está nos seus contatos.` : `Pedido de contato enviado para ${m.name}.`);
   };
 
   return (
@@ -467,6 +466,7 @@ export default function GrupoView({ id }: { id: string }) {
           <div className="flex gap-1.5 border-b border-zinc-800" role="tablist" aria-label="Seções do grupo">
             {(
               [
+                ['chat', 'Chat', 'chat'],
                 ['mural', 'Mural', 'chat'],
                 ['fotos', 'Fotos e álbuns', 'image'],
               ] as const
@@ -488,7 +488,10 @@ export default function GrupoView({ id }: { id: string }) {
               </button>
             ))}
           </div>
-          {/* As duas ficam montadas: trocar de aba não perde o que foi carregado. */}
+          <div hidden={aba !== 'chat'}>
+            <ChatDoGrupo groupId={id} />
+          </div>
+          {/* As abas ficam montadas: trocar de aba não perde o que foi carregado. */}
           <div hidden={aba !== 'mural'}>
             <Mural groupId={id} aoMudarFotos={() => setVersaoFotos((v) => v + 1)} />
           </div>
@@ -518,8 +521,24 @@ export default function GrupoView({ id }: { id: string }) {
                   </span>
                   {m.userId !== meuId && m.status === 'ativo' && (
                     <span className="flex shrink-0 items-center">
+                      <Link
+                        href={`/comunidade/chat?com=${m.userId}`}
+                        className="action-collage action-collage--paper rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
+                        aria-label={`Conversar com ${m.name}`}
+                        title={`Abrir chat com ${m.name}`}
+                      >
+                        <Icon name="chat" size={15} />
+                      </Link>
                       <button
-                        onClick={() => ligar({ tipo: 'dupla', outroId: m.userId }, true)}
+                        onClick={() => adicionarContato(m)}
+                        className="action-collage action-collage--paper rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
+                        aria-label={`Adicionar ${m.name} aos contatos`}
+                        title="Adicionar aos contatos"
+                      >
+                        <Icon name="plus" size={15} />
+                      </button>
+                      <button
+                        onClick={() => ligar({ tipo: 'dupla', outroId: m.userId }, true)
                         className="action-collage action-collage--paper rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
                         aria-label={`Chamada de vídeo com ${m.name}`}
                         title={`Chamada de vídeo com ${m.name}`}
@@ -587,9 +606,6 @@ export default function GrupoView({ id }: { id: string }) {
                     <Icon name="close" size={14} /> Tirar imagem do grupo
                   </button>
                 )}
-                <button onClick={novoLink} disabled={ocupado} className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-zinc-300 hover:bg-zinc-800/60">
-                  <Icon name="link" size={14} /> Gerar novo link de convite
-                </button>
                 <button onClick={apagarGrupo} disabled={ocupado} className="action-collage action-collage--paper flex w-full items-center gap-2 rounded-lg px-2 py-2 text-clay-300 hover:bg-clay-950/30">
                   <Icon name="trash" size={14} /> Apagar grupo
                 </button>
@@ -618,12 +634,10 @@ export default function GrupoView({ id }: { id: string }) {
         />
       )}
 
-      {convidar && podeConvidar && grupo.inviteToken && (
+      {convidar && podeConvidar && (
         <ConvidarAmigos
           groupId={id}
           groupName={grupo.name}
-          token={grupo.inviteToken}
-          meuNome={meuNome}
           jaNoGrupo={membros.map((m) => m.userId)}
           onFechar={() => setConvidar(false)}
           onConvidou={carregar}
