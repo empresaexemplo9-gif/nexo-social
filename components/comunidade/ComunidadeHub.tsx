@@ -258,12 +258,20 @@ export default function ComunidadeHub() {
           </div>
         </form>
       ) : (
-        <button
-          onClick={() => setCriando(true)}
-          className="inline-flex items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
-        >
-          <Icon name="plus" size={16} /> Criar grupo
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setCriando(true)}
+            className="inline-flex items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
+          >
+            <Icon name="plus" size={16} /> Criar grupo
+          </button>
+          <Link
+            href="/comunidade/chat"
+            className="inline-flex items-center gap-2 rounded-2xl border border-zinc-700 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300"
+          >
+            <Icon name="chat" size={16} /> Chat e contatos
+          </Link>
+        </div>
       )}
 
       {/* Meus grupos */}
@@ -275,8 +283,7 @@ export default function ComunidadeHub() {
           <div className="rounded-3xl border border-dashed border-zinc-700 p-8 text-center">
             <p className="text-sm font-medium text-zinc-200">Você ainda não está em nenhum grupo.</p>
             <p className="mx-auto mt-1 max-w-md text-xs text-zinc-400">
-              Crie um grupo para a família, os amigos do trabalho ou quem curte o mesmo som, e use <strong>Convidar amigos</strong> para
-              chamar quem já está aqui — ou mandar o link para quem ainda não tem conta.
+              Crie um grupo para a família, os amigos do trabalho ou quem curte o mesmo som, e use <strong>Convidar amigos</strong> para chamar contas que já existem na plataforma.
             </p>
           </div>
         ) : (
