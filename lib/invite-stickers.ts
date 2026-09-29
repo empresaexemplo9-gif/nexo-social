@@ -1,4 +1,4 @@
-// Viewports into the four original sheets, preserved byte-for-byte.
+// Viewports into the original sticker sheets. The fifth sheet comes from the newer supplied artwork.
 // Coordinates are pixels [x, y, width, height]; each viewport holds one sticker.
 const sheets: { width: number; height: number; boxes: number[][] }[] = [
   { width: 309, height: 298, boxes: [
@@ -36,10 +36,20 @@ const sheets: { width: number; height: number; boxes: number[][] }[] = [
     [10,221,51,26],[65,220,58,27],[128,223,47,25],[181,222,60,26],[247,219,56,30],
     [9,249,52,37],[68,249,54,33],[130,250,95,36],[231,252,74,34],
   ] },
+  { width: 512, height: 488, boxes: [
+    [0,0,106,100],[106,0,145,90],[249,0,89,91],[340,0,168,90],
+    [0,100,120,75],[120,94,72,79],[192,98,135,70],[330,95,88,75],[421,95,85,74],
+    [0,175,117,106],[120,174,77,103],[198,174,102,91],[302,174,143,80],
+    [0,286,170,70],[171,273,86,78],[258,274,78,65],[338,265,168,91],
+    [0,355,142,60],[147,350,138,66],[284,347,117,67],[405,342,101,91],
+    [0,420,78,66],[80,410,116,50],[200,414,90,54],[296,410,94,62],[430,412,75,61],
+  ] },
 ];
 const colors = ["#d9ccaf", "#d9ccaf", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#6ba3ff", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#6ba3ff", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#ff7e6b", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#ff7e6b", "#6bc8ff", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#ffed6b", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#ff6bed", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#6bc8ff", "#d9ccaf", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#ff7e6b", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#6b7eff", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#ff7e6b", "#d9ccaf", "#6ba3ff", "#edff6b", "#d9ccaf", "#d9ccaf", "#6ba3ff", "#ff7e6b", "#d9ccaf", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#ff6b7e", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff6b7e", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#ff6b7e", "#d9ccaf", "#6ba3ff", "#d9ccaf", "#d9ccaf", "#d9ccaf", "#d9ccaf"];
 const labels = ['OUTRO OLHAR', 'PRESENÇA ÚNICA', 'FORA DO ÓBVIO', 'NOVAS FREQUÊNCIAS', 'CONEXÕES RARAS', 'ACESSO ESPECIAL'];
+const newColors = ['#977e65','#ed2802','#0a70f5','#0a70f5','#f7462c','#f30c0a','#d9d6cd','#0451f4','#f83705','#f9482e','#ebdecd','#f91109','#0457f4','#0251ef','#b3b0ab','#fb2214','#0368f1','#0553f2','#0659f5','#0654f1','#e9ddce','#f83c1f','#f83212','#0559f8','#f63d1d','#eaddcc'];
+
 export const STICKERS = sheets.flatMap((sheet, index) => sheet.boxes.map(([x, y, w, h], i) => ({
   sheet: index, sw: sheet.width, sh: sheet.height, x, y, w, h,
-  color: colors[sheets.slice(0, index).reduce((sum, item) => sum + item.boxes.length, 0) + i], label: labels[(i + index) % labels.length],
+  color: index === 4 ? newColors[i] : colors[sheets.slice(0, index).reduce((sum, item) => sum + item.boxes.length, 0) + i], label: labels[(i + index) % labels.length],
 })));
