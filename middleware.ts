@@ -3,10 +3,9 @@ import { createServerClient } from '@supabase/ssr';
 import { isPlatformAdmin } from '@/lib/auth';
 import { resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config';
 
-// Entrada, política de privacidade, cadastro e arquivos do app são públicos.
-// Não liberar por extensão: uma rota interna pode terminar em .png ou .svg.
 const publicPaths = new Set([
-  '/login', '/auth/callback', '/privacidade', '/termos', '/offline', '/api/signup', '/manifest.webmanifest', '/sw.js',
+  '/login', '/auth/callback', '/privacidade', '/termos', '/offline', '/api/signup', '/api/invites/validate',
+  '/manifest.webmanifest', '/sw.js',
   '/favicon.ico', '/favicon-32.png', '/favicon-48.png', '/apple-touch-icon.png',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png',
   '/logo.png', '/logo.svg', '/google12ea32661b84e35f.html',
@@ -20,14 +19,14 @@ export async function middleware(request: NextRequest) {
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });
+
   const finish = (result: NextResponse) => {
-    if (result !== response) {
-      response.cookies.getAll().forEach((cookie) => result.cookies.set(cookie));
-    }
+    if (result !== response) response.cookies.getAll().forEach((cookie) => result.cookies.set(cookie));
     result.headers.set('Cache-Control', 'private, no-store');
     return result;
   };
-  const deny = (unavailable = false) => {
+
+  const deny = (unavailable = false, invitation = false) => {
     if (path === '/api/youtube/entrar' || path === '/api/youtube/retorno') {
       const login = new URL('/login', request.url);
       login.searchParams.set('next', '/conta?youtube=sessao_expirada#youtube');
@@ -35,12 +34,13 @@ export async function middleware(request: NextRequest) {
     }
     if (isApi) {
       return finish(NextResponse.json(
-        { error: unavailable ? 'Não foi possível validar sua sessão. Tente novamente.' : 'Faça login para acessar a plataforma.' },
-        { status: unavailable ? 503 : 401 },
+        { error: invitation ? 'Esta conta não possui acesso à plataforma.' : unavailable ? 'Não foi possível validar sua sessão. Tente novamente.' : 'Faça login para acessar a plataforma.' },
+        { status: unavailable ? 503 : invitation ? 403 : 401 },
       ));
     }
     const login = new URL('/login', request.url);
     login.searchParams.set('next', path + request.nextUrl.search);
+    if (invitation) login.searchParams.set('error', 'invite_required');
     return finish(NextResponse.redirect(login));
   };
 
@@ -59,9 +59,18 @@ export async function middleware(request: NextRequest) {
       },
     });
 
-    // Validação no servidor: a presença de um cookie não comprova identidade.
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error || !user || user.is_anonymous) return deny();
+
+    if (!isPlatformAdmin(user.email)) {
+      const { data: access, error: accessError } = await supabase
+        .from('platform_access')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (accessError) return deny(true);
+      if (!access) return deny(false, true);
+    }
 
     const adminPage = path === '/admin' || path.startsWith('/admin/');
     const adminApi = path === '/api/admin' || path.startsWith('/api/admin/')
@@ -74,7 +83,6 @@ export async function middleware(request: NextRequest) {
 
     return finish(response);
   } catch {
-    // Falhas de rede/configuração nunca podem liberar a área interna.
     console.error('[middleware] Não foi possível validar a sessão.');
     return deny(true);
   }
