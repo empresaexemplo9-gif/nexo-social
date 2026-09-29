@@ -538,7 +538,7 @@ export default function GrupoView({ id }: { id: string }) {
                         <Icon name="plus" size={15} />
                       </button>
                       <button
-                        onClick={() => ligar({ tipo: 'dupla', outroId: m.userId }, true)
+                        onClick={() => ligar({ tipo: 'dupla', outroId: m.userId }, true)}
                         className="action-collage action-collage--paper rounded-lg p-1.5 text-zinc-500 transition hover:text-emerald-300"
                         aria-label={`Chamada de vídeo com ${m.name}`}
                         title={`Chamada de vídeo com ${m.name}`}
