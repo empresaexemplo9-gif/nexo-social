@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import { NextResponse } from 'next/server';
 import { arquivosDaPasta, exigirSessao, falha, idInvalido, membrosDoGrupo, minhaParticipacao, texto } from '@/lib/comunidade';
 import { salaDaLinha } from '@/lib/comunidade-tipos';
@@ -8,13 +7,6 @@ export const dynamic = 'force-dynamic';
 
 type Ctx = { params: { id: string } };
 
-/**
- * O grupo, seus membros e a sala. Convidado que ainda não respondeu recebe só
- * o essencial (nome, descrição, imagem, quem convidou) para decidir.
- *
- * O link de convite só vem para quem pode convidar: o dono e, se o grupo for
- * aberto, os membros (o RLS de community_group_links decide).
- */
 export async function GET(_req: Request, { params }: Ctx) {
   const s = await exigirSessao();
   if (!s.ok) return s.response;
@@ -49,10 +41,9 @@ export async function GET(_req: Request, { params }: Ctx) {
   }
 
   try {
-    const [membros, sala, link] = await Promise.all([
+    const [membros, sala] = await Promise.all([
       membrosDoGrupo(s.sb, g.id),
       s.sb.from('community_sessions').select('*').eq('group_id', g.id).maybeSingle(),
-      s.sb.from('community_group_links').select('token').eq('group_id', g.id).maybeSingle(),
     ]);
     const podeConvidar = eu.role === 'dono' || g.privacy === 'aberto';
     return NextResponse.json({
@@ -68,7 +59,6 @@ export async function GET(_req: Request, { params }: Ctx) {
         imagePath: g.image_path ?? null,
         ownerId: g.owner_id,
         createdAt: g.created_at,
-        inviteToken: podeConvidar ? link.data?.token ?? null : null,
       },
       membros,
       sala: salaDaLinha(sala.data),
@@ -79,10 +69,6 @@ export async function GET(_req: Request, { params }: Ctx) {
   }
 }
 
-/**
- * Só o dono: renomeia, muda a descrição, o tipo (aberto/fechado), a imagem
- * do grupo ou gera um novo link de convite.
- */
 export async function PATCH(request: Request, { params }: Ctx) {
   const s = await exigirSessao();
   if (!s.ok) return s.response;
@@ -109,57 +95,32 @@ export async function PATCH(request: Request, { params }: Ctx) {
     }
     mudancas.image_path = b.imagePath;
   }
-  if (!Object.keys(mudancas).length && !b?.novoLink) return NextResponse.json({ error: 'Nada para mudar.' }, { status: 400 });
+  if (!Object.keys(mudancas).length) return NextResponse.json({ error: 'Nada para mudar.' }, { status: 400 });
 
-  const { data: antes } = await s.sb
-    .from('community_groups')
-    .select('owner_id, image_path')
-    .eq('id', params.id)
-    .maybeSingle();
+  const { data: antes } = await s.sb.from('community_groups').select('owner_id, image_path').eq('id', params.id).maybeSingle();
   if (!antes || antes.owner_id !== s.user.id) {
     return NextResponse.json({ error: 'Só quem criou o grupo pode mudá-lo.' }, { status: 403 });
   }
 
-  let grupo: { name: string; description: string | null; privacy: string; image_path: string | null } | null = null;
-  if (Object.keys(mudancas).length) {
-    const { data, error } = await s.sb
-      .from('community_groups')
-      .update(mudancas)
-      .eq('id', params.id)
-      .eq('owner_id', s.user.id)
-      .select('name, description, privacy, image_path')
-      .maybeSingle();
-    if (error) return falha(error, 'Falha ao salvar o grupo.');
-    grupo = data;
-    // Imagem trocada ou tirada: a antiga sai do Storage.
-    if (mudancas.image_path !== undefined && antes.image_path && antes.image_path !== mudancas.image_path) {
-      await s.sb.storage.from('perfis').remove([antes.image_path]);
-    }
-  }
+  const { data, error } = await s.sb
+    .from('community_groups')
+    .update(mudancas)
+    .eq('id', params.id)
+    .eq('owner_id', s.user.id)
+    .select('name, description, privacy, image_path')
+    .maybeSingle();
+  if (error || !data) return falha(error, 'Falha ao salvar o grupo.');
 
-  let inviteToken: string | undefined;
-  if (b?.novoLink) {
-    // O link antigo para de funcionar na hora: é o que fazer se ele vazou.
-    const { data, error } = await s.sb
-      .from('community_group_links')
-      .update({ token: randomUUID().replace(/-/g, '') })
-      .eq('group_id', params.id)
-      .select('token')
-      .maybeSingle();
-    if (error || !data) return falha(error, 'Falha ao gerar o novo link.');
-    inviteToken = data.token;
+  if (mudancas.image_path !== undefined && antes.image_path && antes.image_path !== mudancas.image_path) {
+    await s.sb.storage.from('perfis').remove([antes.image_path]);
   }
 
   return NextResponse.json({
     ok: true,
-    grupo: grupo
-      ? { name: grupo.name, description: grupo.description, privacy: grupo.privacy, imagePath: grupo.image_path }
-      : undefined,
-    inviteToken,
+    grupo: { name: data.name, description: data.description, privacy: data.privacy, imagePath: data.image_path },
   });
 }
 
-/** Só o dono: apaga o grupo, com mural, fotos, álbuns e sala. */
 export async function DELETE(_req: Request, { params }: Ctx) {
   const s = await exigirSessao();
   if (!s.ok) return s.response;
@@ -171,8 +132,6 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     return NextResponse.json({ error: 'Só quem criou o grupo pode apagá-lo.' }, { status: 403 });
   }
 
-  // Arquivos primeiro: as regras do Storage perguntam ao grupo quem é o dono,
-  // e depois de apagado ele não existe mais para responder.
   const fotos = await arquivosDaPasta(s.sb, 'comunidade', `grupos/${params.id}`);
   for (let i = 0; i < fotos.length; i += 500) await s.sb.storage.from('comunidade').remove(fotos.slice(i, i + 500));
   if (g.image_path) await s.sb.storage.from('perfis').remove([g.image_path]);
