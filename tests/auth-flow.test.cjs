@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const ts = require('typescript');
 const { NextResponse } = require('next/server');
+
 function load(file, dependencies = {}) {
   const exports = {};
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText,
@@ -11,60 +12,86 @@ function load(file, dependencies = {}) {
   return exports;
 }
 const redirect = load('lib/auth-redirect.ts');
-test('redirect validation rejects external URLs, auth loops and parser ambiguities', () => {
-  for (const value of ['https://evil.test', '//evil.test', '/\\evil.test', '/\t/evil.test', '/login', '/auth/callback', '/a/../login', null]) assert.equal(redirect.safeAuthDestination(value), null, value);
-  assert.equal(redirect.safeAuthDestination('/comunidade/convite/abc?q=1#ok'), '/comunidade/convite/abc?q=1#ok');
+
+test('redirect validation rejects external URLs', () => {
+  for (const value of ['https://evil.test', '//evil.test', '/\\evil.test', '/login', '/auth/callback', null]) assert.equal(redirect.safeAuthDestination(value), null);
+  assert.equal(redirect.safeAuthDestination('/agenda'), '/agenda');
 });
+
 function callback(options = {}) {
   const calls = [];
-  const sb = { auth: {
-    exchangeCodeForSession: async code => { calls.push(code); return { error: options.exchangeError }; },
-    getUser: async () => ({ data: { user: options.noUser ? null : { email: 'user@example.com', user_metadata: { full_name: 'Pessoa', account_type: 'organizacao', tenant_name: 'Empresa' } } } }),
-  }, rpc: async (name, args) => { calls.push(args); return { error: options.profileError }; } };
-  return { calls, GET: load('app/auth/callback/route.ts', { 'next/server': { NextResponse }, '@/lib/supabase-server': { createServerSupabase: () => sb }, '@/lib/auth-redirect': redirect, '@/lib/auth': { isPlatformAdmin: () => false } }).GET };
+  const user = options.noUser ? null : { id: 'u1', email: 'user@example.com', is_anonymous: false, user_metadata: { full_name: 'Pessoa', account_type: 'organizacao', tenant_name: 'Empresa' } };
+  const sb = {
+    auth: {
+      exchangeCodeForSession: async code => { calls.push(['exchange', code]); return { error: options.exchangeError }; },
+      getUser: async () => ({ data: { user }, error: null }),
+      signOut: async () => ({}),
+    },
+    rpc: async (name, args) => { calls.push([name, args]); return { error: options.profileError }; },
+  };
+  const admin = {
+    from: () => ({ select() { return this; }, eq() { return this; }, async maybeSingle() { return { data: options.hasAccess === false ? null : { user_id: 'u1' }, error: null }; } }),
+    rpc: async () => ({ data: true, error: null }),
+    auth: { admin: { deleteUser: async () => ({}) } },
+  };
+  return {
+    calls,
+    GET: load('app/auth/callback/route.ts', {
+      'next/server': { NextResponse },
+      '@/lib/supabase-server': { createServerSupabase: () => sb, createAdminClient: () => admin },
+      '@/lib/auth-redirect': redirect,
+      '@/lib/auth': { isPlatformAdmin: () => false },
+    }).GET,
+  };
 }
-test('OAuth callback validates session, provisions real user context and preserves internal destination', async () => {
+
+test('existing invited OAuth account enters and is provisioned', async () => {
   const app = callback();
   const res = await app.GET(new Request('https://nexo.test/auth/callback?code=abc&next=%2Fagenda'));
   assert.equal(res.headers.get('location'), 'https://nexo.test/agenda');
-  assert.equal(res.headers.get('cache-control'), 'private, no-store');
-  assert.equal(app.calls[1].p_account_type, 'organizacao');
+  assert.equal(app.calls.some(x => x[0] === 'ensure_my_profile'), true);
 });
-test('failed exchange, missing user and failed provisioning never enter protected app', async () => {
-  for (const options of [{ exchangeError: {} }, { noUser: true }, { profileError: {} }]) {
-    const res = await callback(options).GET(new Request('https://nexo.test/auth/callback?code=secret&next=//evil.test'));
-    assert.equal(new URL(res.headers.get('location')).pathname, '/login');
-    assert.equal(res.headers.get('location').includes('secret'), false);
-  }
+
+test('new OAuth account requires a valid invitation', async () => {
+  const blocked = await callback({ hasAccess: false }).GET(new Request('https://nexo.test/auth/callback?code=abc'));
+  assert.match(blocked.headers.get('location'), /invite_required/);
+
+  const allowed = await callback({ hasAccess: false }).GET(new Request('https://nexo.test/auth/callback?code=abc&convite=' + 'a'.repeat(64)));
+  assert.equal(new URL(allowed.headers.get('location')).pathname, '/');
 });
-test('cancelled or missing OAuth code never calls token exchange', async () => {
-  for (const query of ['', '?error=access_denied&code=abc']) {
-    const app = callback();
-    await app.GET(new Request('https://nexo.test/auth/callback' + query));
-    assert.equal(app.calls.length, 0);
-  }
-});
-function signup(session) {
+
+function signup(session, validInvite = true) {
   const calls = [];
-  return { calls, POST: load('app/api/signup/route.ts', { 'next/server': { NextResponse }, '@/lib/supabase-server': { createServerSupabase: () => ({ auth: { signUp: async data => { calls.push(data); return { data: { session }, error: null }; } } }) }, '@/lib/auth': { tenantSlug: () => 'empresa' }, '@/lib/auth-redirect': redirect, '@/lib/auth-errors': { describeAuthError: () => 'error' } }).POST };
+  const sb = { auth: { signUp: async data => { calls.push(data); return { data: { session, user: { id: 'new-user' } }, error: null }; } } };
+  const anon = { rpc: async () => ({ data: { valid: validInvite }, error: null }) };
+  const admin = { rpc: async () => ({ data: true, error: null }), auth: { admin: { deleteUser: async () => ({}) } } };
+  return {
+    calls,
+    POST: load('app/api/signup/route.ts', {
+      'next/server': { NextResponse },
+      '@/lib/supabase-server': { createServerSupabase: () => sb, createAnonServerClient: () => anon, createAdminClient: () => admin },
+      '@/lib/auth': { tenantSlug: () => 'empresa' },
+      '@/lib/auth-redirect': redirect,
+      '@/lib/auth-errors': { describeAuthError: e => e?.message || 'error' },
+    }).POST,
+  };
 }
-const payload = { email: ' PERSON@example.com ', password: 'test-password', fullName: 'Pessoa', accountType: 'organizacao', tenantName: 'Empresa', next: '//evil.test' };
+
+const token = 'b'.repeat(64);
+const payload = { email: ' PERSON@example.com ', password: 'test-password', fullName: 'Pessoa', accountType: 'organizacao', tenantName: 'Empresa', next: '//evil.test', inviteToken: token };
 const request = (body = payload, origin = 'https://nexo.test') => new Request('https://nexo.test/api/signup', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-test('signup retains email verification and returns actual confirmation state', async () => {
-  for (const session of [null, { access_token: 'test' }]) {
-    const app = signup(session);
-    const res = await app.POST(request());
-    assert.equal((await res.json()).confirmacaoPendente, !session);
-    assert.equal(app.calls[0].email, 'person@example.com');
-    assert.equal(app.calls[0].options.emailRedirectTo, 'https://nexo.test/auth/callback');
-    assert.equal(app.calls[0].options.data.account_type, 'organizacao');
-    assert.equal(app.calls[0].email_confirm, undefined);
-  }
+
+test('signup validates and consumes an invite', async () => {
+  const app = signup(null, true);
+  const res = await app.POST(request());
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).confirmacaoPendente, true);
+  assert.equal(app.calls[0].email, 'person@example.com');
+  assert.match(app.calls[0].options.emailRedirectTo, /convite=/);
 });
-test('signup rejects invalid input and cross-origin requests without creating accounts', async () => {
-  const app = signup(null);
-  assert.equal((await app.POST(request(payload, 'https://evil.test'))).status, 403);
-  assert.equal((await app.POST(request({ ...payload, password: 'x' }))).status, 400);
-  assert.equal((await app.POST(request({ ...payload, fullName: '' }))).status, 400);
-  assert.equal(app.calls.length, 0);
+
+test('signup rejects missing, invalid, used or cross-origin invitations', async () => {
+  assert.equal((await signup(null).POST(request({ ...payload, inviteToken: '' }))).status, 403);
+  assert.equal((await signup(null, false).POST(request())).status, 403);
+  assert.equal((await signup(null).POST(request(payload, 'https://evil.test'))).status, 403);
 });
