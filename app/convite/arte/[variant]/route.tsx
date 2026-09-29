@@ -40,8 +40,37 @@ export async function GET(_request: Request, { params }: { params: { variant: st
   }
 
   const sticker = STICKERS[Number(params.variant)];
-  const ext = sticker.sheet === 4 ? 'jpg' : 'png';
-  const bytes = await readFile(path.join(process.cwd(), 'public', 'invite-art', `sheet-${sticker.sheet}.${ext}`));
+
+  let bytes: Buffer;
+  let mime = 'image/png';
+  if (sticker.sheet === 4) {
+    const base = path.join(process.cwd(), 'public', 'invite-art');
+    const [p0, p1, p2, p2tail, p3, p4, p5, p6, p7] = await Promise.all([
+      readFile(path.join(base, 'sheet-4.part0'), 'utf8'),
+      readFile(path.join(base, 'sheet-4.part1'), 'utf8'),
+      readFile(path.join(base, 'sheet-4.part2'), 'utf8'),
+      readFile(path.join(base, 'sheet-4.part2tail'), 'utf8'),
+      readFile(path.join(base, 'sheet-4.part3'), 'utf8'),
+      readFile(path.join(base, 'sheet-4.part4'), 'utf8'),
+      readFile(path.join(base, 'sheet-4.part5'), 'utf8'),
+      readFile(path.join(base, 'sheet-4.part6'), 'utf8'),
+      readFile(path.join(base, 'sheet-4.part7'), 'utf8'),
+    ]);
+    const encoded =
+      p0.trim().slice(0, 12000) +
+      p1.trim().slice(0, 12000) +
+      p2.trim().slice(0, 9833) +
+      p2tail.trim().slice(0, 2167) +
+      p3.trim().slice(0, 12000) +
+      p4.trim().slice(0, 12000) +
+      p5.trim().slice(0, 12000) +
+      p6.trim().slice(0, 12000) +
+      p7.trim().slice(0, 4532);
+    bytes = Buffer.from(encoded, 'base64');
+    mime = 'image/jpeg';
+  } else {
+    bytes = await readFile(path.join(process.cwd(), 'public', 'invite-art', `sheet-${sticker.sheet}.png`));
+  }
 
   const accent = hexToRgb(sticker.color);
   const bgA = mix(sticker.color, '#111318', 0.34);
@@ -116,7 +145,7 @@ export async function GET(_request: Request, { params }: { params: { variant: st
             <div style={{ display: 'flex', position: 'relative', width: sticker.w * scale, height: sticker.h * scale, overflow: 'hidden', flexShrink: 0 }}>
               <img
                 alt="Adesivo original do Nexo Social"
-                src={`data:image/${ext === 'jpg' ? 'jpeg' : 'png'};base64,${bytes.toString('base64')}`}
+                src={`data:${mime};base64,${bytes.toString('base64')}`}
                 width={sticker.sw * scale}
                 height={sticker.sh * scale}
                 style={{
