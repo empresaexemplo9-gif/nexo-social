@@ -128,10 +128,22 @@ export default function ContaPage() {
             </p>
           )}
 
-          {admin && (
-            <Link href="/admin" className="mt-4 inline-block rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">
-              Abrir Painel Admin →
-            </Link>
+          {account && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link href="/convites" className="inline-block rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-100 hover:border-emerald-600 hover:text-emerald-300">
+                Meus convites
+              </Link>
+              {admin && (
+                <>
+                  <Link href="/admin" className="inline-block rounded-xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">
+                    Abrir Painel Admin →
+                  </Link>
+                  <Link href="/admin/convites" className="inline-block rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-100 hover:border-emerald-600 hover:text-emerald-300">
+                    Gerenciar convites
+                  </Link>
+                </>
+              )}
+            </div>
           )}
         </section>
 
