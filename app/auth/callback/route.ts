@@ -36,12 +36,19 @@ export async function GET(request: Request) {
 
     const { data: existingAccess, error: accessError } = await admin
       .from('platform_access').select('user_id').eq('user_id', user.id).maybeSingle();
-    if (accessError) {
+    const accessSchemaPending = accessError && (
+      accessError.code === '42P01' ||
+      accessError.code === 'PGRST205' ||
+      /platform_access|schema cache|does not exist/i.test(accessError.message || '')
+    );
+    if (accessError && !accessSchemaPending) {
       await sb.auth.signOut();
       return fail('invite_unavailable');
     }
 
-    if (!existingAccess) {
+    // Antes de a migração de convites existir, preserva somente o login de
+    // contas já provisionadas. Novas contas continuam dependendo do convite.
+    if (!existingAccess && !accessSchemaPending) {
       if (!/^[0-9a-f]{64}$/i.test(convite)) {
         await admin.auth.admin.deleteUser(user.id).catch(() => null);
         await sb.auth.signOut();
