@@ -24,26 +24,29 @@ CREATE TABLE IF NOT EXISTS platform_invites (
   used_at TIMESTAMPTZ
 );
 
-ALTER TABLE platform_access
-  ADD CONSTRAINT platform_access_invite_fk
-  FOREIGN KEY (invite_id) REFERENCES platform_invites(id) ON DELETE SET NULL
-  NOT VALID;
-DO $$
+DO $
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'platform_access_invite_fk'
+  ) THEN
+    ALTER TABLE platform_access
+      ADD CONSTRAINT platform_access_invite_fk
+      FOREIGN KEY (invite_id) REFERENCES platform_invites(id) ON DELETE SET NULL
+      NOT VALID;
+  END IF;
   ALTER TABLE platform_access VALIDATE CONSTRAINT platform_access_invite_fk;
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+END $;
 
 -- Marco fixo: somente contas que já existiam quando o modelo por convite foi implantado
 -- recebem o lote inicial automaticamente. Reexecutar este arquivo não libera contas novas.
 INSERT INTO platform_access (user_id)
 SELECT id FROM auth.users
-WHERE created_at <= TIMESTAMPTZ '2026-09-29 01:30:00+00'
+WHERE created_at <= TIMESTAMPTZ '2026-09-29 01:40:00+00'
 ON CONFLICT (user_id) DO NOTHING;
 
 INSERT INTO platform_invite_balances (user_id, credits)
 SELECT id, 3 FROM auth.users
-WHERE created_at <= TIMESTAMPTZ '2026-09-29 01:30:00+00'
+WHERE created_at <= TIMESTAMPTZ '2026-09-29 01:40:00+00'
 ON CONFLICT (user_id) DO NOTHING;
 
 ALTER TABLE platform_access ENABLE ROW LEVEL SECURITY;
