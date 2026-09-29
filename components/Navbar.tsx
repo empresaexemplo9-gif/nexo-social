@@ -24,7 +24,7 @@ const CHAVE_LATERAL = 'nexo:lateral';
 
 const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'Início', icon: 'sparkles' },
-  { href: '/descobrir', label: 'Descobrir de graça', icon: 'grade' },
+  { href: '/descobrir', label: 'Descobrir', icon: 'grade' },
   { href: '/shorts', label: 'Shorts', icon: 'shorts' },
   { href: '/revista', label: 'Revista', icon: 'jornal' },
   { href: '/agenda', label: 'Agenda', icon: 'calendarCheck' },

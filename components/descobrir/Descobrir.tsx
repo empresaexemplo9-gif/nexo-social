@@ -104,7 +104,7 @@ export default function Descobrir() {
         <div className="relative">
           <p className="rotulo-hud">Assistir, ler e ouvir</p>
           <h1 className="mt-3 font-display text-5xl font-extrabold leading-[0.95] tracking-tight text-zinc-50 md:text-6xl">
-            Descobrir, <span className="texto-degrade">de graça</span>
+            <span className="texto-degrade">Descobrir</span>
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300">
             Filmes, livros, audiolivros e tutoriais que estão liberados — tocando e abrindo aqui dentro, filtrados pelos seus gostos.
