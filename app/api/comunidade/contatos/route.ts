@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao } from '@/lib/comunidade';
-import { profilesByIds } from '@/lib/social';
+import { notify, profilesByIds } from '@/lib/social';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,14 +64,14 @@ export async function POST(request: Request) {
   });
   if (error) return NextResponse.json({ error: 'Não foi possível adicionar o contato.' }, { status: 500 });
 
-  await s.sb.from('notifications').insert({
-    user_id: userId,
+  await notify([{
+    userId,
     type: 'contato',
     title: 'Novo pedido de contato',
     body: 'Alguém da Comunidade quer adicionar você aos contatos.',
     link: '/comunidade/chat',
-    actor_id: s.user.id,
-  });
+    actorId: s.user.id,
+  }]);
 
   return NextResponse.json({ ok: true, status: 'pendente' });
 }
