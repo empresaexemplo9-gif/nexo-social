@@ -20,7 +20,7 @@ function setup() {
     'next/link': ({ children, ...props }) => React.createElement('a', props, children),
     './YoutubeAccount': () => null,
     '@/lib/preferences': { usePreferences: () => preferences },
-    '@/lib/taxonomy': { MUSIC_GENRES: [{ id: 'rock', label: 'Rock' }] },
+    '@/lib/taxonomy': { MUSIC_GENRES: [{ id: 'rock', label: 'Rock' }, { id: 'lofi', label: 'Lo-fi & Foco' }] },
   };
   const source = fs.readFileSync(process.env.PLAYLIST_SOURCE || 'components/YoutubePlaylist.tsx', 'utf8');
   vm.runInNewContext(ts.transpileModule(source, { compilerOptions: {
@@ -78,4 +78,24 @@ test('music API failure stays inside the widget and the retry works', async () =
   await act(async () => { app.pending.shift()({ ok: true, json: async () => ({ videos: [] }) }); });
   assert.equal(view.root.findAllByProps({ role: 'alert' }).length, 0);
   await act(async () => { view.unmount(); });
+});
+
+test('Bom Dia supplies a playable default and refreshes its daily music variation', async () => {
+  const app = setup();
+  app.preferences.ready = true;
+  app.preferences.prefs.musicGenres = [];
+  let view;
+  await act(async () => { view = create(React.createElement(app.Playlist, { fallbackGenre: 'lofi', variation: 2 })); });
+  assert.match(app.requests[0].url, /genre=lofi/);
+  assert.match(app.requests[0].url, /rodada=2/);
+  await act(async () => app.pending.shift()({ ok: true, json: async () => ({ videos: [
+    { id: 'abcdefghijk', title: 'Trilha de teste', channel: 'Canal', thumb: null },
+  ] }) }));
+  const play = view.root.findAllByType('button').find(button => button.props.children === 'Tocar seleção');
+  await act(async () => play.props.onClick());
+  assert.match(view.root.findByType('iframe').props.src, /youtube-nocookie\.com\/embed\/abcdefghijk/);
+  await act(async () => view.update(React.createElement(app.Playlist, { fallbackGenre: 'lofi', variation: 3 })));
+  assert.match(app.requests.at(-1).url, /rodada=3/);
+  await act(async () => app.pending.shift()({ ok: true, json: async () => ({ videos: [] }) }));
+  await act(async () => view.unmount());
 });

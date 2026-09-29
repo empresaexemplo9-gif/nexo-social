@@ -8,11 +8,11 @@ import { MUSIC_GENRES } from '@/lib/taxonomy';
 
 interface Video { id: string; title: string; channel: string; thumb: string | null }
 
-export default function YoutubePlaylist() {
+export default function YoutubePlaylist({ variation = 0, fallbackGenre = '' }: { variation?: number; fallbackGenre?: string } = {}) {
   const { prefs, ready } = usePreferences();
   const genres = useMemo(() => MUSIC_GENRES.filter(g => prefs.musicGenres?.includes(g.id)), [prefs.musicGenres]);
   const [selected, setSelected] = useState('');
-  const genre = genres.find(g => g.id === selected) ?? genres[0];
+  const genre = genres.find(g => g.id === selected) ?? genres[0] ?? MUSIC_GENRES.find(g => g.id === fallbackGenre);
   const [round, setRound] = useState(0);
   const [retry, setRetry] = useState(0);
   const [videos, setVideos] = useState<Video[]>([]);
@@ -35,7 +35,7 @@ export default function YoutubePlaylist() {
     if (!ready) return;
     const controller = new AbortController();
     setLoading(true); setError(''); setVideos([]); setIndex(null);
-    const params = new URLSearchParams({ genre: genre?.id || '', rodada: String(round), hits: prefs.musicHits ? '1' : '0', mix: prefs.musicMix ?? 'misturar' });
+    const params = new URLSearchParams({ genre: genre?.id || '', rodada: String((round + variation) % 5), hits: prefs.musicHits ? '1' : '0', mix: prefs.musicMix ?? 'misturar' });
     fetch(`/api/musica?${params}`, { signal: controller.signal })
       .then(async res => {
         const data = await res.json();
@@ -45,10 +45,10 @@ export default function YoutubePlaylist() {
       .catch(err => { if (!controller.signal.aborted) setError(err.message); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [ready, genre?.id, round, retry, prefs.musicHits, prefs.musicMix]);
+  }, [ready, genre?.id, round, retry, variation, prefs.musicHits, prefs.musicMix]);
 
   if (!ready) return <p>Montando sua trilha…</p>;
-  if (!genres.length && !videos.length) return <div className="card-soft space-y-3 p-6">
+  if (!genre && !videos.length) return <div className="card-soft space-y-3 p-6">
     <YoutubeAccount />
     <p>Escolha seus estilos musicais para montar sua trilha no YouTube.</p>
     <Link className="inline-block underline" href="/questionario#q-musica">Escolher meus estilos</Link>

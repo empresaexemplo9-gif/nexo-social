@@ -9,6 +9,7 @@ import LiveAlerts from '@/components/LiveAlerts';
 import HeritageShelf from '@/components/HeritageShelf';
 import ClipsShelf from '@/components/ClipsShelf';
 import InstallApp from '@/components/InstallApp';
+import BomDiaWidget from '@/components/bom-dia/BomDiaWidget';
 import AgendaTimeline from '@/components/AgendaTimeline';
 import MontarHome from '@/components/home/MontarHome';
 import EventosDoTema from '@/components/home/EventosDoTema';
@@ -109,40 +110,6 @@ export default function HomeView({ events }: Props) {
         </div>
       </footer>
     </div>
-  );
-}
-
-/** Widget: rotina da manhã. */
-function BomDiaWidget() {
-  return (
-    <section className="space-y-5">
-      <SectionHeader
-        label="Rotina"
-        title="Bom Dia"
-        icon="sunrise"
-        subtitle="Como começar o dia com calma e foco."
-        action={
-          <Link href="/bom-dia" className="shrink-0 font-mono text-xs uppercase tracking-widest text-emerald-400 hover:text-clay-400">
-            abrir →
-          </Link>
-        }
-      />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {[
-          { href: '/bom-dia#trilha', icon: 'headphones' as const, label: 'Trilha matinal', text: 'Lofi & ambiente para focar' },
-          { href: '/bom-dia#receita', icon: 'leaf' as const, label: 'Nutrição rápida', text: 'Receitas de até 10 minutos' },
-          { href: '/bom-dia#habito', icon: 'bulb' as const, label: 'Hábitos', text: 'Pequenos rituais de manhã' },
-        ].map((item) => (
-          <Link key={item.href} href={item.href} className="card-soft group block p-5">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-950 text-emerald-400 transition duration-300 group-hover:-rotate-6 group-hover:bg-clay-500 group-hover:text-zinc-900">
-              <Icon name={item.icon} size={20} />
-            </span>
-            <span className="mt-4 block text-sm font-semibold text-zinc-50 group-hover:text-emerald-400">{item.label}</span>
-            <span className="mt-1 block text-xs leading-relaxed text-zinc-400">{item.text}</span>
-          </Link>
-        ))}
-      </div>
-    </section>
   );
 }
 

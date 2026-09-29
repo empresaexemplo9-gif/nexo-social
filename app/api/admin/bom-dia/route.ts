@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Campos obrigatórios ausentes.' }, { status: 400 });
   }
 
-  // Publica uma nova curadoria "Bom Dia" (a home lê sempre a mais recente).
+  // Complemento editorial exibido por até sete dias junto à seleção diária.
   const { data, error } = await auth.sb
     .from('bom_dia')
     .insert({
