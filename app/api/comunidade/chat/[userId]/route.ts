@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao } from '@/lib/comunidade';
-import { profilesByIds } from '@/lib/social';
+import { notify, profilesByIds } from '@/lib/social';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,14 +69,14 @@ export async function POST(request: Request, { params }: Ctx) {
   }).select('id, created_at').maybeSingle();
   if (error || !data) return NextResponse.json({ error: 'Não foi possível enviar a mensagem.' }, { status: 500 });
 
-  await s.sb.from('notifications').insert({
-    user_id: params.userId,
+  await notify([{
+    userId: params.userId,
     type: 'chat',
     title: 'Nova mensagem',
     body: body.slice(0, 100),
     link: `/comunidade/chat?com=${s.user.id}`,
-    actor_id: s.user.id,
-  });
+    actorId: s.user.id,
+  }]);
 
   return NextResponse.json({ ok: true, id: data.id, createdAt: data.created_at });
 }
