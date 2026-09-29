@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS platform_invites (
   used_at TIMESTAMPTZ
 );
 
-DO $
+DO $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_constraint WHERE conname = 'platform_access_invite_fk'
@@ -35,7 +35,7 @@ BEGIN
       NOT VALID;
   END IF;
   ALTER TABLE platform_access VALIDATE CONSTRAINT platform_access_invite_fk;
-END $;
+END $$;
 
 -- Marco fixo: somente contas que já existiam quando o modelo por convite foi implantado
 -- recebem o lote inicial automaticamente. Reexecutar este arquivo não libera contas novas.
