@@ -9,7 +9,7 @@ const publicPaths = new Set([
   '/login', '/auth/callback', '/privacidade', '/termos', '/offline', '/api/signup', '/manifest.webmanifest', '/sw.js',
   '/favicon.ico', '/favicon-32.png', '/favicon-48.png', '/apple-touch-icon.png',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png',
-  '/logo.png', '/logo.svg',
+  '/logo.png', '/logo.svg', '/google12ea32661b84e35f.html',
   '/bg/linhas-luz.svg', '/bg/grade.svg', '/bg/chip.svg', '/bg/hud.svg',
   '/bg/rede.svg', '/bg/hexagonos.svg', '/bg/circuito.svg',
 ]);
