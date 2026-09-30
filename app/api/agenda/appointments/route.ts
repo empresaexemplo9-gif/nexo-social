@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/api-helpers';
 import { isUuid, listAppointments } from '@/lib/social';
+import { despacharAgora } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,5 +75,6 @@ export async function POST(request: Request) {
     }
   }
 
+  if (ids.length) await despacharAgora();
   return NextResponse.json({ ok: true, appointment: appt, invited: ids.length });
 }

@@ -5,6 +5,8 @@ import { resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config'
 
 const publicPaths = new Set([
   '/login', '/auth/callback', '/privacidade', '/termos', '/offline', '/api/signup', '/api/invites/validate',
+  // Chamada pelo banco a cada minuto; vale só com o segredo do despacho.
+  '/api/push/despachar',
   '/manifest.webmanifest', '/sw.js',
   '/favicon.ico', '/favicon-32.png', '/favicon-48.png', '/apple-touch-icon.png',
   '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png',

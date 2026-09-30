@@ -21,6 +21,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import type { CategorySlug } from './data';
 import { normalizarWidgets, type WidgetDaHome } from './widgets';
 import { APARENCIA_PADRAO, formaDaAparencia, type Aparencia } from './aparencia-tipos';
+import { AVISOS_PADRAO, formaDosAvisos, type PreferenciasDeAviso } from './push-regras';
 
 export type Frequency = 'diaria' | 'semanal' | 'mensal';
 
@@ -61,6 +62,8 @@ export interface UserPreferences {
   idiomaIndicacao: IdiomaIndicacao;
   /** Cor e textura do fundo da home e cor dos botões (temas dos convites). */
   aparencia: Aparencia;
+  /** O que chega como aviso no aparelho (vale para todos os aparelhos da conta). */
+  notificacoes: PreferenciasDeAviso;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -82,6 +85,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   estiloIndicacao: 'misturar',
   idiomaIndicacao: 'pt',
   aparencia: APARENCIA_PADRAO,
+  notificacoes: AVISOS_PADRAO,
 };
 
 const STORAGE_KEY = 'nexo:prefs:v1';
@@ -118,7 +122,7 @@ function readStorage(): UserPreferences {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_PREFERENCES;
     const parsed = JSON.parse(raw);
-    return { ...DEFAULT_PREFERENCES, ...parsed, homeWidgets: normalizarWidgets(parsed?.homeWidgets), aparencia: formaDaAparencia(parsed?.aparencia) };
+    return { ...DEFAULT_PREFERENCES, ...parsed, homeWidgets: normalizarWidgets(parsed?.homeWidgets), aparencia: formaDaAparencia(parsed?.aparencia), notificacoes: formaDosAvisos(parsed?.notificacoes) };
   } catch {
     return DEFAULT_PREFERENCES;
   }
@@ -243,6 +247,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
     (async () => {
       let remote: UserPreferences | null = null;
       let semAparenciaNaConta = false;
+      let semAvisosNaConta = false;
       let remoteUpdatedAt: string | null = null;
       let userId = '';
       try {
@@ -253,6 +258,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         remote = json.preferences ? { ...DEFAULT_PREFERENCES, ...json.preferences } : null;
         // Conta sem a coluna da aparência (migração pendente): vale a do aparelho.
         semAparenciaNaConta = Boolean(json.preferences) && !('aparencia' in json.preferences);
+        semAvisosNaConta = Boolean(json.preferences) && !('notificacoes' in json.preferences);
         remoteUpdatedAt = typeof json.updatedAt === 'string' ? json.updatedAt : null;
       } catch {
         return; // offline — segue no modo aparelho
@@ -290,6 +296,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       }
 
       if (semAparenciaNaConta) remote = { ...remote, aparencia: mine.aparencia };
+      if (semAvisosNaConta) remote = { ...remote, notificacoes: mine.notificacoes };
       const merged = merge(mine, remote);
       persist(merged);
       setSynced(true);

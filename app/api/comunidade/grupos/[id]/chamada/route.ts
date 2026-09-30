@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao, falha, idInvalido } from '@/lib/comunidade';
 import { isUuid } from '@/lib/social';
+import { despacharAgora } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,5 +27,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
     p_video: b?.video !== false,
   });
   if (error) return falha(error, 'Não deu para avisar a chamada.');
+  await despacharAgora(); // o telefone da outra pessoa toca já
   return NextResponse.json({ ok: true, avisados: data ?? 0 });
 }

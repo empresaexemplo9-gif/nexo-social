@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao, falha, idInvalido } from '@/lib/comunidade';
+import { despacharAgora } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,5 +18,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   const { data, error } = await s.sb.rpc('respond_group_invite', { p_group: params.id, p_accept: b.aceitar });
   if (error) return falha(error, 'Falha ao responder o convite.');
+  await despacharAgora();
   return NextResponse.json({ ok: true, status: data });
 }

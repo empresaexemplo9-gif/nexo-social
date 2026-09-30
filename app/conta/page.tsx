@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import FotoDePerfil from '@/components/FotoDePerfil';
 import YoutubeAccount from '@/components/YoutubeAccount';
+import AvisosNoAparelho from '@/components/AvisosNoAparelho';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
 import { ensureProfile } from '@/lib/provisioning';
@@ -146,6 +147,13 @@ export default function ContaPage() {
             </div>
           )}
         </section>
+
+        {account && (
+          <section id="avisos" className="scroll-mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <h2 className="mb-4 text-lg font-semibold text-zinc-50">Avisos no aparelho</h2>
+            <AvisosNoAparelho />
+          </section>
+        )}
 
         <section id="youtube" className="scroll-mt-8 space-y-3">
           <h2 className="text-lg font-semibold text-zinc-50">Minha conta do YouTube</h2>

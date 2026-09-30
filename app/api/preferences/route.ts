@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/api-helpers';
 import { normalizarWidgets } from '@/lib/widgets';
 import { normalizarAparencia } from '@/lib/aparencia';
+import { formaDosAvisos } from '@/lib/push-regras';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +14,7 @@ const ESTILOS = ['misturar', 'classicos', 'descobertas'];
  * falhar por causa de uma delas, salva o resto em vez de perder o questionário
  * inteiro — e avisa nos logs para rodar o db/schema.sql.
  */
-const COLUNAS_OPCIONAIS = ['completed_at', 'music_hits', 'music_mix', 'home_widgets', 'estilo_indicacao', 'idioma_indicacao', 'appearance'];
+const COLUNAS_OPCIONAIS = ['completed_at', 'music_hits', 'music_mix', 'home_widgets', 'estilo_indicacao', 'idioma_indicacao', 'appearance', 'notification_prefs'];
 
 /** Linha do banco → formato usado pelo aplicativo (camelCase). */
 function toClient(row: Record<string, any>) {
@@ -37,6 +38,7 @@ function toClient(row: Record<string, any>) {
     idiomaIndicacao: row.idioma_indicacao === 'todos' ? 'todos' : 'pt',
     // Sem a coluna (migração pendente) a chave não vem, e o aparelho mantém a dele.
     ...('appearance' in row ? { aparencia: normalizarAparencia(row.appearance) } : {}),
+    ...('notification_prefs' in row ? { notificacoes: formaDosAvisos(row.notification_prefs) } : {}),
     // Contas anteriores à coluna completed_at têm interesses mas não têm data.
     // Sem esta herança elas voltariam a ver "responda o questionário".
     completedAt: row.completed_at ?? (interests.length > 0 ? (row.updated_at ?? row.created_at ?? null) : null),
@@ -103,6 +105,7 @@ export async function PUT(request: Request) {
   if (typeof b.estiloIndicacao === 'string' && ESTILOS.includes(b.estiloIndicacao)) row.estilo_indicacao = b.estiloIndicacao;
   if (b.idiomaIndicacao === 'pt' || b.idiomaIndicacao === 'todos') row.idioma_indicacao = b.idiomaIndicacao;
   if ('aparencia' in b) row.appearance = normalizarAparencia(b.aparencia);
+  if ('notificacoes' in b) row.notification_prefs = formaDosAvisos(b.notificacoes);
 
   // A conclusão do questionário fica na conta — é ela que impede a plataforma
   // de pedir o questionário de novo em outro aparelho. `null` limpa (é o que
