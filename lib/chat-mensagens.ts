@@ -1,6 +1,7 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { STICKERS } from './invite-stickers';
+import { semColuna } from './erros-banco';
 
 // Mensagens dos chats da Comunidade (grupo e contato): o que pode ser enviado
 // e como a mídia volta para quem lê. A mídia fica no bucket privado "chat";
@@ -127,7 +128,7 @@ export async function lerMensagens(consulta: (colunas: string) => PromiseLike<Re
   let r: Resultado = { data: null, error: null };
   for (const extra of [`${COLUNAS_DE_MIDIA}, reply_to`, COLUNAS_DE_MIDIA, '']) {
     r = await consulta(extra ? `${base}, ${extra}` : base);
-    if (r.error?.code !== '42703') return r;
+    if (!semColuna(r.error)) return r;
   }
   return r;
 }
@@ -169,7 +170,7 @@ export const respostaPedida = (b: any): string | null => {
 /** Grava a mensagem; se o banco ainda não tem a coluna da resposta, grava sem ela. */
 export async function inserirMensagem(inserir: (linha: Record<string, unknown>) => PromiseLike<Resultado>, linha: Record<string, unknown>): Promise<Resultado> {
   const r = await inserir(linha);
-  if (r.error?.code === '42703' && 'reply_to' in linha) {
+  if (semColuna(r.error) && 'reply_to' in linha) {
     const { reply_to: _sem, ...resto } = linha;
     return inserir(resto);
   }

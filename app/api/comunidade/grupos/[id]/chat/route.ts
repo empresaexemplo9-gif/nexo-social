@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { exigirSessao, idInvalido, minhaParticipacao } from '@/lib/comunidade';
 import { profilesByIds, isUuid } from '@/lib/social';
 import { avataresPorId, citacoesDasRespostas, conteudoParaCliente, inserirMensagem, lerMensagens, linksDaMidia, previa, respostaPedida, validarMensagem } from '@/lib/chat-mensagens';
+import { semColuna } from '@/lib/erros-banco';
 import { enviarAviso, pushConfigurado } from '@/lib/push';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -90,7 +91,7 @@ export async function POST(request: Request, { params }: Ctx) {
     : { group_id: params.id, author_id: s.user.id, ...nova };
   if (original) linha.reply_to = original.id;
   const { data, error } = await inserirMensagem((l) => s.sb.from('community_chat_messages').insert(l).select('id, created_at').maybeSingle(), linha);
-  if (error?.code === '42703') return NextResponse.json({ error: 'Fotos, vídeos e áudios no chat ainda não foram ativados no banco.' }, { status: 503 });
+  if (semColuna(error)) return NextResponse.json({ error: 'Fotos, vídeos e áudios no chat ainda não foram ativados no banco.' }, { status: 503 });
   if (error || !data) return NextResponse.json({ error: 'Não foi possível enviar a mensagem.' }, { status: 500 });
   await avisarOGrupo(s.sb, params.id, s.user.id, previa(nova)).catch(() => undefined);
   return NextResponse.json({ ok: true, id: data.id, createdAt: data.created_at });
