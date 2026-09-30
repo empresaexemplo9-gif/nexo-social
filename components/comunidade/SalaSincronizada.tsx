@@ -272,6 +272,37 @@ export default function SalaSincronizada({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [temVideo]);
 
+  // A sala foi limpa: o player sai da tela (volta quando alguém escolher outro).
+  useEffect(() => {
+    if (temVideo || !player.current) return;
+    try {
+      player.current.destroy?.();
+    } catch {
+      /* já tinha saído */
+    }
+    player.current = null;
+    pronto.current = false;
+    if (caixa.current) caixa.current.innerHTML = '';
+    setPrecisaToque(false);
+  }, [temVideo]);
+
+  /** Tira o vídeo da tela de todo mundo. */
+  const limpar = async () => {
+    const s = salaRef.current;
+    if (!s) return;
+    const otimista = { ...s, youtubeId: null, title: null, isPlaying: false, positionSec: 0, updatedAt: new Date(Date.now() + offset.current).toISOString(), updatedBy: meuId };
+    salaRef.current = otimista;
+    setSala(otimista);
+    try {
+      const res = await fetch(`/api/comunidade/grupos/${groupId}/sala`, { method: 'DELETE' });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error);
+      receber(j.sala);
+    } catch (e) {
+      setErro((e as Error).message || 'Não deu para limpar a sala.');
+    }
+  };
+
   useEffect(
     () => () => {
       try {
@@ -529,6 +560,13 @@ export default function SalaSincronizada({
                 aria-label="Ressincronizar com o grupo"
               >
                 <Icon name="refresh" size={14} />
+              </button>
+              <button
+                onClick={() => void limpar()}
+                className="action-collage action-collage--paper inline-flex items-center gap-1 rounded-xl border border-zinc-800 px-2.5 py-2 text-xs text-zinc-300 hover:border-clay-500 hover:text-clay-300"
+                title="Tirar o vídeo da tela de todos"
+              >
+                <Icon name="close" size={13} /> Limpar
               </button>
             </div>
           </div>
