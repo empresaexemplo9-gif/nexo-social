@@ -60,7 +60,7 @@ export default function BarraDoPlayer() {
         aria-label="Posição da faixa"
         aria-valuetext={`${tempo(mostrada)} de ${tempo(faixa.duracao)}`}
         style={{
-          background: `linear-gradient(to right, #2b5288 ${(mostrada / Math.max(1, faixa.duracao)) * 100}%, rgba(22,24,29,0.12) 0)`,
+          background: `linear-gradient(to right, rgb(var(--acento-400)) ${(mostrada / Math.max(1, faixa.duracao)) * 100}%, rgba(22,24,29,0.12) 0)`,
         }}
         className="progresso absolute inset-x-0 -top-0.5 w-full cursor-pointer"
       />

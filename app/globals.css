@@ -18,7 +18,39 @@
 :root {
   color-scheme: light;
   --tinta: 22 24 29; /* zinc-50 */
-  --marinho: 43 82 136; /* emerald-400 */
+  /* Tinta e papel (Tailwind "zinc") e a cor dos botões e destaques ("emerald"),
+     em "r g b". A pessoa pode trocar o acento (lib/aparencia.ts); estes são os
+     valores da marca. */
+  --tinta-50: 22 24 29;
+  --tinta-100: 35 38 45;
+  --tinta-200: 52 56 66;
+  --tinta-300: 74 79 91;
+  --tinta-400: 93 98 112;
+  --tinta-500: 100 105 118;
+  --tinta-600: 163 158 149;
+  --tinta-700: 212 204 191;
+  --tinta-800: 233 227 215;
+  --tinta-900: 255 253 248;
+  --tinta-950: 246 242 234;
+  --acento-50: 15 33 61;
+  --acento-100: 22 41 74;
+  --acento-200: 28 58 99;
+  --acento-300: 35 70 118;
+  --acento-400: 43 82 136;
+  --acento-500: 61 103 163;
+  --acento-600: 106 140 192;
+  --acento-700: 159 182 217;
+  --acento-800: 201 215 236;
+  --acento-900: 227 235 246;
+  --acento-950: 240 244 250;
+  /* Etiquetas de tecido (action-patch) e botões do menu (menu-denim). */
+  --botao: 23 69 188;
+  --botao-borda: 16 45 121;
+  --denim: 41 79 115;
+  --denim-sutil: 54 93 126;
+  --denim-ativo: 23 61 98;
+  --denim-borda: 23 55 82;
+  --marinho: var(--acento-400); /* emerald-400 */
   --laranja: 236 106 44; /* clay-500 */
   --papel: 246 242 234; /* zinc-950 */
   --cartao: 255 253 248; /* zinc-900 */
@@ -61,7 +93,7 @@ h2 {
   border: 2px solid #f6f2ea;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2b5288;
+  background: rgb(var(--acento-400));
 }
 
 /* ---------------------------------------------------------------------------
@@ -214,7 +246,7 @@ body:has(.barra-player) {
   width: 12px;
   height: 12px;
   border-radius: 9999px;
-  background: #2b5288;
+  background: rgb(var(--acento-400));
   box-shadow: 0 0 0 3px rgb(var(--cartao)), 0 2px 6px rgb(var(--marinho) / 0.5);
 }
 .barra-player .progresso::-moz-range-thumb {
@@ -222,7 +254,7 @@ body:has(.barra-player) {
   height: 12px;
   border: 0;
   border-radius: 9999px;
-  background: #2b5288;
+  background: rgb(var(--acento-400));
 }
 
 /* Superfícies grandes: grão de papel e, bem de leve, as linhas de monitor
@@ -321,7 +353,7 @@ a.card-soft:hover,
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #2b5288;
+  color: rgb(var(--acento-400));
 }
 .rotulo-hud::before {
   content: '';
@@ -347,7 +379,7 @@ section:hover > .rotulo-hud::before {
 
 /* Degradê marinho → laranja que corre devagar nas palavras-chave. */
 .texto-degrade {
-  background: linear-gradient(90deg, #2b5288, #3d67a3 35%, #ec6a2c 65%, #2b5288);
+  background: linear-gradient(90deg, rgb(var(--acento-400)), rgb(var(--acento-500)) 35%, #ec6a2c 65%, rgb(var(--acento-400)));
   background-size: 220% 100%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -541,9 +573,9 @@ html {
 /* Etiquetas de tinta sobre tecido: textura vetorial, nítida em qualquer DPI.
    Somente ações explicitamente marcadas; não altera cartões nem campos. */
 .action-patch.action-patch {
-  --patch-bg: #1745bc;
+  --patch-bg: rgb(var(--botao));
   --patch-fg: #fff8e9;
-  --patch-edge: #102d79;
+  --patch-edge: rgb(var(--botao-borda));
   --patch-stitch: rgb(255 248 233 / 0.55);
   position: relative;
   isolation: isolate;
@@ -600,7 +632,7 @@ html {
   }
 }
 .action-patch.action-patch:focus-visible {
-  outline: 3px solid #1745bc;
+  outline: 3px solid rgb(var(--botao));
   outline-offset: 4px;
 }
 .action-patch.action-patch:active:not(:disabled):not([aria-disabled='true']) {
@@ -629,10 +661,10 @@ html {
 
 /* Índigo jeans: trama de sarja, fios claros, borda costurada e relevo suave. */
 .menu-denim {
-  --denim-blue: #294f73;
+  --denim-blue: rgb(var(--denim));
   position: relative;
   isolation: isolate;
-  border: 1px solid #173752;
+  border: 1px solid rgb(var(--denim-borda));
   border-radius: 9px;
   background-color: var(--denim-blue);
   background-image:
@@ -660,11 +692,11 @@ html {
   box-shadow: 0 1px 0 rgb(5 22 39 / 0.18);
   pointer-events: none;
 }
-.menu-denim--subtle { --denim-blue: #365d7e; }
+.menu-denim--subtle { --denim-blue: rgb(var(--denim-sutil)); }
 .menu-denim[aria-current='page'],
 .menu-denim[data-active='true'],
 .menu-denim--active {
-  --denim-blue: #173d62;
+  --denim-blue: rgb(var(--denim-ativo));
   box-shadow: inset 4px 0 0 #d4e6f4, inset 0 1px 1px rgb(224 236 246 / 0.28), 0 2px 4px rgb(12 35 55 / 0.25);
 }
 .menu-denim[aria-current='page'] .rotulo-menu {
@@ -673,7 +705,7 @@ html {
   text-decoration-thickness: 2px;
 }
 .menu-denim:focus-visible {
-  outline: 3px solid #173d62;
+  outline: 3px solid rgb(var(--denim-ativo));
   outline-offset: 3px;
 }
 @media (hover: hover) {
@@ -721,7 +753,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   text-decoration: underline;
 }
 .action-collage:focus-visible {
-  outline: 3px solid #1745bc;
+  outline: 3px solid rgb(var(--botao));
   outline-offset: 3px;
 }
 @media (hover: hover) {
@@ -761,3 +793,40 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 @font-face { font-family: 'IM Fell English'; src: url('/fonts/jogos/im-fell-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 .fonte-arcana { font-family: 'Cinzel', 'Times New Roman', serif; }
 .fonte-pergaminho { font-family: 'IM Fell English', 'Georgia', serif; }
+
+/* Home com fundo escuro escolhido pela pessoa: a tinta dos títulos soltos
+   sobre o fundo fica clara; os cartões (e tudo o que tem papel por trás)
+   voltam à tinta normal, então continuam iguais. */
+.home-fundo-escuro {
+  --tinta-50: 250 247 241;
+  --tinta-100: 244 240 232;
+  --tinta-200: 230 225 215;
+  --tinta-300: 214 208 197;
+  --tinta-400: 196 190 180;
+  --tinta-500: 176 171 162;
+  --tinta-600: 128 124 118;
+  --tinta-700: 92 90 86;
+  --tinta-800: 64 63 61;
+  --tinta-900: 36 37 40;
+  --tinta-950: 24 25 28;
+}
+.home-fundo-escuro :is(.card-soft, [class*='bg-zinc-9'], [class*='bg-zinc-8'], [class*='bg-white'], [class*='bg-emerald-9'], [class*='bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog']) {
+  --tinta-50: 22 24 29;
+  --tinta-100: 35 38 45;
+  --tinta-200: 52 56 66;
+  --tinta-300: 74 79 91;
+  --tinta-400: 93 98 112;
+  --tinta-500: 100 105 118;
+  --tinta-600: 163 158 149;
+  --tinta-700: 212 204 191;
+  --tinta-800: 233 227 215;
+  --tinta-900: 255 253 248;
+  --tinta-950: 246 242 234;
+}
+.home-fundo-escuro .rotulo-hud:not(.home-fundo-escuro :is(.card-soft, [class*='bg-zinc-9'], [role='dialog']) *) {
+  color: rgb(var(--tinta-300));
+}
+/* Painéis translúcidos (aviso de instalar etc.) viram papel sobre o fundo escuro. */
+.home-fundo-escuro :is([class*='bg-emerald-950/'], [class*='bg-zinc-900/'], [class*='bg-zinc-950/']):not(.home-fundo-escuro :is(.card-soft, [class*='bg-zinc-9'], [class*='bg-emerald-9'], [role='dialog']) *) {
+  background-color: rgb(var(--tinta-900) / 0.97);
+}

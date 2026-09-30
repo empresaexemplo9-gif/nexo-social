@@ -13,6 +13,7 @@ import AvisoDeChamada from '@/components/AvisoDeChamada';
 import TechBackdrop from '@/components/TechBackdrop';
 import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
 import { MidiaProvider } from '@/components/midia/MidiaProvider';
+import AplicarAparencia from '@/components/AplicarAparencia';
 
 // Barlow Condensed: títulos firmes e condensados, como nos cartazes.
 const display = Barlow_Condensed({
@@ -116,13 +117,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{if(localStorage.getItem('nexo:lateral')==='recolhida')document.documentElement.dataset.lateral='recolhida'}catch(e){}",
+              "try{if(localStorage.getItem('nexo:lateral')==='recolhida')document.documentElement.dataset.lateral='recolhida'}catch(e){}" +
+              // Cor dos botões escolhida pela pessoa (ver components/AplicarAparencia.tsx).
+              "try{var a=JSON.parse(localStorage.getItem('nexo:aparencia:vars')||'null');if(a)for(var k in a)if(/^--[a-z0-9-]+$/.test(k)&&/^[0-9 ]+$/.test(a[k]))document.documentElement.style.setProperty(k,a[k])}catch(e){}",
           }}
         />
       </head>
       <body className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
         <TechBackdrop />
         <PreferencesProvider>
+          <AplicarAparencia />
           <AgendaProvider>
             <ReadingProvider>
               <SpotifyProvider>

@@ -19,6 +19,8 @@ import { GratisWidget, RevistaWidget, ShortsWidget } from '@/components/home/Wid
 import { usePreferences } from '@/lib/preferences';
 import { getTopic, type ContentItem, type EventItem } from '@/lib/data';
 import { widgetDeTema } from '@/lib/widgets';
+import { opcaoDeFundo } from '@/lib/aparencia';
+import PersonalizarAparencia, { AmostraDeFundo } from '@/components/home/PersonalizarAparencia';
 
 interface Props {
   contents: ContentItem[];
@@ -29,6 +31,9 @@ export default function HomeView({ events }: Props) {
   const { prefs, ready, checked } = usePreferences();
   const [montando, setMontando] = useState(false);
   const [escolhendo, setEscolhendo] = useState(false);
+  const [personalizando, setPersonalizando] = useState(false);
+  // Fundo escolhido pela pessoa (cor + textura de um tema dos convites).
+  const fundo = opcaoDeFundo(prefs.aparencia?.fundo);
   // Primeiro acesso: ainda não escolheu os widgets (e a conta já respondeu,
   // para não perguntar de novo a quem escolheu em outro aparelho).
   const primeiroAcesso = ready && checked && prefs.homeWidgets === null;
@@ -75,7 +80,9 @@ export default function HomeView({ events }: Props) {
   );
 
   return (
-    <div className="min-h-screen font-sans text-zinc-100 antialiased">
+    <div className={`min-h-screen font-sans text-zinc-100 antialiased ${fundo?.escuro ? 'home-fundo-escuro' : ''}`}>
+      {/* O fundo fica por trás de tudo (acima do papel padrão da plataforma). */}
+      {fundo && <AmostraDeFundo opcao={fundo} className="pointer-events-none !fixed inset-0 -z-[9]" />}
       <Navbar />
 
       {/* Largura total: a home usa a tela inteira, com respiro só nas bordas. */}
@@ -83,7 +90,7 @@ export default function HomeView({ events }: Props) {
         {/* Convite a instalar — some sozinho quando já está instalado */}
         <InstallApp />
 
-        <HeroDoPerfil onMontar={alternarMontagem} montando={montando} />
+        <HeroDoPerfil onMontar={alternarMontagem} montando={montando} onPersonalizar={() => setPersonalizando(true)} />
 
         {/* Sempre em evidência: Agenda, Comunidade e os convites ainda não usados */}
         <AgendaTimeline events={events} />
@@ -118,7 +125,7 @@ export default function HomeView({ events }: Props) {
         </div>
 
         {!montando && !escolhendo && !primeiroAcesso && ready && (
-          <div className="flex justify-center">
+          <div className="flex flex-wrap justify-center gap-3">
             <button
               type="button"
               onClick={alternarMontagem}
@@ -126,8 +133,16 @@ export default function HomeView({ events }: Props) {
             >
               <Icon name="palette" size={15} className="transition duration-500 group-hover:rotate-45" /> Montar minha home
             </button>
+            <button
+              type="button"
+              onClick={() => setPersonalizando(true)}
+              className="action-collage action-collage--paper action-collage--seal inline-flex items-center gap-2 rounded-full border border-dashed border-zinc-700 px-5 py-2.5 text-sm font-medium text-zinc-400 transition hover:border-clay-500 hover:text-clay-300"
+            >
+              <Icon name="image" size={15} /> Personalizar cores
+            </button>
           </div>
         )}
+        {personalizando && <PersonalizarAparencia onFechar={() => setPersonalizando(false)} />}
       </main>
 
       <footer className="border-t border-zinc-800 bg-zinc-900/60 py-8 text-xs text-zinc-500 backdrop-blur">

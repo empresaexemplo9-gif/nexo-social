@@ -20,6 +20,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { CategorySlug } from './data';
 import { normalizarWidgets, type WidgetDaHome } from './widgets';
+import { APARENCIA_PADRAO, formaDaAparencia, type Aparencia } from './aparencia-tipos';
 
 export type Frequency = 'diaria' | 'semanal' | 'mensal';
 
@@ -58,6 +59,8 @@ export interface UserPreferences {
   /** Filtro das indicações de filmes, livros, audiolivros e vídeos. */
   estiloIndicacao: EstiloIndicacao;
   idiomaIndicacao: IdiomaIndicacao;
+  /** Cor e textura do fundo da home e cor dos botões (temas dos convites). */
+  aparencia: Aparencia;
 }
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -78,6 +81,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   homeWidgets: null,
   estiloIndicacao: 'misturar',
   idiomaIndicacao: 'pt',
+  aparencia: APARENCIA_PADRAO,
 };
 
 const STORAGE_KEY = 'nexo:prefs:v1';
@@ -114,7 +118,7 @@ function readStorage(): UserPreferences {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_PREFERENCES;
     const parsed = JSON.parse(raw);
-    return { ...DEFAULT_PREFERENCES, ...parsed, homeWidgets: normalizarWidgets(parsed?.homeWidgets) };
+    return { ...DEFAULT_PREFERENCES, ...parsed, homeWidgets: normalizarWidgets(parsed?.homeWidgets), aparencia: formaDaAparencia(parsed?.aparencia) };
   } catch {
     return DEFAULT_PREFERENCES;
   }
@@ -238,6 +242,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
 
     (async () => {
       let remote: UserPreferences | null = null;
+      let semAparenciaNaConta = false;
       let remoteUpdatedAt: string | null = null;
       let userId = '';
       try {
@@ -246,6 +251,8 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         const json = await res.json();
         userId = typeof json.userId === 'string' ? json.userId : '';
         remote = json.preferences ? { ...DEFAULT_PREFERENCES, ...json.preferences } : null;
+        // Conta sem a coluna da aparência (migração pendente): vale a do aparelho.
+        semAparenciaNaConta = Boolean(json.preferences) && !('aparencia' in json.preferences);
         remoteUpdatedAt = typeof json.updatedAt === 'string' ? json.updatedAt : null;
       } catch {
         return; // offline — segue no modo aparelho
@@ -282,6 +289,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
         return;
       }
 
+      if (semAparenciaNaConta) remote = { ...remote, aparencia: mine.aparencia };
       const merged = merge(mine, remote);
       persist(merged);
       setSynced(true);
