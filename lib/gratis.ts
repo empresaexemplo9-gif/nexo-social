@@ -178,7 +178,7 @@ const primeiro = (v: unknown): string | null => {
   return x === undefined || x === null || x === '' ? null : String(x);
 };
 
-async function buscarNoArchive(consulta: string, linhas = 80): Promise<DocIA[]> {
+export async function buscarNoArchive(consulta: string, linhas = 80): Promise<DocIA[]> {
   const params = new URLSearchParams({ q: consulta, rows: String(linhas), page: '1', output: 'json' });
   for (const f of ['identifier', 'title', 'creator', 'year', 'date', 'language', 'downloads']) params.append('fl[]', f);
   params.append('sort[]', 'downloads desc');
@@ -197,7 +197,7 @@ function codigoDeIdioma(v: string): string {
   return IDIOMAS[k] ?? k.slice(0, 2);
 }
 
-function doArchive(d: DocIA, formato: 'video' | 'audio', fonte: ItemGratis['fonte']): ItemGratis {
+export function doArchive(d: DocIA, formato: 'video' | 'audio', fonte: ItemGratis['fonte']): ItemGratis {
   const idioma = primeiro(d.language);
   return {
     id: `ia:${d.identifier}`,
@@ -225,7 +225,7 @@ interface LivroGutendex {
   download_count?: number;
 }
 
-async function buscarNoGutendex(params: Record<string, string>, paginas = 2): Promise<LivroGutendex[]> {
+export async function buscarNoGutendex(params: Record<string, string>, paginas = 2): Promise<LivroGutendex[]> {
   const saida: LivroGutendex[] = [];
   for (let page = 1; page <= paginas; page++) {
     const qs = new URLSearchParams({ ...params, page: String(page) });
@@ -245,7 +245,7 @@ function nomeDoAutor(n: string | undefined): string | null {
   return nome ? `${nome} ${sobrenome}` : n;
 }
 
-function doGutenberg(l: LivroGutendex): ItemGratis {
+export function doGutenberg(l: LivroGutendex): ItemGratis {
   const capa = Object.entries(l.formats ?? {}).find(([k]) => k.startsWith('image/jpeg'))?.[1] ?? null;
   return {
     id: `gutenberg:${l.id}`,

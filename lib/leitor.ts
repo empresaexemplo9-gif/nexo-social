@@ -72,45 +72,58 @@ export function dividirEmCapitulos(bruto: string): Capitulo[] {
   return partes;
 }
 
+async function baixar(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      ...UMA_SEMANA,
+      signal: AbortSignal.timeout(15000),
+      headers: { 'User-Agent': 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)' },
+    });
+    if (!res.ok) return '';
+    const texto = await res.text();
+    return texto.length > 500 ? texto : '';
+  } catch {
+    return '';
+  }
+}
+
+/** "Title: …" / "Author: …" / "Language: …" do cabeçalho do próprio arquivo. */
+function doCabecalho(texto: string, campo: string): string | null {
+  return texto.slice(0, 4000).match(new RegExp(`^${campo}:\\s*(.+)$`, 'm'))?.[1]?.trim() || null;
+}
+
 export async function carregarLivro(id: number): Promise<LivroParaLer> {
-  const meta = await fetch(`https://gutendex.com/books/${id}`, { ...UMA_SEMANA, signal: AbortSignal.timeout(12000) })
+  // O texto sai direto do Gutenberg, sem esperar o Gutendex (que às vezes
+  // demora dezenas de segundos). Os metadados vêm em paralelo, com prazo curto.
+  const metaPedido = fetch(`https://gutendex.com/books/${id}`, { ...UMA_SEMANA, signal: AbortSignal.timeout(5000) })
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null);
 
-  const formatos: Record<string, string> = meta?.formats ?? {};
-  const candidatos = [
-    ...Object.entries(formatos)
-      .filter(([k, v]) => k.startsWith('text/plain') && !v.endsWith('.zip'))
-      .map(([, v]) => v),
-    `https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`,
-    `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`,
-  ].filter(doGutenberg);
-
-  let texto = '';
-  for (const url of candidatos) {
-    try {
-      const res = await fetch(url, {
-        ...UMA_SEMANA,
-        signal: AbortSignal.timeout(15000),
-        headers: { 'User-Agent': 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)' },
-      });
-      if (res.ok) {
-        texto = await res.text();
-        if (texto.length > 500) break;
-      }
-    } catch {
-      // tenta o próximo endereço
+  let texto = await baixar(`https://www.gutenberg.org/cache/epub/${id}/pg${id}.txt`);
+  const meta = await metaPedido;
+  if (!texto) {
+    const formatos: Record<string, string> = meta?.formats ?? {};
+    const candidatos = [
+      ...Object.entries(formatos)
+        .filter(([k, v]) => k.startsWith('text/plain') && !v.endsWith('.zip'))
+        .map(([, v]) => v),
+      `https://www.gutenberg.org/ebooks/${id}.txt.utf-8`,
+    ].filter(doGutenberg);
+    for (const url of candidatos) {
+      texto = await baixar(url);
+      if (texto) break;
     }
   }
   if (!texto) throw new Error('Não foi possível baixar o texto deste livro no Projeto Gutenberg.');
 
   const autorBruto: string | undefined = meta?.authors?.[0]?.name;
   const [sobrenome, nome] = (autorBruto ?? '').split(', ');
+  const idiomas: Record<string, string> = { Portuguese: 'pt', English: 'en', Spanish: 'es', French: 'fr', German: 'de', Italian: 'it' };
   return {
     id,
-    titulo: String(meta?.title ?? `Livro ${id}`).replace(/\s*\n\s*/g, ' — '),
-    autor: autorBruto ? (nome ? `${nome} ${sobrenome}` : autorBruto) : null,
-    idioma: meta?.languages?.[0] ?? null,
+    titulo: String(meta?.title ?? doCabecalho(texto, 'Title') ?? `Livro ${id}`).replace(/\s*\n\s*/g, ' — '),
+    autor: autorBruto ? (nome ? `${nome} ${sobrenome}` : autorBruto) : doCabecalho(texto, 'Author'),
+    idioma: meta?.languages?.[0] ?? idiomas[doCabecalho(texto, 'Language') ?? ''] ?? null,
     capitulos: dividirEmCapitulos(texto),
     link: `https://www.gutenberg.org/ebooks/${id}`,
   };

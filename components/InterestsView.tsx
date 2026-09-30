@@ -7,7 +7,8 @@ import TopicGrid from './TopicGrid';
 import ProfilePlaylist from './ProfilePlaylist';
 import { Selo } from './Logo';
 import { usePreferences } from '@/lib/preferences';
-import { bookPicks, filmPicks, type CulturePick } from '@/lib/culture';
+import { filmPicks, type CulturePick } from '@/lib/culture';
+import IndicacoesLivros from './IndicacoesLivros';
 import { HOBBIES, MUSIC_GENRES, genreLabel } from '@/lib/taxonomy';
 import { getTopic, type EventItem } from '@/lib/data';
 
@@ -288,13 +289,12 @@ export function TrilhaWidget() {
 export function AssistirLerWidget() {
   const { prefs } = usePreferences();
   const films = filmPicks(prefs.filmGenres ?? []);
-  const books = bookPicks(prefs.bookGenres ?? []);
   return (
     <div className="space-y-10">
       <section className="space-y-6">
         <SectionHeader label="Tela & papel" title="Para assistir e ler" icon="film" subtitle="Baseado nos gêneros que você escolheu." />
         <PickList title="Filmes e séries" icon="film" picks={films} />
-        <PickList title="Livros" icon="book" picks={books} />
+        <IndicacoesLivros generos={prefs.bookGenres ?? []} />
       </section>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">

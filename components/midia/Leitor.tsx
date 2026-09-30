@@ -12,11 +12,36 @@ interface Livro {
   id: number;
   titulo: string;
   autor: string | null;
+  idioma?: string | null;
   capitulos: Capitulo[];
   link: string;
 }
 
 const TAMANHOS = [15, 17, 19, 21, 24];
+
+// Fontes pensadas para leitura longa e o "papel" do leitor. Valem para todos
+// os livros e ficam guardadas no aparelho.
+const FONTES = {
+  literata: { rotulo: 'Literata', familia: "'Literata', Georgia, 'Times New Roman', serif" },
+  atkinson: { rotulo: 'Atkinson', familia: "'Atkinson Hyperlegible', system-ui, sans-serif" },
+} as const;
+const PAPEIS = {
+  claro: { rotulo: 'Claro', fundo: '#fffdf8', tinta: '#1f1b16', suave: '#6b6257' },
+  sepia: { rotulo: 'Sépia', fundo: '#f4ecd8', tinta: '#3a2e22', suave: '#7a6650' },
+  noite: { rotulo: 'Noite', fundo: '#16181d', tinta: '#e8e3d9', suave: '#9d978c' },
+} as const;
+type Fonte = keyof typeof FONTES;
+type Papel = keyof typeof PAPEIS;
+const CHAVE_ESTILO = 'nexo:leitor:estilo';
+
+function lerEstilo(): { fonte: Fonte; papel: Papel } {
+  try {
+    const v = JSON.parse(localStorage.getItem(CHAVE_ESTILO) || '{}');
+    return { fonte: v.fonte in FONTES ? v.fonte : 'literata', papel: v.papel in PAPEIS ? v.papel : 'claro' };
+  } catch {
+    return { fonte: 'literata', papel: 'claro' };
+  }
+}
 
 function lerMarcador(id: number): { cap: number; tam: number } {
   try {
@@ -37,6 +62,8 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
   const [erro, setErro] = useState('');
   const [cap, setCap] = useState(0);
   const [tam, setTam] = useState(2);
+  const [fonte, setFonte] = useState<Fonte>('literata');
+  const [papel, setPapel] = useState<Papel>('claro');
   const rolagem = useRef<HTMLDivElement>(null);
   const { find, add } = useReading();
   const naEstante = find('gutenberg', `gutenberg-${id}`);
@@ -45,6 +72,9 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
     const m = lerMarcador(id);
     setCap(m.cap);
     setTam(m.tam);
+    const e = lerEstilo();
+    setFonte(e.fonte);
+    setPapel(e.papel);
     let vivo = true;
     fetch(`/api/leitor?id=${id}`)
       .then(async (r) => {
@@ -66,6 +96,14 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
     }
     rolagem.current?.scrollTo({ top: 0 });
   }, [id, cap, tam]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHAVE_ESTILO, JSON.stringify({ fonte, papel }));
+    } catch {
+      /* sem armazenamento: vale só nesta leitura */
+    }
+  }, [fonte, papel]);
 
   if (erro) {
     return (
@@ -113,6 +151,32 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
             const a = document.createElement('a'); a.href = url; a.download = `livro-${id}.txt`; document.body.appendChild(a); a.click(); a.remove();
             window.setTimeout(() => URL.revokeObjectURL(url), 1000);
           }}>Baixar texto</button>
+          <select
+            value={fonte}
+            onChange={(e) => setFonte(e.target.value as Fonte)}
+            aria-label="Fonte do texto"
+            className="h-8 rounded-lg border border-zinc-800 bg-zinc-900 px-1.5 text-xs text-zinc-200"
+            style={{ fontFamily: FONTES[fonte].familia }}
+          >
+            {(Object.keys(FONTES) as Fonte[]).map((k) => (
+              <option key={k} value={k} style={{ fontFamily: FONTES[k].familia }}>{FONTES[k].rotulo}</option>
+            ))}
+          </select>
+          <div role="radiogroup" aria-label="Cor do papel" className="flex items-center gap-1">
+            {(Object.keys(PAPEIS) as Papel[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={papel === k}
+                aria-label={`Papel ${PAPEIS[k].rotulo}`}
+                title={PAPEIS[k].rotulo}
+                onClick={() => setPapel(k)}
+                className={`h-6 w-6 rounded-full border-2 transition ${papel === k ? 'border-emerald-400 scale-110' : 'border-zinc-700'}`}
+                style={{ backgroundColor: PAPEIS[k].fundo }}
+              />
+            ))}
+          </div>
           <button
             type="button"
             onClick={() => setTam((t) => Math.max(0, t - 1))}
@@ -154,10 +218,14 @@ export default function Leitor({ id, capa }: { id: number; capa?: string | null 
         </div>
       </div>
 
-      <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto bg-[#fffdf8]">
-        <article className="mx-auto max-w-prose px-5 py-8 font-serif text-zinc-100 sm:px-8" style={{ fontSize: TAMANHOS[tam] }}>
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-clay-400">{livro.titulo}</p>
-          <h3 className="mt-2 font-display text-3xl font-bold text-zinc-50">{atual.titulo}</h3>
+      <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto transition-colors" style={{ backgroundColor: PAPEIS[papel].fundo }}>
+        <article
+          className="mx-auto max-w-prose px-5 py-8 sm:px-8"
+          style={{ fontSize: TAMANHOS[tam], fontFamily: FONTES[fonte].familia, color: PAPEIS[papel].tinta, fontKerning: 'normal', hyphens: 'auto' }}
+          lang={livro.idioma ?? undefined}
+        >
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em]" style={{ color: PAPEIS[papel].suave }}>{livro.titulo}</p>
+          <h3 className="mt-2 text-3xl font-bold leading-tight" style={{ color: PAPEIS[papel].tinta }}>{atual.titulo}</h3>
           <div className="mt-6 space-y-[0.9em] leading-[1.8]">
             {atual.paragrafos.map((p, i) => (
               <p key={i}>{p}</p>
