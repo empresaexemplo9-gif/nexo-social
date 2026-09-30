@@ -37,6 +37,8 @@ export default function FotoDePerfil({
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       setPath(json.avatarPath);
+      // O menu lateral mostra a foto: avisa para trocar lá também.
+      window.dispatchEvent(new CustomEvent('nexo:perfil', { detail: { avatar_path: json.avatarPath } }));
     } catch (e: any) {
       if (novo) await apagarImagens('perfis', [novo]);
       setErro(e?.message || 'Não deu para trocar a foto.');
@@ -51,7 +53,10 @@ export default function FotoDePerfil({
     setErro('');
     const res = await fetch('/api/me/foto', { method: 'DELETE' });
     const json = await res.json().catch(() => ({}));
-    if (res.ok) setPath(null);
+    if (res.ok) {
+      setPath(null);
+      window.dispatchEvent(new CustomEvent('nexo:perfil', { detail: { avatar_path: null } }));
+    }
     else setErro(json.error || 'Não deu para tirar a foto.');
     setOcupado(false);
   };

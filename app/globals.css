@@ -739,3 +739,11 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   .action-collage { background-image: none; box-shadow: none; outline: 1px solid ButtonText; }
   .action-collage:focus-visible { outline: 3px solid Highlight; }
 }
+
+/* Fontes do leitor de livros (auto-hospedadas; carregam só quando usadas). */
+@font-face { font-family: 'Literata'; src: url('/fonts/leitura/literata-regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Literata'; src: url('/fonts/leitura/literata-bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Literata'; src: url('/fonts/leitura/literata-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url('/fonts/leitura/atkinson-regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url('/fonts/leitura/atkinson-bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Atkinson Hyperlegible'; src: url('/fonts/leitura/atkinson-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }

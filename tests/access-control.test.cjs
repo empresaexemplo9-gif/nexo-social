@@ -89,10 +89,10 @@ test('missing configuration, network errors and invalid sessions fail closed', a
 
 test('invitation preview is public but invite management and unrelated paths remain protected', async () => {
   const app = load({ throws: true });
-  for (const path of ['/convite/' + 'a'.repeat(64), '/convite/arte/0?v=1', '/convite/arte/150']) {
+  for (const path of ['/convite/' + 'a'.repeat(64), '/convite/arte/0?v=1', '/convite/arte/131?n=427&v=6', '/convite-assets/adesivos/007.png', '/convite-assets/fonts/anton.ttf', '/convite-assets/texturas/lona.jpg']) {
     assert.equal((await app.run(path)).headers.get('x-middleware-next'), '1');
   }
   assert.equal(app.calls(), 0);
-  for (const path of ['/convites', '/convite/admin', '/convite/arte/admin']) assert.equal((await app.run(path)).status, 307);
+  for (const path of ['/convites', '/convite/admin', '/convite/arte/admin', '/convite-assets/adesivos/x.png', '/convite-assets/outro/segredo.json']) assert.equal((await app.run(path)).status, 307);
   assert.equal((await app.run('/api/invites')).status, 503);
 });

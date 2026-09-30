@@ -4,13 +4,14 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { getSession } from './api-helpers';
 import { isPlatformAdmin } from './auth';
+import { apagarConexao, gravarConexao, lerConexao } from './conexoes';
 
 const SESSION = 'nexo_youtube';
 const REQUEST = 'nexo_youtube_oauth';
 const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
 const opts = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/api' };
 const privateHeaders = { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' };
-interface Session { uid: string; access: string; refresh: string; expires: number }
+interface Session { uid: string; access: string; refresh: string; expires: number; channel?: string }
 interface Pending { uid: string; state: string; verifier: string; redirect: string; expires: number; next?: string }
 function config() {
   // Pares completos: nunca combinar o ID de um app com o segredo de outro.
@@ -59,7 +60,25 @@ function save(session: Session) {
   const maxAge = session.refresh ? 180 * 86400 : Math.max(1, Math.floor((session.expires - Date.now()) / 1000));
   cookies().set(SESSION, seal(session), { ...opts, maxAge });
 }
-function clear() { cookies().set(SESSION, '', { ...opts, maxAge: 0 }); }
+// Tokens novos: além do cookie, guarda uma cópia selada na conta, para a
+// conexão continuar em outro aparelho ou depois que o navegador limpar cookies.
+async function persist(session: Session) {
+  save(session);
+  if (session.refresh) await gravarConexao(session.uid, 'youtube', seal(session));
+}
+async function clear(uid?: string) {
+  cookies().set(SESSION, '', { ...opts, maxAge: 0 });
+  if (uid) await apagarConexao(uid, 'youtube');
+}
+// Sessão do cookie; sem ele, a cópia guardada na conta (e o cookie volta).
+async function load(uid: string): Promise<Session | null> {
+  const fromCookie = unseal<Session>(cookies().get(SESSION)?.value);
+  if (fromCookie?.uid === uid) return fromCookie;
+  const stored = unseal<Session>((await lerConexao(uid, 'youtube')) ?? undefined);
+  if (stored?.uid !== uid || !stored.refresh) return null;
+  save(stored);
+  return stored;
+}
 async function exchange(params: Record<string,string>) {
   const c = config();
   const res = await fetch('https://oauth2.googleapis.com/token', { method:'POST',
@@ -73,21 +92,23 @@ function expiresAt(value: unknown) {
   return Number.isFinite(seconds) && seconds > 0 ? Date.now() + Math.min(seconds, 86400) * 1000 : null;
 }
 export async function youtubeAccess(uid: string): Promise<string | null> {
-  const s = unseal<Session>(cookies().get(SESSION)?.value);
-  if (!s || s.uid !== uid || !youtubeContaConfigurada()) return null;
+  if (!youtubeContaConfigurada()) return null;
+  const s = await load(uid);
+  if (!s) return null;
   if (s.expires > Date.now()+60000) {
     save(s); // Janela persistente renovada enquanto a conexão estiver em uso.
     return s.access;
   }
-  if (!s.refresh) { clear(); return null; }
+  if (!s.refresh) { await clear(); return null; }
   try {
     const res = await exchange({grant_type:'refresh_token',refresh_token:s.refresh});
     const expires = expiresAt(res.data.expires_in);
     if (!res.ok || !res.data.access_token || !expires) {
-      if (res.data.error === 'invalid_grant') clear();
+      // Só a revogação de verdade desconecta; falha passageira mantém tudo.
+      if (res.data.error === 'invalid_grant') await clear(uid);
       return null;
     }
-    save({...s,access:res.data.access_token,refresh:res.data.refresh_token || s.refresh,expires});
+    await persist({...s,access:res.data.access_token,refresh:res.data.refresh_token || s.refresh,expires});
     return res.data.access_token;
   } catch { return null; }
 }
@@ -150,15 +171,19 @@ export async function youtubeAccount(request: Request, action: string) {
       const expires = expiresAt(res.data.expires_in);
       if (!res.data.access_token || !expires) return finish('falhou', p.next);
       if (!String(res.data.scope || '').split(' ').includes(SCOPE)) return finish('permissao', p.next);
-      await youtubeApi(res.data.access_token,'channels',{part:'id',mine:'true'});
-      // Google pode não emitir outro refresh_token. Não reutilizar um de outra conta.
-      save({uid:user.id,access:res.data.access_token,refresh:res.data.refresh_token || '',expires});
+      const canal = await youtubeApi(res.data.access_token,'channels',{part:'id',mine:'true'});
+      const channel: string | undefined = canal?.items?.[0]?.id;
+      // Google pode não emitir outro refresh_token. Só reaproveitar o anterior
+      // se for o mesmo canal (nunca o de outra conta Google).
+      const prior = await load(user.id);
+      const refresh = res.data.refresh_token || (channel && prior?.channel === channel ? prior.refresh : '');
+      await persist({uid:user.id,access:res.data.access_token,refresh,expires,channel});
       return finish('conectado', p.next);
     } catch(e) { return finish(e instanceof Error && e.message === 'api_desativada' ? 'api_desativada' : 'falhou', p.next); }
   }
   if (action === 'sair') {
     if (request.headers.get('origin') && request.headers.get('origin') !== origin) return json({error:'Origem inválida.'},403);
-    const session = unseal<Session>(cookies().get(SESSION)?.value);
+    const session = await load(user.id);
     if (session?.uid === user.id) {
       try {
         const res = await fetch('https://oauth2.googleapis.com/revoke',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
@@ -170,7 +195,7 @@ export async function youtubeAccount(request: Request, action: string) {
         }
       } catch { return json({error:'Não foi possível desconectar agora. Tente novamente.'},502); }
     }
-    clear(); return json({conectado:false});
+    await clear(user.id); return json({conectado:false});
   }
   const redirect = redirectFor(origin);
   const configured = youtubeContaConfigurada();
@@ -181,7 +206,7 @@ export async function youtubeAccount(request: Request, action: string) {
     dominioCorreto: redirect?.origin === origin,
   } : undefined;
   const access = await youtubeAccess(user.id);
-  const stored = unseal<Session>(cookies().get(SESSION)?.value);
+  const stored = await load(user.id);
   // Falha temporária de renovação não significa revogação. invalid_grant limpa o cookie.
   const saved = stored?.uid === user.id && Boolean(stored.refresh);
   return json({configurado: configured && Boolean(redirect) && redirect?.origin === origin,

@@ -8,7 +8,6 @@ import {
   WIDGETS_DE_TEMA,
   WIDGETS_FIXOS,
   widgetDeTema,
-  widgetsPadrao,
   type TipoDeTema,
   type WidgetDaHome,
 } from '@/lib/widgets';
@@ -27,6 +26,8 @@ export function descreverWidget(id: string) {
 interface Props {
   montando: boolean;
   onConcluir: () => void;
+  /** Abre a escolha de widgets (a mesma do primeiro acesso). */
+  onEscolher: () => void;
   /** O conteúdo de cada widget; `null` quando não há o que mostrar. */
   conteudo: (id: string) => React.ReactNode;
 }
@@ -40,9 +41,10 @@ const BOTAO =
  * tamanho e esconder, e a galeria mostra o que dá para acrescentar — os blocos
  * escondidos e os widgets dos temas que a pessoa segue.
  */
-export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
+export default function MontarHome({ montando, onConcluir, onEscolher, conteudo }: Props) {
   const { prefs, save } = usePreferences();
-  const salvo = prefs.homeWidgets ?? widgetsPadrao();
+  // Sem escolha salva a home fica só com os destaques (a escolha aparece antes).
+  const salvo = prefs.homeWidgets ?? [];
   const [lista, setLista] = useState<WidgetDaHome[]>(salvo);
   const [galeria, setGaleria] = useState(false);
   const [arrastando, setArrastando] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
   // pessoa esteja mexendo agora.
   const chaveSalva = JSON.stringify(prefs.homeWidgets);
   useEffect(() => {
-    if (!montando) setLista(prefs.homeWidgets ?? widgetsPadrao());
+    if (!montando) setLista(prefs.homeWidgets ?? []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chaveSalva]);
 
@@ -89,6 +91,78 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
     nova.splice(destino, 0, w);
     mudar(nova);
   };
+
+  // Arrastar com o dedo ou o mouse pela alça do widget, a qualquer momento
+  // (não só no modo de montar). Ponteiro em vez de drag-and-drop do HTML, que
+  // não funciona em tela de toque.
+  const ponteiro = useRef<{ x: number; y: number } | null>(null);
+  const alvoRef = useRef<string | null>(null);
+  const marcarAlvo = (x: number, y: number) => {
+    const sob = document
+      .elementsFromPoint(x, y)
+      .map((n) => (n as HTMLElement).closest?.('[data-widget]') as HTMLElement | null)
+      .find(Boolean);
+    const id = sob?.dataset.widget;
+    if (id && id !== alvoRef.current) {
+      alvoRef.current = id;
+      setAlvo(id);
+    }
+  };
+  // Dedo parado perto da borda da tela: a página rola sozinha até o destino.
+  useEffect(() => {
+    if (!arrastando) return;
+    let quadro = 0;
+    const passo = () => {
+      const p = ponteiro.current;
+      if (p) {
+        const borda = 110;
+        const v = p.y < borda ? -Math.ceil((borda - p.y) / 6) : p.y > window.innerHeight - borda ? Math.ceil((p.y - (window.innerHeight - borda)) / 6) : 0;
+        if (v) {
+          window.scrollBy({ top: v, behavior: 'instant' as ScrollBehavior });
+          marcarAlvo(p.x, p.y);
+        }
+      }
+      quadro = requestAnimationFrame(passo);
+    };
+    quadro = requestAnimationFrame(passo);
+    return () => cancelAnimationFrame(quadro);
+  }, [arrastando]);
+
+  const iniciarArraste = (id: string) => (e: React.PointerEvent<HTMLElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    ponteiro.current = { x: e.clientX, y: e.clientY };
+    alvoRef.current = id;
+    setArrastando(id);
+    setAlvo(id);
+  };
+  const arrastar = (e: React.PointerEvent<HTMLElement>) => {
+    if (!arrastando) return;
+    ponteiro.current = { x: e.clientX, y: e.clientY };
+    marcarAlvo(e.clientX, e.clientY);
+  };
+  const soltar = () => {
+    const destino = alvoRef.current;
+    if (arrastando && destino && destino !== arrastando) mover(arrastando, lista.findIndex((w) => w.id === destino));
+    ponteiro.current = null;
+    alvoRef.current = null;
+    setArrastando(null);
+    setAlvo(null);
+  };
+  const alca = (id: string, i: number, titulo: string) => ({
+    onPointerDown: iniciarArraste(id),
+    onPointerMove: arrastar,
+    onPointerUp: soltar,
+    onPointerCancel: soltar,
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowUp') { e.preventDefault(); mover(id, i - 1); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); mover(id, i + 1); }
+    },
+    'aria-label': `Arrastar ${titulo} (setas ↑ ↓ também mudam de lugar)`,
+    title: 'Arraste para mudar de lugar',
+    style: { touchAction: 'none' as const },
+  });
 
   const alternarTamanho = (id: string) =>
     mudar(lista.map((w) => (w.id === id ? { ...w, tamanho: w.tamanho === 'inteira' ? 'metade' : 'inteira' } : w)));
@@ -141,10 +215,13 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
               </button>
               <button
                 type="button"
-                onClick={() => mudar(widgetsPadrao())}
+                onClick={() => {
+                  setGaleria(false);
+                  onEscolher();
+                }}
                 className="action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium text-zinc-400 transition hover:text-zinc-50"
               >
-                <Icon name="refresh" size={13} /> Restaurar padrão
+                <Icon name="refresh" size={13} /> Escolher de novo
               </button>
               <button
                 type="button"
@@ -203,9 +280,18 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
               <div
                 key={w.id}
                 data-widget={w.id}
-                className={`widget-entra min-w-0 ${largura}`}
+                className={`widget-entra group/widget relative min-w-0 rounded-3xl transition duration-200 ${largura} ${
+                  arrastando === w.id ? 'scale-[0.98] opacity-50' : ''
+                } ${alvo === w.id && arrastando && arrastando !== w.id ? 'ring-4 ring-clay-500/40 ring-offset-4 ring-offset-transparent' : ''}`}
                 style={{ animationDelay: `${Math.min(i, 8) * 70}ms` }}
               >
+                <button
+                  type="button"
+                  {...alca(w.id, i, info.titulo)}
+                  className="absolute -top-3 right-2 z-20 flex h-8 w-8 cursor-grab items-center justify-center rounded-full border border-zinc-700 bg-zinc-900/95 text-zinc-400 shadow-soft transition hover:text-emerald-400 active:cursor-grabbing lg:opacity-0 lg:group-hover/widget:opacity-100 lg:focus-visible:opacity-100"
+                >
+                  <Icon name="menu" size={15} />
+                </button>
                 {corpo}
               </div>
             );
@@ -215,28 +301,6 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
             <div
               key={w.id}
               data-widget={w.id}
-              draggable
-              onDragStart={(e) => {
-                setArrastando(w.id);
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', w.id);
-              }}
-              onDragOver={(e) => {
-                if (!arrastando) return;
-                e.preventDefault();
-                if (alvo !== w.id) setAlvo(w.id);
-              }}
-              onDragLeave={() => setAlvo((a) => (a === w.id ? null : a))}
-              onDrop={(e) => {
-                e.preventDefault();
-                if (arrastando) mover(arrastando, i);
-                setArrastando(null);
-                setAlvo(null);
-              }}
-              onDragEnd={() => {
-                setArrastando(null);
-                setAlvo(null);
-              }}
               className={`relative min-w-0 rounded-3xl border-2 border-dashed p-3 pt-12 transition duration-300 ${largura} ${
                 alvo === w.id && arrastando !== w.id
                   ? 'border-clay-500 bg-clay-950/80 ring-4 ring-clay-500/15'
@@ -244,10 +308,10 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
               } ${arrastando === w.id ? 'scale-[0.98] opacity-50' : ''} ${recemChegado === w.id ? 'widget-entra' : ''}`}
             >
               <div className="absolute inset-x-3 top-2.5 z-20 flex items-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900 px-1.5 py-1 shadow-soft">
-                <span className="flex cursor-grab items-center gap-2 px-1.5 text-zinc-500 active:cursor-grabbing" title="Arraste para mudar de lugar">
+                <button type="button" {...alca(w.id, i, info.titulo)} className="flex cursor-grab items-center gap-2 rounded-lg px-1.5 py-1 text-zinc-500 active:cursor-grabbing">
                   <Icon name="menu" size={15} />
                   <Icon name={info.icone} size={15} className="text-emerald-400" />
-                </span>
+                </button>
                 <span className="min-w-0 flex-1 truncate text-xs font-semibold text-zinc-100">{info.titulo}</span>
                 <button type="button" className={"action-collage " + (BOTAO)} onClick={() => mover(w.id, i - 1)} disabled={i === 0} aria-label={`Subir ${info.titulo}`}>
                   <Icon name="chevronRight" size={14} className="-rotate-90" />
@@ -300,7 +364,7 @@ export default function MontarHome({ montando, onConcluir, conteudo }: Props) {
 
       {!montando && lista.length === 0 && (
         <p className="rounded-2xl border border-dashed border-zinc-700 p-8 text-center text-sm text-zinc-400">
-          Sua home está vazia — toque em <span className="font-semibold text-zinc-100">Montar minha home</span> para escolher os widgets.
+          Por enquanto, só os destaques. Toque em <span className="font-semibold text-zinc-100">Montar minha home</span> para acrescentar widgets.
         </p>
       )}
     </div>
