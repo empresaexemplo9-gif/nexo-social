@@ -110,3 +110,9 @@ export async function avataresPorId(sb: SupabaseClient, ids: string[]): Promise<
 
 /** Pasta de uma conversa direta no bucket: "diretas/<menor>_<maior>". */
 export const pastaDaConversa = (a: string, b: string) => `diretas/${[a, b].sort().join('_')}`;
+
+/** Prévia de uma mensagem já gravada (resumo da Comunidade, listas de conversa). */
+export function previaDaLinha(row: { kind?: string | null; body?: string | null; media_meta?: any }): string {
+  const kind = (TIPOS as readonly string[]).includes(row.kind ?? '') ? (row.kind as TipoDeMensagem) : 'texto';
+  return previa({ kind, body: row.body ?? '', media_path: null, media_meta: row.media_meta ?? null });
+}

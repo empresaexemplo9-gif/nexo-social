@@ -87,7 +87,7 @@ export default function HomeView({ events }: Props) {
 
         {/* Sempre em evidência: Agenda, Comunidade e os convites ainda não usados */}
         <AgendaTimeline events={events} />
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+        <div className="flex flex-col gap-6 xl:flex-row">
           <div className="min-w-0 xl:flex-1"><ComunidadeDestaque /></div>
           <ConvitesDestaqueCaixa />
         </div>
