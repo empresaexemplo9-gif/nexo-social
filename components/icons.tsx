@@ -84,6 +84,9 @@ export type IconName =
   | 'micOff'
   | 'videoOff'
   | 'maximize'
+  | 'minimize'
+  | 'chevronDown'
+  | 'chevronUp'
   | 'cameraSwitch'
   | 'reply';
 
@@ -475,6 +478,9 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   maximize: <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />,
+  minimize: <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />,
+  chevronDown: <path d="m5 9 7 7 7-7" />,
+  chevronUp: <path d="m5 15 7-7 7 7" />,
   cameraSwitch: (
     <>
       <path d="M4 8h3l1.8-2.5h6.4L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" />
