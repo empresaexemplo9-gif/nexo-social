@@ -13,9 +13,13 @@ const publicPaths = new Set([
   '/bg/rede.svg', '/bg/hexagonos.svg', '/bg/circuito.svg',
 ]);
 
+// Adesivos, fontes e texturas da página pública do convite.
+const INVITE_ASSET = /^\/convite-assets\/(adesivos\/[0-9]{3}\.png|fonts\/[a-z0-9-]+\.ttf|texturas\/[a-z-]+\.(jpg|png))$/;
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)) return NextResponse.next();
+  if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
+    || INVITE_ASSET.test(path)) return NextResponse.next();
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });

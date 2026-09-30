@@ -2,15 +2,18 @@
 
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { inviteImage, INVITE_TITLE, INVITE_DESCRIPTION } from '@/lib/invite-art';
+import { inviteEdition, inviteImage, inviteMeta, STICKERS } from '@/lib/invite-art';
 
 type Invite = { id: string; link: string; status: 'pending' | 'used' | 'revoked'; created_at: string; used_at: string | null };
+
+const tokenOf = (link: string) => { try { return new URL(link).pathname.split('/').pop() || ''; } catch { return ''; } };
 
 export default function ConvitesPage() {
   const [credits, setCredits] = useState(0);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [novo, setNovo] = useState<string | null>(null);
 
   const load = async () => {
     const res = await fetch('/api/invites', { cache: 'no-store' });
@@ -28,6 +31,7 @@ export default function ConvitesPage() {
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error || 'Não foi possível gerar o convite.');
       setCredits(j.credits);
+      setNovo(j.link);
       setMessage('Convite criado. Use Compartilhar ou Copiar link abaixo.');
       try {
         if (navigator.clipboard) {
@@ -50,7 +54,10 @@ export default function ConvitesPage() {
 
   const compartilhar = async (link: string) => {
     if (!navigator.share) return copiar(link);
-    try { await navigator.share({ title: INVITE_TITLE, text: INVITE_DESCRIPTION, url: link }); }
+    const token = tokenOf(link);
+    const e = inviteEdition(token);
+    const { title } = inviteMeta(token);
+    try { await navigator.share({ title, text: `Separei um convite do Nexo Social pra você: ${e.theme.nome}, ${e.serialLabel}. Só existe um desse.`, url: link }); }
     catch (error) { if ((error as Error).name !== 'AbortError') setMessage('Não foi possível compartilhar. Use Copiar link.'); }
   };
 
@@ -73,11 +80,29 @@ export default function ConvitesPage() {
           {credits <= 0 && <p className="mt-4 text-sm text-amber-300">Você usou seus convites. Novos convites só podem ser liberados pelo superadministrador.</p>}
           {message && <p className="mt-4 text-sm text-zinc-300">{message}</p>}
         </section>
+        {novo && (() => {
+          const e = inviteEdition(tokenOf(novo));
+          return (
+            <section className="overflow-hidden rounded-2xl border border-zinc-700" style={{ backgroundColor: e.theme.fundo, color: e.theme.tinta }}>
+              <div className="flex flex-col items-center gap-5 p-6 sm:flex-row">
+                <img src={e.sticker.file} width={e.sticker.w} height={e.sticker.h} alt={`Adesivo da ${e.theme.nome}`} className="h-auto max-h-44 w-auto max-w-[60%] drop-shadow-xl" />
+                <div className="space-y-1">
+                  <p className="text-xs uppercase tracking-[.25em]" style={{ color: e.theme.suave }}>Seu novo convite saiu com</p>
+                  <p className="text-2xl font-bold">{e.theme.nome}</p>
+                  <p className="text-sm" style={{ color: e.theme.suave }}>Convite {e.serialLabel} · adesivo {String(e.variant + 1).padStart(3, '0')} de {STICKERS.length}. Ninguém mais recebe um igual.</p>
+                </div>
+              </div>
+            </section>
+          );
+        })()}
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Links gerados</h2>
-          {!invites.length ? <p className="text-sm text-zinc-500">Você ainda não gerou nenhum convite.</p> : invites.map((i) => (
+          {!invites.length ? <p className="text-sm text-zinc-500">Você ainda não gerou nenhum convite.</p> : invites.map((i) => {
+            const e = inviteEdition(tokenOf(i.link));
+            return (
             <div key={i.id} className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
-              <img src={inviteImage(new URL(i.link).pathname.split('/').pop() || '')} width={1200} height={630} alt="Prévia do convite para o ecossistema Nexo Social" className="mb-4 w-full rounded-lg" loading="lazy" />
+              <img src={inviteImage(tokenOf(i.link))} width={1200} height={630} alt={`Prévia do convite ${e.serialLabel}, ${e.theme.nome}`} className="mb-3 w-full rounded-lg" loading="lazy" />
+              <p className="mb-3 text-xs uppercase tracking-[.2em] text-zinc-400">{e.theme.nome} · {e.serialLabel} · adesivo {String(e.variant + 1).padStart(3, '0')}/{STICKERS.length}</p>
               <div className="flex items-center justify-between gap-3">
                 <span className={i.status === 'pending' ? 'text-emerald-400 text-sm' : 'text-zinc-500 text-sm'}>
                   {i.status === 'pending' ? 'Disponível' : i.status === 'used' ? 'Usado' : 'Revogado'}
@@ -86,7 +111,8 @@ export default function ConvitesPage() {
               </div>
               <p className="mt-2 break-all text-xs text-zinc-500">{i.link}</p>
             </div>
-          ))}
+            );
+          })}
         </section>
       </main>
     </div>

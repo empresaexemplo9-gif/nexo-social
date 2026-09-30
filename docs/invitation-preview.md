@@ -1,22 +1,32 @@
 # Prévia dos convites
 
-151 adesivos das quatro pranchas originais formam o catálogo em
-`lib/invite-stickers.ts`. As imagens originais são preservadas; o gerador de
-Open Graph usa viewports individuais em HTML/CSS para cada adesivo.
+132 adesivos das pranchas originais (enviadas em alta) foram recortados um a
+um, com fundo transparente e sombra de contato, em
+`public/convite-assets/adesivos/NNN.png`. O catálogo fica em
+`lib/invite-stickers.ts`.
 
-O token aleatório existente escolhe uma variante de forma determinística. A
-mesma URL mantém a mesma imagem, e não são necessárias migrações nem novos
-campos no Supabase. A paleta de destaque acompanha as cores do adesivo.
+Cada adesivo pertence a um tema (`lib/invite-themes.ts`). O tema define a
+estética inteira do convite, tirada do adesivo: cores, fontes
+(`public/convite-assets/fonts`), textura (`public/convite-assets/texturas`),
+ornamentos (retícula, xadrez, costura, globo, selo circular, código de barras
+etc.) e o próprio texto. Temas com vários adesivos alternam o título.
 
-- Novos links e a listagem usam `/convite/<token>`.
-- A página pública apresenta o convite e encaminha para o cadastro existente.
-- URLs antigas `/login?cadastro=1&convite=...` também recebem metadados próprios.
-- `/convite/arte/<variante>?v=2` produz PNG 1200 × 630 sem autenticação e sem
-  receber o token, nome, e-mail ou qualquer dado da conta.
-- O middleware mantém o gerenciamento de convites e a plataforma protegidos.
-- Visualizar a prévia não valida, reserva nem consome o convite. O cadastro
-  continua verificando sua disponibilidade no fluxo existente.
-- A lista mostra a miniatura e permite copiar ou compartilhar pelo navegador.
+O token aleatório escolhe o adesivo e um número de série (Nº 0001–9999) de
+forma determinística. A mesma URL mantém a mesma imagem; o número muda detalhes
+do cartão (inclinação do adesivo, lado, código de barras), então cada convite é
+único. Não são necessárias migrações nem novos campos no Supabase.
 
-Aplicativos de mensagem podem manter previews antigos no cache. Copiar o link
-novo pela tela Meus convites usa a nova página de apresentação.
+- `/convite/<token>` é a página pública, vestida com o tema do adesivo, e
+  encaminha para o cadastro existente.
+- `/convite/arte/<variante>?n=<número>&v=6` produz o PNG 1200 × 630
+  (`lib/invite-card.tsx`) sem autenticação e sem receber o token, nome, e-mail
+  ou qualquer dado da conta.
+- O adesivo nunca é ampliado além de 1,6× o arquivo original (2× nos muito
+  pequenos), para não perder nitidez; a página mostra o adesivo no tamanho real.
+- `/convite-assets/...` (adesivos, fontes e texturas) é público; o restante da
+  plataforma continua protegido pelo middleware.
+- Visualizar a prévia não valida, reserva nem consome o convite.
+- Em Meus convites, cada link mostra a edição, o número e o adesivo, e o convite
+  recém-criado é revelado com o tema dele.
+
+Aplicativos de mensagem podem manter previews antigos no cache.
