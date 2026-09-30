@@ -1,19 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-let api: Promise<void> | null = null;
-function loadApi() {
-  if (window.YT?.Player) return Promise.resolve();
-  if (!api) api = new Promise<void>((resolve, reject) => {
-    const previous = window.onYouTubeIframeAPIReady;
-    const timer = window.setTimeout(() => { api = null; reject(new Error()); }, 15000);
-    window.onYouTubeIframeAPIReady = () => { previous?.(); clearTimeout(timer); resolve(); };
-    if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
-      const script = document.createElement('script'); script.src = 'https://www.youtube.com/iframe_api'; script.async = true;
-      script.onerror = () => { clearTimeout(timer); api = null; script.remove(); reject(new Error()); }; document.head.appendChild(script);
-    }
-  });
-  return api;
-}
+import { carregarApiDoYoutube as loadApi } from '@/lib/youtube-iframe';
 export default function YoutubeLivePlayer({ id, title, onClose }: { id: string; title: string; onClose: () => void }) {
   const container = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState('Carregando player…');
