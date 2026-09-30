@@ -829,6 +829,8 @@ END $$;
 -- ordem e o tamanho. Lista de {id, tamanho}; NULL = arranjo padrão.
 -- ---------------------------------------------------------------------------
 ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS home_widgets JSONB;
+-- Aparência escolhida: {fundo, botoes} com ids dos temas dos convites.
+ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS appearance JSONB;
 
 -- ---------------------------------------------------------------------------
 -- Filtro das indicações de filmes, livros, audiolivros e vídeos (lib/gratis.ts):

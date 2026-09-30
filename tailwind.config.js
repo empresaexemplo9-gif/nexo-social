@@ -19,6 +19,12 @@ function invertida(escala) {
   return Object.fromEntries(passos.map((p, i) => [p, escala[passos[passos.length - 1 - i]]]));
 }
 
+/** Escala cujas cores vêm de variáveis "r g b" (aceita /opacidade). */
+function escalaDeVariavel(nome) {
+  const passos = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
+  return Object.fromEntries(passos.map((p) => [p, `rgb(var(--${nome}-${p}) / <alpha-value>)`]));
+}
+
 module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx,mdx}',
@@ -36,33 +42,12 @@ module.exports = {
       colors: {
         // Papel e tinta: 950 é o papel da página, 900 o cartão (mais claro que
         // o papel), 800/700 os fios, 500–50 a tinta, do texto apagado ao preto.
-        zinc: {
-          50: '#16181d',
-          100: '#23262d',
-          200: '#343842',
-          300: '#4a4f5b',
-          400: '#5d6270',
-          500: '#646976',
-          600: '#a39e95',
-          700: '#d4ccbf',
-          800: '#e9e3d7',
-          900: '#fffdf8',
-          950: '#f6f2ea',
-        },
+        // As duas escalas vêm de variáveis CSS (app/globals.css), com os mesmos
+        // valores de antes: é o que deixa cada pessoa trocar a cor dos botões e
+        // destaques (emerald) e a home clarear a tinta sobre um fundo escuro.
+        zinc: escalaDeVariavel('tinta'),
         // Marca — azul-marinho. 400 é o botão/link; os mais baixos, mais escuros.
-        emerald: {
-          50: '#0f213d',
-          100: '#16294a',
-          200: '#1c3a63',
-          300: '#234676',
-          400: '#2b5288',
-          500: '#3d67a3',
-          600: '#6a8cc0',
-          700: '#9fb6d9',
-          800: '#c9d7ec',
-          900: '#e3ebf6',
-          950: '#f0f4fa',
-        },
+        emerald: escalaDeVariavel('acento'),
         // Acento — laranja. 500 é o preenchimento; 300 o texto sobre o papel.
         clay: {
           50: '#4a1a05',

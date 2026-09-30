@@ -24,9 +24,10 @@ import {
   type Lado,
   type Participante,
 } from '@/lib/jogos/arcanos/motor';
-import type { Mensagem, useCanalDeJogos } from '@/lib/jogos/canal';
+import type { Mensagem } from '@/lib/jogos/canal';
+import type { CanalDeJogos } from '@/lib/jogos/sala-local';
 
-type Canal = ReturnType<typeof useCanalDeJogos>;
+type Canal = CanalDeJogos;
 type Eu = { userId: string; nome: string; avatar: string | null };
 
 const TEMPO_DO_TURNO = 90_000;
@@ -40,13 +41,20 @@ const MESA_BG = 'radial-gradient(ellipse at 50% 45%, #3a2a1b 0%, #20160d 55%, #0
 
 interface Props {
   canal: Canal;
-  groupId: string;
+  /** Sem grupo (contra o computador): o placar não é gravado. */
+  groupId?: string | null;
   mesa: string;
   papel: 'host' | 'desafiante' | 'espectador';
   eu: Eu;
   escolas?: [Escola, Escola];
   hostNome?: string;
+  /** Duelo contra o computador, só neste aparelho. */
+  local?: boolean;
   aoSair: () => void;
+  /** Contra o computador: outra partida com o mesmo grimório. */
+  aoRevanche?: () => void;
+  /** O palco chama isto no "Fechar jogo". */
+  fecharRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 function useLargura() {
@@ -60,10 +68,10 @@ function useLargura() {
   return w;
 }
 
-export default function Arcanos({ canal, groupId, mesa, papel, eu, escolas, hostNome, aoSair }: Props) {
+export default function Arcanos({ canal, groupId, mesa, papel, eu, escolas, hostNome, local = false, aoSair, aoRevanche, fecharRef }: Props) {
   const [estado, setEstado] = useState<Estado | null>(null);
   const [aviso, setAviso] = useState('');
-  const [esperando, setEsperando] = useState(papel === 'host' ? 'Esperando um desafiante aceitar o duelo…' : papel === 'desafiante' ? `Chamando ${hostNome ?? 'o anfitrião'} para o duelo…` : 'Entrando para assistir…');
+  const [esperando, setEsperando] = useState(local ? 'Embaralhando os grimórios…' : papel === 'host' ? 'Esperando um desafiante aceitar o duelo…' : papel === 'desafiante' ? `Chamando ${hostNome ?? 'o anfitrião'} para o duelo…` : 'Entrando para assistir…');
   const [modo, setModo] = useState<{ tipo: 'normal' } | { tipo: 'alvo'; inst: string; carta: string } | { tipo: 'ataque' }>({ tipo: 'normal' });
   const [selAtaque, setSelAtaque] = useState<string[]>([]);
   const [bloqueios, setBloqueios] = useState<Record<string, string>>({});
@@ -284,7 +292,7 @@ export default function Arcanos({ canal, groupId, mesa, papel, eu, escolas, host
 
   // Fim: grava o resultado (uma vez).
   useEffect(() => {
-    if (!estado || estado.eu === null || estado.vencedor === null || gravou.current) return;
+    if (!estado || estado.eu === null || estado.vencedor === null || gravou.current || !groupId) return;
     gravou.current = true;
     const v = estado.vencedor;
     const [a, b] = estado.jogadores;
@@ -309,6 +317,7 @@ export default function Arcanos({ canal, groupId, mesa, papel, eu, escolas, host
     void anunciar(null);
     aoSair();
   };
+  if (fecharRef) fecharRef.current = sair;
 
   // --- Interação -----------------------------------------------------------------
   const alvosPossiveis = useMemo<Alvo[]>(() => (estado && modo.tipo === 'alvo' ? alvosDaCarta(estado, lado, modo.carta) : []), [estado, modo, lado]);
@@ -375,17 +384,16 @@ export default function Arcanos({ canal, groupId, mesa, papel, eu, escolas, host
       <Arte nome="spell-book" className="h-7 w-7 shrink-0" style={{ color: OURO }} />
       <div className="min-w-0 flex-1">
         <p className="fonte-arcana truncate text-base font-black leading-none text-[#fdf6e3] sm:text-lg">Arcanos · Duelo de Escolas</p>
-        <p className="truncate text-[11px] text-[#fef3c7]/60">{papel === 'espectador' ? 'Você está assistindo' : 'Ao vivo no grupo'}</p>
+        <p className="truncate text-[11px] text-[#fef3c7]/60">{papel === 'espectador' ? 'Você está assistindo' : local ? 'Contra o computador' : 'Ao vivo no grupo'}</p>
       </div>
       <button type="button" onClick={() => setLog((v) => !v)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#fef3c7]/80 hover:bg-white/10">Registro</button>
       <button type="button" onClick={() => setRegras(true)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#fef3c7]/80 hover:bg-white/10">Regras</button>
-      <button type="button" onClick={sair} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#fecaca] hover:bg-[#ef4444]/20">Sair</button>
     </header>
   );
 
   if (!estado) {
     return (
-      <div className="fixed inset-0 z-[70] flex flex-col" style={{ background: MESA_BG }}>
+      <div className="absolute inset-0 flex flex-col" style={{ background: MESA_BG }}>
         {cabecalho}
         <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6 text-center">
           <div className="flex -space-x-6">
@@ -394,7 +402,7 @@ export default function Arcanos({ canal, groupId, mesa, papel, eu, escolas, host
             <VersoDaCarta largura={70} className="rotate-12" />
           </div>
           <p className="fonte-arcana max-w-sm text-lg font-bold text-[#fdf6e3]">{esperando}</p>
-          {papel === 'host' && escolas && (
+          {papel === 'host' && escolas && !local && (
             <p className="fonte-pergaminho text-sm text-[#fef3c7]/70">Seu grimório: {ESCOLAS[escolas[0]].nome} + {ESCOLAS[escolas[1]].nome}. A mesa aparece para todo mundo que está na sala de jogos do grupo.</p>
           )}
           <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#fde68a] border-t-transparent" />
@@ -509,7 +517,7 @@ export default function Arcanos({ canal, groupId, mesa, papel, eu, escolas, host
   const segredos = jBaixo.segredos;
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col overflow-hidden text-[#fdf6e3]" style={{ background: MESA_BG }}>
+    <div className="absolute inset-0 flex flex-col overflow-hidden text-[#fdf6e3]" style={{ background: MESA_BG }}>
       {cabecalho}
 
       <div className="relative min-h-0 flex-1 overflow-y-auto">
@@ -638,7 +646,7 @@ export default function Arcanos({ canal, groupId, mesa, papel, eu, escolas, host
         </button>
       )}
 
-      {estado.vencedor !== null && <FimDoDuelo estado={estado} onSair={sair} />}
+      {estado.vencedor !== null && <FimDoDuelo estado={estado} onSair={sair} local={local} onRevanche={aoRevanche} comPlacar={Boolean(groupId)} />}
       {regras && <ModalRegras onFechar={() => setRegras(false)} />}
     </div>
   );
@@ -664,19 +672,22 @@ function BotaoMesa({ children, onClick, disabled, fraco, perigo }: { children: R
   );
 }
 
-function FimDoDuelo({ estado, onSair }: { estado: Estado; onSair: () => void }) {
+function FimDoDuelo({ estado, onSair, onRevanche, local, comPlacar }: { estado: Estado; onSair: () => void; onRevanche?: () => void; local: boolean; comPlacar: boolean }) {
   const v = estado.vencedor;
   const venci = estado.eu !== null && v === estado.eu;
   const titulo = v === 'empate' ? 'Empate!' : estado.eu === null ? `${estado.jogadores[v as Lado].nome} venceu!` : venci ? 'Vitória!' : 'Derrota';
   return (
-    <div className="fixed inset-0 z-[76] flex items-center justify-center bg-black/70 p-6" role="dialog" aria-modal="true" aria-label={titulo}>
+    <div className="absolute inset-0 z-[6] flex items-center justify-center bg-black/70 p-6" role="dialog" aria-modal="true" aria-label={titulo}>
       <div className="w-full max-w-sm rounded-3xl p-6 text-center" style={{ background: MESA_BG, boxShadow: `0 0 0 1px ${OURO}, 0 0 40px rgba(212,175,55,.35)` }}>
         <Arte nome={venci || v === 'empate' ? 'laurels-trophy' : 'crossed-swords'} className="mx-auto h-20 w-20" style={{ color: OURO, filter: 'drop-shadow(0 0 12px rgba(212,175,55,.6))' }} />
         <h2 className="fonte-arcana mt-3 text-3xl font-black text-[#fdf6e3]">{titulo}</h2>
         {estado.motivo && <p className="fonte-pergaminho mt-2 text-sm text-[#fef3c7]/80">{estado.motivo}</p>}
-        <p className="mt-1 text-xs text-[#fef3c7]/60">{Math.ceil(estado.turno / 2)} rodadas · o placar do grupo foi atualizado.</p>
-        <div className="mt-5 flex justify-center">
-          <BotaoMesa onClick={onSair}>Voltar à sala de jogos</BotaoMesa>
+        <p className="mt-1 text-xs text-[#fef3c7]/60">{Math.ceil(estado.turno / 2)} rodadas{comPlacar ? ' · o placar do grupo foi atualizado' : ''}.</p>
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          {local && onRevanche && <BotaoMesa onClick={onRevanche}>Revanche</BotaoMesa>}
+          <BotaoMesa onClick={onSair} fraco={Boolean(local && onRevanche)}>
+            Fechar jogo
+          </BotaoMesa>
         </div>
       </div>
     </div>

@@ -123,7 +123,7 @@ function Contador({ valor, rotulo }: { valor: string | number; rotulo: string })
  * Topo da home: saudação, o título com traço de caneta, os temas como
  * adesivos, e à direita um mural com o selo girando e etiquetas soltas.
  */
-export function HeroDoPerfil({ onMontar, montando }: { onMontar: () => void; montando: boolean }) {
+export function HeroDoPerfil({ onMontar, montando, onPersonalizar }: { onMontar: () => void; montando: boolean; onPersonalizar?: () => void }) {
   const { prefs, ready, hasCompleted } = usePreferences();
 
   if (!ready) {
@@ -214,6 +214,15 @@ export function HeroDoPerfil({ onMontar, montando }: { onMontar: () => void; mon
               <Icon name="palette" size={16} className="transition duration-500 group-hover:rotate-45" />
               {montando ? 'Montando a home…' : 'Montar minha home'}
             </button>
+            {onPersonalizar && (
+              <button
+                type="button"
+                onClick={onPersonalizar}
+                className="group inline-flex w-fit items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:-translate-y-0.5 hover:border-clay-500 hover:text-clay-300 action-patch action-patch--paper"
+              >
+                <Icon name="image" size={16} /> Personalizar cores
+              </button>
+            )}
           </div>
         </div>
 

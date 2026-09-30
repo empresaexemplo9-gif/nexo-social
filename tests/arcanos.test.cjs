@@ -161,3 +161,45 @@ test('todas as cartas geram texto de regras', () => {
     if (c.efeitos?.length || c.palavras?.length || c.aoMorrer?.length) assert.ok(linhas.length > 0, c.id);
   }
 });
+
+// --- Adversário do computador ------------------------------------------------------
+const robo = carregar('lib/jogos/arcanos/robo.ts', { './cartas': cartas, './motor': motor });
+
+test('o computador joga partidas inteiras só com jogadas válidas e alguém vence', () => {
+  const escolas = [['chama', 'bosque'], ['mare', 'sombra'], ['luz', 'chama'], ['bosque', 'sombra'], ['mare', 'luz']];
+  for (let n = 0; n < 12; n++) {
+    const ea = escolas[n % escolas.length];
+    const eb = escolas[(n + 2) % escolas.length];
+    const a = motor.embaralharBaralho(cartas.montarBaralho(ea), 0);
+    const b = motor.embaralharBaralho(cartas.montarBaralho(eb), 1);
+    // Aqui os dois lados ficam no mesmo estado (cada robô só olha a própria mão).
+    let e = motor.novaPartida([P('a', ea), P('b', eb)], 0, a);
+    e.jogadores[1].mao = [];
+    e.jogadores[1].baralho = [...b.baralho];
+    e.jogadores[1].segredos = { ...b.segredos };
+    for (let i = 0; i < 5; i++) e.jogadores[1].mao.push(e.jogadores[1].baralho.shift());
+    let passos = 0;
+    while (e.vencedor === null && passos < 2000) {
+      const quem = e.fase === 'bloqueio' ? motor.outro(e.ativo) : e.ativo;
+      const acao = robo.decidirJogada({ ...e, eu: quem }, quem);
+      assert.ok(acao, `sem jogada no passo ${passos}`);
+      const r = motor.aplicar(e, acao);
+      assert.equal(r.ok, true, `${JSON.stringify(acao)}: ${r.erro}`);
+      e = { ...r.estado, eu: 0 };
+      passos += 1;
+    }
+    assert.notEqual(e.vencedor, null, 'a partida terminou');
+  }
+});
+
+test('o computador bloqueia quando o ataque seria fatal', () => {
+  let e = partida(['b04'], ['b04']);
+  // Coloca uma criatura em cada lado e deixa o defensor com pouca vida.
+  e.jogadores[0].campo.push({ id: 'x1', carta: 'b04', dono: 0, ataque: 3, vida: 3, bonusA: 0, bonusV: 0, dano: 0, palavras: [], palavrasFim: [], exausta: false, congelada: false, entrouNoTurno: 0 });
+  e.jogadores[1].campo.push({ id: 'y1', carta: 'b04', dono: 1, ataque: 1, vida: 1, bonusA: 0, bonusV: 0, dano: 0, palavras: [], palavrasFim: [], exausta: false, congelada: false, entrouNoTurno: 0 });
+  e.jogadores[1].vida = 3;
+  e = ok(motor.aplicar(e, { t: 'atacar', lado: 0, atacantes: ['x1'] }));
+  assert.equal(e.fase, 'bloqueio');
+  const acao = robo.decidirJogada({ ...e, eu: 1 }, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(acao)), { t: 'bloquear', lado: 1, bloqueios: { x1: 'y1' } });
+});
