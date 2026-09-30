@@ -89,8 +89,9 @@ function CartaoPerfil({ perfil, email, ativoAgora, onNavegar }: { perfil: Perfil
     >
       <Avatar nome={nome} path={perfil?.avatar} tamanho={40} className="ring-2 ring-emerald-400/30" />
       <span className="rotulo-menu min-w-0">
-        <span className="block truncate text-sm font-semibold text-zinc-100">{nome}</span>
-        <span className="block truncate text-[11px] text-zinc-500">Minha conta</span>
+        {/* Sem cor própria: herda a do botão do menu (legível no azul). */}
+        <span className="block truncate text-sm font-semibold">{nome}</span>
+        <span className="block truncate text-[11px] opacity-75">Minha conta</span>
       </span>
     </Link>
   );
