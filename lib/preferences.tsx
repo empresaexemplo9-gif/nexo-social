@@ -99,6 +99,8 @@ interface PreferencesContextValue {
   hasCompleted: boolean;
   /** true quando o perfil está salvo na conta (e não apenas no aparelho). */
   synced: boolean;
+  /** A conta já foi consultada (com ou sem resposta): dá para decidir o 1º acesso. */
+  checked: boolean;
   save: (patch: Partial<UserPreferences>) => Promise<SaveResult>;
   complete: (prefs: Partial<UserPreferences>) => Promise<SaveResult>;
   reset: () => void;
@@ -215,6 +217,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
   const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [ready, setReady] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [checked, setChecked] = useState(false);
 
   const persist = useCallback((next: UserPreferences) => {
     setPrefs(next);
@@ -288,7 +291,7 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       if (merged.completedAt && merged.completedAt !== remote.completedAt) {
         void pushToAccount(merged);
       }
-    })();
+    })().finally(() => setChecked(true));
   }, [persist]);
 
   const save = useCallback<PreferencesContextValue['save']>(
@@ -347,11 +350,12 @@ export function PreferencesProvider({ children }: { children: React.ReactNode })
       ready,
       hasCompleted: Boolean(prefs.completedAt),
       synced,
+      checked,
       save,
       complete,
       reset,
     }),
-    [prefs, ready, synced, save, complete, reset],
+    [prefs, ready, synced, checked, save, complete, reset],
   );
 
   return <PreferencesContext.Provider value={value}>{children}</PreferencesContext.Provider>;

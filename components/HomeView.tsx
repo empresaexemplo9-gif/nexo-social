@@ -12,6 +12,8 @@ import InstallApp from '@/components/InstallApp';
 import BomDiaWidget from '@/components/bom-dia/BomDiaWidget';
 import AgendaTimeline from '@/components/AgendaTimeline';
 import MontarHome from '@/components/home/MontarHome';
+import EscolherWidgets from '@/components/home/EscolherWidgets';
+import { ComunidadeDestaque, ConvitesDestaque } from '@/components/home/Destaques';
 import EventosDoTema from '@/components/home/EventosDoTema';
 import { GratisWidget, RevistaWidget, ShortsWidget } from '@/components/home/WidgetsDeMidia';
 import { usePreferences } from '@/lib/preferences';
@@ -24,8 +26,12 @@ interface Props {
 }
 
 export default function HomeView({ events }: Props) {
-  const { prefs, ready } = usePreferences();
+  const { prefs, ready, checked } = usePreferences();
   const [montando, setMontando] = useState(false);
+  const [escolhendo, setEscolhendo] = useState(false);
+  // Primeiro acesso: ainda não escolheu os widgets (e a conta já respondeu,
+  // para não perguntar de novo a quem escolheu em outro aparelho).
+  const primeiroAcesso = ready && checked && prefs.homeWidgets === null;
 
   const alternarMontagem = () => {
     setMontando((m) => !m);
@@ -79,14 +85,39 @@ export default function HomeView({ events }: Props) {
 
         <HeroDoPerfil onMontar={alternarMontagem} montando={montando} />
 
+        {/* Sempre em evidência: Agenda, Comunidade e os convites ainda não usados */}
         <AgendaTimeline events={events} />
+        <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
+          <div className="min-w-0 xl:flex-1"><ComunidadeDestaque /></div>
+          <ConvitesDestaqueCaixa />
+        </div>
 
         {/* Os widgets, na ordem e no tamanho que a pessoa escolheu */}
         <div id="widgets" className="scroll-mt-20">
-          {ready && <MontarHome montando={montando} onConcluir={() => setMontando(false)} conteudo={conteudo} />}
+          {(primeiroAcesso || escolhendo) ? (
+            <EscolherWidgets
+              inicial={prefs.homeWidgets}
+              onPronto={() => {
+                setEscolhendo(false);
+                setMontando(false);
+              }}
+            />
+          ) : (
+            ready && (
+              <MontarHome
+                montando={montando}
+                onConcluir={() => setMontando(false)}
+                onEscolher={() => {
+                  setMontando(false);
+                  setEscolhendo(true);
+                }}
+                conteudo={conteudo}
+              />
+            )
+          )}
         </div>
 
-        {!montando && ready && (
+        {!montando && !escolhendo && !primeiroAcesso && ready && (
           <div className="flex justify-center">
             <button
               type="button"
@@ -109,6 +140,15 @@ export default function HomeView({ events }: Props) {
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/** Convites ocupam meia largura ao lado da Comunidade — e somem quando acabam. */
+function ConvitesDestaqueCaixa() {
+  return (
+    <div className="min-w-0 empty:hidden xl:flex-1">
+      <ConvitesDestaque />
     </div>
   );
 }
