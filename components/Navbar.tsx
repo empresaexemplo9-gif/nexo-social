@@ -7,6 +7,7 @@ import Icon, { type IconName } from './icons';
 import LogoMark from './Logo';
 import NotificationsBell from './NotificationsBell';
 import InstallApp from './InstallApp';
+import Avatar from './Avatar';
 import { supabase } from '@/lib/supabase';
 import { isPlatformAdmin } from '@/lib/auth';
 import { TOPICS } from '@/lib/data';
@@ -21,6 +22,8 @@ import { TOPICS } from '@/lib/data';
 // ela abrir e fechar a cada carregamento.
 
 const CHAVE_LATERAL = 'nexo:lateral';
+
+type Perfil = { nome: string; avatar: string | null };
 
 const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/', label: 'Início', icon: 'sparkles' },
@@ -72,10 +75,32 @@ function Marca({ onClick }: { onClick?: () => void }) {
   );
 }
 
+/** Foto e nome de quem está logado, no topo do menu. */
+function CartaoPerfil({ perfil, email, ativoAgora, onNavegar }: { perfil: Perfil | null; email: string; ativoAgora: boolean; onNavegar: () => void }) {
+  const nome = perfil?.nome || email.split('@')[0];
+  return (
+    <Link
+      href="/conta"
+      onClick={onNavegar}
+      title="Minha conta"
+      aria-label={`Minha conta — ${nome}`}
+      aria-current={ativoAgora ? 'page' : undefined}
+      className={`item-menu menu-denim flex items-center gap-3 px-2 py-2 ${ativoAgora ? 'menu-denim--active' : ''}`}
+    >
+      <Avatar nome={nome} path={perfil?.avatar} tamanho={40} className="ring-2 ring-emerald-400/30" />
+      <span className="rotulo-menu min-w-0">
+        <span className="block truncate text-sm font-semibold text-zinc-100">{nome}</span>
+        <span className="block truncate text-[11px] text-zinc-500">Minha conta</span>
+      </span>
+    </Link>
+  );
+}
+
 /** Conteúdo da navegação — o mesmo na barra do computador e na gaveta do celular. */
 function ConteudoMenu({
   pathname,
   email,
+  perfil,
   lateral,
   onNavegar,
   onSair,
@@ -83,6 +108,7 @@ function ConteudoMenu({
 }: {
   pathname: string;
   email: string | null;
+  perfil: Perfil | null;
   lateral: boolean;
   onNavegar: () => void;
   onSair: () => void;
@@ -95,6 +121,11 @@ function ConteudoMenu({
 
   return (
     <>
+      {email && (
+        <div className="border-b border-emerald-400/10 px-3 py-3">
+          <CartaoPerfil perfil={perfil} email={email} ativoAgora={ativo(pathname, '/conta')} onNavegar={onNavegar} />
+        </div>
+      )}
       <nav aria-label="Navegação principal" className="flex-1 space-y-1 overflow-y-auto px-3 py-3">
         {PRINCIPAIS.map((l) => (
           <Link key={l.href} href={l.href} onClick={onNavegar} className={item(ativo(pathname, l.href))} aria-current={ativo(pathname, l.href) ? 'page' : undefined} aria-label={l.label} title={l.label}>
@@ -154,10 +185,6 @@ function ConteudoMenu({
                 <span className="rotulo-menu truncate">Painel</span>
               </Link>
             )}
-            <Link href="/conta" onClick={onNavegar} className={item(ativo(pathname, '/conta'))} aria-current={ativo(pathname, '/conta') ? 'page' : undefined} title="Minha conta">
-              <Icon name="user" size={19} className="shrink-0" />
-              <span className="rotulo-menu truncate">Minha conta</span>
-            </Link>
             <button type="button" onClick={onSair} className={`${item(false)} w-full`} title="Sair">
               <Icon name="arrowRight" size={19} className="shrink-0" />
               <span className="rotulo-menu">Sair</span>
@@ -177,6 +204,7 @@ function ConteudoMenu({
 export default function Navbar() {
   const pathname = usePathname();
   const [email, setEmail] = useState<string | null>(null);
+  const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [gaveta, setGaveta] = useState(false);
   const [recolhida, setRecolhida] = useState(false);
 
@@ -196,6 +224,27 @@ export default function Navbar() {
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // Nome e foto de perfil para o topo do menu.
+  useEffect(() => {
+    if (!email) { setPerfil(null); return; }
+    let active = true;
+    fetch('/api/me', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (active && j) setPerfil({ nome: j.profile?.full_name || '', avatar: j.profile?.avatar_path ?? null });
+      })
+      .catch(() => undefined);
+    const trocouFoto = (e: Event) => {
+      const avatar = (e as CustomEvent<{ avatar_path: string | null }>).detail?.avatar_path ?? null;
+      setPerfil((p) => ({ nome: p?.nome || '', avatar }));
+    };
+    window.addEventListener('nexo:perfil', trocouFoto);
+    return () => {
+      active = false;
+      window.removeEventListener('nexo:perfil', trocouFoto);
+    };
+  }, [email]);
 
   // Trocou de página: a gaveta fecha.
   useEffect(() => setGaveta(false), [pathname]);
@@ -251,6 +300,7 @@ export default function Navbar() {
         <ConteudoMenu
           pathname={pathname}
           email={email}
+          perfil={perfil}
           lateral
           onNavegar={() => undefined}
           onSair={sair}
@@ -275,6 +325,11 @@ export default function Navbar() {
               <Icon name="search" size={20} />
             </Link>
             {email && <NotificationsBell />}
+            {email && (
+              <Link href="/conta" aria-label="Minha conta" className="ml-1 rounded-full">
+                <Avatar nome={perfil?.nome || email} path={perfil?.avatar} tamanho={30} />
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -306,6 +361,7 @@ export default function Navbar() {
             <ConteudoMenu
               pathname={pathname}
               email={email}
+              perfil={perfil}
               lateral={false}
               onNavegar={() => setGaveta(false)}
               onSair={sair}

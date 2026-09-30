@@ -6,7 +6,7 @@ const fs=require('node:fs');
 const {NextResponse}=require('next/server');
 const scope='https://www.googleapis.com/auth/youtube.readonly';
 function setup(options={}) {
- const jar=new Map(), attributes=new Map(), calls=[];let uid='user-a', clock=Date.now();
+ const jar=new Map(), attributes=new Map(), calls=[], stored=new Map();let uid='user-a', clock=Date.now();
  const env=options.env || {YOUTUBE_OAUTH_CLIENT_ID:'id',YOUTUBE_OAUTH_CLIENT_SECRET:'secret',YOUTUBE_SESSION_SECRET:'cookie-secret',NODE_ENV:'production'};
  const exports={};
  class Clock extends Date { static now(){return clock;} }
@@ -18,10 +18,10 @@ function setup(options={}) {
    if(String(url).includes('/revoke'))return {ok:!options.revokeError,json:async()=>({error:options.revokeError})};
    return {ok:!options.apiError,json:async()=>options.apiError?{error:{errors:[{reason:options.apiError}]}}:{items:[]}};
   },
-  require:name=>({'server-only':{},'node:crypto':require('node:crypto'),'next/server':{NextResponse},'next/headers':{cookies:()=>({get:n=>jar.has(n)?{value:jar.get(n)}:undefined,set:(n,v,o)=>{jar.set(n,v);attributes.set(n,o);}})},'./auth':{isPlatformAdmin:email=>email==='admin@example.com'},'./api-helpers':{getSession:async()=>({user:uid?{id:uid,email:options.admin?'admin@example.com':'member@example.com'}:null})}}[name]),
+  require:name=>({'server-only':{},'node:crypto':require('node:crypto'),'next/server':{NextResponse},'next/headers':{cookies:()=>({get:n=>jar.has(n)?{value:jar.get(n)}:undefined,set:(n,v,o)=>{jar.set(n,v);attributes.set(n,o);}})},'./auth':{isPlatformAdmin:email=>email==='admin@example.com'},'./conexoes':{lerConexao:async(u,p)=>stored.get(u+':'+p)??null,gravarConexao:async(u,p,v)=>{stored.set(u+':'+p,v);},apagarConexao:async(u,p)=>{stored.delete(u+':'+p);}},'./api-helpers':{getSession:async()=>({user:uid?{id:uid,email:options.admin?'admin@example.com':'member@example.com'}:null})}}[name]),
  });
  const request=(action,query='',init)=>exports.youtubeAccount(new Request('https://nexo.example/api/youtube/'+action+query,init),action);
- return {api:exports,jar,attributes,calls,env,user:value=>uid=value,advance:ms=>clock+=ms,request,
+ return {api:exports,jar,attributes,calls,env,stored,user:value=>uid=value,advance:ms=>clock+=ms,request,
   start:async(next='')=>new URL((await request('entrar',next?'?next='+encodeURIComponent(next):'')).headers.get('location')),
   callback:url=>request('retorno','?state='+url.searchParams.get('state')+'&code=code')};
 }
@@ -105,4 +105,15 @@ test('temporary refresh failures preserve connection and recover without consent
  assert.equal(await a.api.youtubeAccess('user-a'),'access');
  options.tokenError='invalid_grant';a.advance(3600001);
  assert.equal((await(await a.request('conta')).json()).conectado,false);
+});
+
+test('connection kept in the account survives a lost cookie and stays per user',async()=>{
+ const a=setup();const u=await a.start();assert.match((await a.callback(u)).headers.get('location'),/conectado/);
+ assert.ok(a.stored.has('user-a:youtube'));assert.ok(!a.stored.get('user-a:youtube').includes('refresh'));
+ a.jar.delete('nexo_youtube');
+ const status=await (await a.request('conta')).json();assert.equal(status.conectado,true);assert.ok(a.jar.get('nexo_youtube'));
+ a.jar.delete('nexo_youtube');a.user('user-b');
+ assert.equal((await (await a.request('conta')).json()).conectado,false);
+ a.user('user-a');assert.equal((await (await a.request('sair',undefined,{method:'POST'})).json()).conectado,false);
+ assert.equal(a.stored.has('user-a:youtube'),false);
 });
