@@ -118,7 +118,11 @@ export async function carregarLivro(id: number): Promise<LivroParaLer> {
 
   const autorBruto: string | undefined = meta?.authors?.[0]?.name;
   const [sobrenome, nome] = (autorBruto ?? '').split(', ');
-  const idiomas: Record<string, string> = { Portuguese: 'pt', English: 'en', Spanish: 'es', French: 'fr', German: 'de', Italian: 'it' };
+  const idiomas: Record<string, string> = {
+    Portuguese: 'pt', English: 'en', Spanish: 'es', French: 'fr', German: 'de', Italian: 'it', Latin: 'la', Dutch: 'nl',
+    Finnish: 'fi', Swedish: 'sv', Danish: 'da', Norwegian: 'no', Russian: 'ru', Polish: 'pl', Greek: 'el', Hungarian: 'hu',
+    Esperanto: 'eo', Catalan: 'ca', Chinese: 'zh', Japanese: 'ja', Czech: 'cs', Tagalog: 'tl', Welsh: 'cy', Icelandic: 'is',
+  };
   return {
     id,
     titulo: String(meta?.title ?? doCabecalho(texto, 'Title') ?? `Livro ${id}`).replace(/\s*\n\s*/g, ' — '),
