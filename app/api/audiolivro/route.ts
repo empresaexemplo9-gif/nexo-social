@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     const res = await fetch(feed, {
       next: { revalidate: 21600 },
       signal: AbortSignal.timeout(12000),
-      headers: { 'User-Agent': 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)' },
+      headers: { 'User-Agent': 'nexo-social/1.0 (+https://nexo-social.drap.app.br)' },
     });
     if (!res.ok) {
       return NextResponse.json({ error: `LibriVox respondeu ${res.status}` }, { status: 502 });

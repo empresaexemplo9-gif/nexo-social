@@ -1,7 +1,7 @@
 # Convites e chat: implantação no Supabase
 
 Aplicado em 2026-09-29 (UTC) no projeto `srunjulrflvsbrkhllaf`, usado por
-`https://nexo-social-two.vercel.app`.
+`https://nexo-social.drap.app.br`.
 
 ## Ordem de aplicação
 

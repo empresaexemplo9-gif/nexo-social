@@ -52,7 +52,7 @@ async function pedir(url: string, headers: Record<string, string> = {}): Promise
       signal: controller.signal,
       cache: 'no-store',
       headers: {
-        'User-Agent': 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)',
+        'User-Agent': 'nexo-social/1.0 (+https://nexo-social.drap.app.br)',
         Accept: 'application/json',
         ...headers,
       },

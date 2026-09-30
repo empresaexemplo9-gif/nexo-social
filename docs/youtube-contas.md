@@ -12,7 +12,7 @@
 
 1. No projeto Google Cloud, ative YouTube Data API v3.
 2. Configure a tela de consentimento e uma credencial OAuth do tipo Aplicativo Web.
-3. Cadastre exatamente `https://nexo-social-two.vercel.app/api/youtube/retorno` como URI de redirecionamento (ou o domínio real de produção).
+3. Cadastre exatamente `https://nexo-social.drap.app.br/api/youtube/retorno` como URI de redirecionamento (ou o domínio real de produção).
 4. Configure em Production na Vercel: `YOUTUBE_OAUTH_CLIENT_ID`, `YOUTUBE_OAUTH_CLIENT_SECRET` e `YOUTUBE_OAUTH_REDIRECT_URI`. Para cifra use `YOUTUBE_SESSION_SECRET` ou a `SUPABASE_SERVICE_ROLE_KEY` já existente. Nunca use prefixo NEXT_PUBLIC para segredos.
 5. O escopo é apenas `https://www.googleapis.com/auth/youtube.readonly`. Publique a tela de consentimento e conclua a verificação do Google aplicável antes de oferecer acesso amplo; o modo de teste limita usuários e pode expirar refresh tokens.
 6. Republique e valide com duas contas distintas: conectar, recomendações pessoais, troca de usuário, renovação e desconectar.

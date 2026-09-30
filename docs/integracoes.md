@@ -47,7 +47,7 @@ Melhor fonte para ligar um evento de música a faixas/artistas.
 
 1. Acesse **developer.spotify.com/dashboard** e entre com sua conta Spotify.
 2. **Create app** → dê um nome e descrição, marque **Web API** e **Web Playback SDK**.
-   Em *Redirect URI* cadastre `https://nexo-social-two.vercel.app/api/spotify/retorno`
+   Em *Redirect URI* cadastre `https://nexo-social.drap.app.br/api/spotify/retorno`
    (e o de cada domínio próprio que o site usar — precisa ser idêntico).
 3. Copie o **Client ID** e o **Client Secret**.
 4. No servidor, troque-os por um token (fluxo *Client Credentials*):
@@ -222,7 +222,7 @@ No projeto **nexo-social** da Vercel, configure para Production:
   `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` ou
   `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` é reconhecido, nessa ordem.
 - `YOUTUBE_OAUTH_REDIRECT_URI`:
-  `https://nexo-social-two.vercel.app/api/youtube/retorno`.
+  `https://nexo-social.drap.app.br/api/youtube/retorno`.
 - `YOUTUBE_SESSION_SECRET`: segredo aleatório para cifrar cookies. Sem ele, o
   servidor utiliza `SUPABASE_SERVICE_ROLE_KEY`, se configurado. Não altere a chave
   de sessão sem considerar que as conexões existentes precisarão ser refeitas.

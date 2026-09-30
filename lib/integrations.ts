@@ -190,7 +190,7 @@ async function safeFetch(url: string, init?: RequestInit): Promise<Response> {
       cache: 'no-store',
       headers: {
         // Nominatim exige identificação; os demais aceitam sem problema.
-        'User-Agent': 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)',
+        'User-Agent': 'nexo-social/1.0 (+https://nexo-social.drap.app.br)',
         Accept: 'application/json',
         ...(init?.headers || {}),
       },

@@ -153,7 +153,7 @@ test('theme news ignore failing, non-feed and oversized sources', async () => {
   assert.deepEqual(r.itens.map((n) => n.titulo), ['Notícia boa']);
   assert.deepEqual(r.fontes.map((f) => f.ok), [true, false, false, false]);
   assert.equal(pedidos.length, 4);
-  assert.ok(pedidos.every((p) => p.sinal && p.agente === 'nexo-social/1.0 (+https://nexo-social-two.vercel.app; noticias)'));
+  assert.ok(pedidos.every((p) => p.sinal && p.agente === 'nexo-social/1.0 (+https://nexo-social.drap.app.br; noticias)'));
 });
 
 test('news API validates the theme and is cacheable at the edge', async () => {

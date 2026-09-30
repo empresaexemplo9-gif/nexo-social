@@ -33,7 +33,7 @@ export function inviteEdition(token: string): InviteEdition {
 
 export const INVITE_TITLE = 'Seu jeito único tem lugar aqui.';
 export const INVITE_DESCRIPTION = 'Você recebeu um acesso especial ao ecossistema Nexo Social. Pessoas, cultura, descobertas e conexões para uma personalidade que não se repete. Abra seu convite.';
-export const INVITE_SITE = 'https://nexo-social-two.vercel.app';
+export const INVITE_SITE = 'https://nexo-social.drap.app.br';
 export const INVITE_ART_VERSION = 6;
 
 export const inviteImage = (token: string) => `/convite/arte/${inviteVariant(token)}?n=${inviteSerial(token)}&v=${INVITE_ART_VERSION}`;

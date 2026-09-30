@@ -21,7 +21,7 @@ const SOURCES = [
 ];
 const fetchSource = unstable_cache(async (index: number) => {
   const source = SOURCES[index];
-  const response = await fetch(source.feed, { cache: 'no-store', signal: AbortSignal.timeout(6500), headers: { 'User-Agent': 'NexoSocial/1.0 (+https://nexo-social-two.vercel.app)', Accept: 'application/atom+xml, text/html;q=0.9' } });
+  const response = await fetch(source.feed, { cache: 'no-store', signal: AbortSignal.timeout(6500), headers: { 'User-Agent': 'NexoSocial/1.0 (+https://nexo-social.drap.app.br)', Accept: 'application/atom+xml, text/html;q=0.9' } });
   if (!response.ok) throw Error('Fonte indisponível');
   const raw = await response.text();
   if (raw.length > 2_000_000) throw Error('Resposta da fonte muito grande');

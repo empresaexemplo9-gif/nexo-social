@@ -5,7 +5,7 @@ O Client ID deve corresponder ao cliente Web do projeto Google autorizado e ao s
 Para ativar no projeto Vercel nexo-social:
 1. No projeto Google desse Client ID, habilite YouTube Data API v3.
 2. Configure o cliente OAuth como aplicativo Web, tela de consentimento e escopo youtube.readonly. Em teste, cadastre os usuários autorizados; para acesso público, conclua a publicação/verificação exigida pelo Google.
-3. Autorize exatamente https://nexo-social-two.vercel.app/api/youtube/retorno como URI de redirecionamento (inclua outro domínio apenas se for usado pela plataforma).
+3. Autorize exatamente https://nexo-social.drap.app.br/api/youtube/retorno como URI de redirecionamento (inclua outro domínio apenas se for usado pela plataforma).
 4. Cadastre YOUTUBE_OAUTH_CLIENT_SECRET e YOUTUBE_SESSION_SECRET (segredo aleatório de pelo menos 32 bytes) somente nas variáveis privadas da Vercel. Nunca em NEXT_PUBLIC ou no Git. Opcional: YOUTUBE_OAUTH_CLIENT_ID e YOUTUBE_OAUTH_REDIRECT_URI.
 5. Faça novo deploy e teste Entrar com YouTube, consentimento, retorno à plataforma, Shorts das inscrições e Desconectar.
 

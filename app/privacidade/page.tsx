@@ -14,7 +14,7 @@ const secoes = [
       <p>
         O <strong>nexo.social</strong> é uma plataforma de cultura, interesses, agenda e comunidade. Esta Política de
         Privacidade explica como tratamos os dados pessoais utilizados para oferecer o serviço e se aplica ao site,
-        aplicativo web e recursos acessíveis em <a href="https://nexo-social-two.vercel.app" className="text-emerald-400 underline">nexo-social-two.vercel.app</a>.
+        aplicativo web e recursos acessíveis em <a href="https://nexo-social.drap.app.br" className="text-emerald-400 underline">nexo-social.drap.app.br</a>.
       </p>
     ),
   },

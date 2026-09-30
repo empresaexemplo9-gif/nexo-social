@@ -77,7 +77,7 @@ async function baixar(url: string): Promise<string> {
     const res = await fetch(url, {
       ...UMA_SEMANA,
       signal: AbortSignal.timeout(15000),
-      headers: { 'User-Agent': 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)' },
+      headers: { 'User-Agent': 'nexo-social/1.0 (+https://nexo-social.drap.app.br)' },
     });
     if (!res.ok) return '';
     const texto = await res.text();

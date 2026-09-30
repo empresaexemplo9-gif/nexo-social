@@ -42,7 +42,7 @@ function load({ user = null, error = null, throws = false, url = 'https://exampl
 
 test('all internal pages and APIs require login', async () => {
   const app = load();
-  for (const path of ['/', '/agenda', '/comunidade/convite/token', '/admin', '/conta', '/new-route']) {
+  for (const path of ['/agenda', '/comunidade/convite/token', '/admin', '/conta', '/new-route']) {
     const res = await app.run(path);
     assert.equal(res.status, 307, path);
     assert.equal(new URL(res.headers.get('location')).pathname, '/login');
@@ -50,6 +50,21 @@ test('all internal pages and APIs require login', async () => {
   for (const path of ['/api/contents', '/api/events', '/api/admin/events', '/api/health', '/api/push/inscricao', '/api/push/teste', '/api/push/chave']) {
     assert.equal((await app.run(path)).status, 401, path);
   }
+});
+
+test('visitors see the public homepage even when authentication is unavailable', async () => {
+  for (const options of [{}, { throws: true }, { url: '' }, { user: { is_anonymous: true } }, { error: Error('expired'), refresh: true }]) {
+    const res = await load(options).run('/?campaign=welcome');
+    assert.equal(res.status, 200);
+    assert.equal(new URL(res.headers.get('x-middleware-rewrite')).pathname, '/sobre');
+    assert.equal(res.headers.get('location'), null);
+    assert.equal(res.headers.get('Cache-Control'), 'private, no-store');
+    if (options.refresh) assert.equal(res.cookies.get('session').value, 'renewed');
+  }
+  const app = load({ throws: true });
+  assert.equal((await app.run('/sobre')).headers.get('x-middleware-next'), '1');
+  assert.equal(app.calls(), 0);
+  assert.equal((await app.run('/sobre/private')).status, 307);
 });
 
 test('login, signup, invite validation and static assets stay public', async () => {

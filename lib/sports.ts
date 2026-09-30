@@ -131,7 +131,7 @@ export interface Match {
   thumb: string | null;
 }
 
-const UA = 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)';
+const UA = 'nexo-social/1.0 (+https://nexo-social.drap.app.br)';
 const SPORTSDB = `https://www.thesportsdb.com/api/v1/json/${process.env.THESPORTSDB_API_KEY?.trim() || '123'}`;
 // IDs conferidos na API; all_leagues é limitado no plano gratuito.
 const SPORTSDB_IDS: Record<string, string> = {

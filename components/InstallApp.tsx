@@ -141,7 +141,7 @@ function PassosIOS({ plat, onClose }: { plat: Plataforma; onClose: () => void })
         ]
       : [
           'No iPhone e no iPad, só o Safari instala aplicativos — mesmo o Chrome usa o motor da Apple e não tem essa opção.',
-          'Abra nexo-social-two.vercel.app no Safari.',
+          'Abra nexo-social.drap.app.br no Safari.',
           'Toque em Compartilhar → "Adicionar à Tela de Início".',
         ]
     : [

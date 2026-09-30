@@ -94,7 +94,7 @@ async function buscarNoGutenberg(termo: string): Promise<ItemGratis[]> {
 async function buscarNoGutenbergAgora(termo: string): Promise<ItemGratis[]> {
   const res = await fetch(`https://www.gutenberg.org/ebooks/search.opds/?${new URLSearchParams({ query: termo })}`, {
     next: { revalidate: 604800 }, signal: AbortSignal.timeout(8000),
-    headers: { 'User-Agent': 'nexo-social/1.0 (+https://nexo-social-two.vercel.app)' },
+    headers: { 'User-Agent': 'nexo-social/1.0 (+https://nexo-social.drap.app.br)' },
   });
   if (!res.ok) throw new Error(`Gutenberg respondeu ${res.status}`);
   const xml = await res.text();

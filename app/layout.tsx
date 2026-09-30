@@ -57,7 +57,7 @@ const mono = JetBrains_Mono({
 const SITE =
   (process.env.NEXT_PUBLIC_SITE_URL || '').trim() ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
-  'https://nexo-social-two.vercel.app';
+  'https://nexo-social.drap.app.br';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),

@@ -4,7 +4,7 @@ import { isPlatformAdmin } from '@/lib/auth';
 import { resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config';
 
 const publicPaths = new Set([
-  '/login', '/auth/callback', '/privacidade', '/termos', '/offline', '/api/signup', '/api/invites/validate',
+  '/sobre', '/login', '/auth/callback', '/privacidade', '/termos', '/offline', '/api/signup', '/api/invites/validate',
   // Chamada pelo banco a cada minuto; vale só com o segredo do despacho.
   '/api/push/despachar',
   '/manifest.webmanifest', '/sw.js',
@@ -33,6 +33,12 @@ export async function middleware(request: NextRequest) {
   };
 
   const deny = (unavailable = false, invitation = false) => {
+    // A raiz apresenta o serviço a visitantes sem liberar a home privada.
+    // Mantém a URL oficial e não compartilha respostas entre sessões.
+    if (path === '/' && !invitation) {
+      const about = new URL('/sobre', request.url);
+      return finish(NextResponse.rewrite(about));
+    }
     if (path === '/api/youtube/entrar' || path === '/api/youtube/retorno') {
       const login = new URL('/login', request.url);
       login.searchParams.set('next', '/conta?youtube=sessao_expirada#youtube');

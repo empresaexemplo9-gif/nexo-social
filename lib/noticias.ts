@@ -17,7 +17,7 @@ export interface NoticiasDoTema {
   fontes: { nome: string; site: string; ok: boolean }[];
 }
 
-const AGENTE = 'nexo-social/1.0 (+https://nexo-social-two.vercel.app; noticias)';
+const AGENTE = 'nexo-social/1.0 (+https://nexo-social.drap.app.br; noticias)';
 const TAMANHO_MAX = 2_000_000;
 /** Itens guardados por feed (já sem os velhos) — sobra para os filtros por editoria. */
 const ITENS_POR_FEED = 100;

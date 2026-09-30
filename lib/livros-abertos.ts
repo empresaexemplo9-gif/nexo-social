@@ -22,7 +22,7 @@ const idioma = (v: unknown): string | null => {
 };
 async function json(url: string) {
   const response = await fetch(url, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(10000),
-    headers: { 'User-Agent': 'NexoSocial/1.0 (https://nexo-social-two.vercel.app)', Accept: 'application/json' } });
+    headers: { 'User-Agent': 'NexoSocial/1.0 (https://nexo-social.drap.app.br)', Accept: 'application/json' } });
   if (!response.ok) throw new Error(`Catálogo respondeu ${response.status}`);
   return response.json();
 }

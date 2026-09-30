@@ -24,7 +24,7 @@ import { decodificarEntidades } from './midia';
 
 const WIKI = 'https://pt.wikipedia.org';
 // A Wikimedia pede um User-Agent que identifique quem chama.
-const CABECALHOS = { 'User-Agent': 'nexo-social/1.0 (https://nexo-social-two.vercel.app; revista)', 'Api-User-Agent': 'nexo-social/1.0' };
+const CABECALHOS = { 'User-Agent': 'nexo-social/1.0 (https://nexo-social.drap.app.br; revista)', 'Api-User-Agent': 'nexo-social/1.0' };
 const UM_DIA = 86400;
 
 // ---------------------------------------------------------------------------
