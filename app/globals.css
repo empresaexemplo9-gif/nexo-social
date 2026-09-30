@@ -752,3 +752,12 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 @keyframes figurinha-pula { 0% { transform: scale(.6) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.12) rotate(4deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
 .figurinha-pula { animation: figurinha-pula .45s cubic-bezier(.2,.9,.3,1.3) both; }
 @media (prefers-reduced-motion: reduce) { .figurinha-pula { animation: none; } }
+
+/* Jogos da Comunidade: Cinzel (títulos gravados) e IM Fell English (texto de
+   pergaminho), ambas SIL Open Font License. */
+@font-face { font-family: 'Cinzel'; src: url('/fonts/jogos/cinzel-700.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Cinzel'; src: url('/fonts/jogos/cinzel-900.woff2') format('woff2'); font-weight: 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IM Fell English'; src: url('/fonts/jogos/im-fell-400.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IM Fell English'; src: url('/fonts/jogos/im-fell-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+.fonte-arcana { font-family: 'Cinzel', 'Times New Roman', serif; }
+.fonte-pergaminho { font-family: 'IM Fell English', 'Georgia', serif; }

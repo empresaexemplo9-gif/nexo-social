@@ -10,6 +10,7 @@ import { formatEventDateLong } from '@/lib/datetime';
 import { EVENTO_CONVITES, responderConvite } from '@/lib/convites';
 import { trocarImagemDoGrupo } from '@/lib/imagens';
 import type { GrupoResumo, Privacidade } from '@/lib/comunidade-tipos';
+import JogosDaComunidade from './jogos/JogosDaComunidade';
 
 const campo =
   'w-full rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-600 focus:outline-none';
@@ -28,6 +29,7 @@ export default function ComunidadeHub() {
     description: '',
     privacy: 'fechado',
   });
+  const [secao, setSecao] = useState<'grupos' | 'jogos'>('grupos');
   const [imagem, setImagem] = useState<File | null>(null);
   const [previa, setPrevia] = useState<string | null>(null);
   const seletorDeImagem = useRef<HTMLInputElement>(null);
@@ -54,6 +56,11 @@ export default function ComunidadeHub() {
       setErro(e?.message || 'Falha ao carregar a Comunidade.');
       setEstado('ok');
     }
+  }, []);
+
+  // /comunidade?aba=jogos abre direto nos jogos.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('aba') === 'jogos') setSecao('jogos');
   }, []);
 
   useEffect(() => {
@@ -125,8 +132,51 @@ export default function ComunidadeHub() {
     );
   }
 
+  const abas = (
+    <div className="flex gap-1.5 border-b border-zinc-800" role="tablist" aria-label="Seções da Comunidade">
+      {(
+        [
+          ['grupos', 'Grupos', 'users'],
+          ['jogos', 'Jogos', 'gamepad'],
+        ] as const
+      ).map(([k, rotulo, icone]) => (
+        <button
+          key={k}
+          type="button"
+          role="tab"
+          aria-selected={secao === k}
+          onClick={() => {
+            setSecao(k);
+            window.history.replaceState(null, '', k === 'jogos' ? '/comunidade?aba=jogos' : '/comunidade');
+          }}
+          className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
+            secao === k ? 'border-emerald-500 text-emerald-300' : 'border-transparent text-zinc-400 hover:text-zinc-100'
+          }`}
+        >
+          <Icon name={icone} size={15} /> {rotulo}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (secao === 'jogos') {
+    return (
+      <div className="space-y-6">
+        {abas}
+        <JogosDaComunidade
+          grupos={grupos}
+          aoCriarGrupo={() => {
+            setSecao('grupos');
+            setCriando(true);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
+      {abas}
       {erro && (
         <div className="flex items-start gap-2 rounded-2xl border border-clay-800/60 bg-clay-950/25 p-3 text-xs text-clay-200">
           <Icon name="alert" size={14} className="mt-0.5 shrink-0" />

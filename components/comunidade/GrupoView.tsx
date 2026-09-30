@@ -15,6 +15,8 @@ import FotosEAlbuns from './FotosEAlbuns';
 import ChatDoGrupo from './ChatDoGrupo';
 import { SeloDoTipo } from './EscolherTipo';
 import Chamada, { usePresencaDaChamada } from './Chamada';
+import SalaDeJogos from './jogos/SalaDeJogos';
+import type { JogoId } from '@/lib/jogos/canal';
 import type { ModoChamada } from '@/lib/chamada';
 
 interface Detalhe {
@@ -58,7 +60,8 @@ export default function GrupoView({ id }: { id: string }) {
   const [editando, setEditando] = useState(false);
   const [edicao, setEdicao] = useState({ name: '', description: '' });
   const [ocupado, setOcupado] = useState(false);
-  const [aba, setAba] = useState<'chat' | 'mural' | 'fotos'>('chat');
+  const [aba, setAba] = useState<'chat' | 'mural' | 'fotos' | 'jogos'>('chat');
+  const [jogoInicial, setJogoInicial] = useState<JogoId | null>(null);
   // A aba de fotos só carrega quando é aberta pela primeira vez.
   const [viuFotos, setViuFotos] = useState(false);
   // Fotos mudaram numa aba: a outra recarrega quando for aberta.
@@ -95,6 +98,19 @@ export default function GrupoView({ id }: { id: string }) {
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  // Veio da aba Jogos da Comunidade: ?aba=jogos&jogo=trilha abre a sala de jogos.
+  useEffect(() => {
+    if (estado !== 'ok') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('aba') !== 'jogos') return;
+    const jogo = params.get('jogo');
+    setJogoInicial(jogo === 'arcanos' || jogo === 'trilha' ? jogo : null);
+    setAba('jogos');
+    params.delete('aba');
+    params.delete('jogo');
+    window.history.replaceState(null, '', `${window.location.pathname}${params.toString() ? `?${params}` : ''}`);
+  }, [estado]);
 
   // Grupo recém-criado chega com ?convidar=1: abre o "Convidar amigos".
   useEffect(() => {
@@ -474,6 +490,7 @@ export default function GrupoView({ id }: { id: string }) {
                 ['chat', 'Chat', 'chat'],
                 ['mural', 'Mural', 'chat'],
                 ['fotos', 'Fotos e álbuns', 'image'],
+                ['jogos', 'Jogos', 'gamepad'],
               ] as const
             ).map(([k, rotulo, icone]) => (
               <button
@@ -504,6 +521,14 @@ export default function GrupoView({ id }: { id: string }) {
             <div hidden={aba !== 'fotos'}>
               <FotosEAlbuns groupId={id} versao={versaoFotos} aoMudar={() => setVersaoFotos((v) => v + 1)} />
             </div>
+          )}
+          {/* Jogos só ficam conectados enquanto a aba está aberta (a presença diz quem está na sala). */}
+          {aba === 'jogos' && (
+            <SalaDeJogos
+              groupId={id}
+              jogoInicial={jogoInicial}
+              eu={{ userId: meuId, nome: meuNome, avatar: membros.find((m) => m.userId === meuId)?.avatarPath ?? null }}
+            />
           )}
         </div>
 
