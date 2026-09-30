@@ -66,8 +66,12 @@ export default function CartaoGratis({ item, formato = 'video' }: { item: ItemGr
           {item.fonte}
         </span>
         {item.idioma && item.idioma !== 'pt' && (
-          <span className="absolute right-2 top-2 rounded-md bg-zinc-50/80 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase text-zinc-900">
+          <span
+            title={item.midia.tipo === 'livro' ? 'Em outra língua: abre traduzido para o português no leitor' : undefined}
+            className="absolute right-2 top-2 rounded-md bg-zinc-50/80 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase text-zinc-900"
+          >
             {item.idioma}
+            {item.midia.tipo === 'livro' && ' → PT'}
           </span>
         )}
       </span>
