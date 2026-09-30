@@ -301,7 +301,7 @@ export default function Chamada({
               <p className="rounded-xl bg-black/50 px-3 py-1.5 text-sm">
                 {fase === 'entrando'
                   ? 'Preparando câmera e microfone…'
-                  : modo.tipo === 'dupla'
+                  : modo.tipo !== 'grupo'
                     ? `Chamando ${pessoas[modo.outroId]?.name ?? 'a pessoa'}…`
                     : 'Aguardando o grupo entrar…'}
               </p>

@@ -747,3 +747,8 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 @font-face { font-family: 'Atkinson Hyperlegible'; src: url('/fonts/leitura/atkinson-regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Atkinson Hyperlegible'; src: url('/fonts/leitura/atkinson-bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Atkinson Hyperlegible'; src: url('/fonts/leitura/atkinson-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+
+/* Figurinha chegando no chat: um pulinho. */
+@keyframes figurinha-pula { 0% { transform: scale(.6) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.12) rotate(4deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
+.figurinha-pula { animation: figurinha-pula .45s cubic-bezier(.2,.9,.3,1.3) both; }
+@media (prefers-reduced-motion: reduce) { .figurinha-pula { animation: none; } }

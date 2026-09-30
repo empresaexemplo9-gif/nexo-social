@@ -69,3 +69,22 @@ export async function PUT(request: Request, { params }: Ctx) {
   if (error || !data) return falha(error, 'Falha ao atualizar a sala.');
   return NextResponse.json({ ok: true, sala: salaDaLinha(data), agora: new Date().toISOString() });
 }
+
+/** Limpa a sala para todos: tira o vídeo da tela até alguém escolher outro. */
+export async function DELETE(_request: Request, { params }: Ctx) {
+  const s = await exigirSessao();
+  if (!s.ok) return s.response;
+  const inv = idInvalido(params.id);
+  if (inv) return inv;
+
+  const { data, error } = await s.sb
+    .from('community_sessions')
+    .upsert(
+      { group_id: params.id, youtube_id: null, title: null, is_playing: false, position_sec: 0, updated_by: s.user.id },
+      { onConflict: 'group_id' },
+    )
+    .select('*')
+    .maybeSingle();
+  if (error || !data) return falha(error, 'Falha ao limpar a sala.');
+  return NextResponse.json({ ok: true, sala: salaDaLinha(data), agora: new Date().toISOString() });
+}

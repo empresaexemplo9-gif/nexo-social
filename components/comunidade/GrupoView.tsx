@@ -489,7 +489,7 @@ export default function GrupoView({ id }: { id: string }) {
             ))}
           </div>
           <div hidden={aba !== 'chat'}>
-            <ChatDoGrupo groupId={id} />
+            <ChatDoGrupo groupId={id} onLigar={(video) => ligar({ tipo: 'grupo' }, video)} />
           </div>
           {/* As abas ficam montadas: trocar de aba não perde o que foi carregado. */}
           <div hidden={aba !== 'mural'}>

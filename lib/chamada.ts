@@ -22,12 +22,14 @@ import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
 export const MAX_PESSOAS = 8;
 
-export type ModoChamada = { tipo: 'grupo' } | { tipo: 'dupla'; outroId: string };
+export type ModoChamada = { tipo: 'grupo' } | { tipo: 'dupla'; outroId: string } | { tipo: 'contato'; outroId: string };
 
 /** Canal privado da chamada (o mesmo nome que o banco autoriza). */
 export function topicoDaChamada(groupId: string, meuId: string, modo: ModoChamada): string {
   if (modo.tipo === 'grupo') return `grupo:${groupId}:chamada`;
   const [a, b] = [meuId, modo.outroId].sort();
+  // Chamada entre contatos (fora de grupo): o banco autoriza só as duas pessoas.
+  if (modo.tipo === 'contato') return `contato:${a}:${b}`;
   return `grupo:${groupId}:dupla:${a}:${b}`;
 }
 
