@@ -134,11 +134,23 @@ h2 {
     transform: translate3d(-3%, 5%, 0) scale(0.97);
   }
 }
-/* Mural de colagens (public/bg/mural.webp, já clareado e com menos contraste):
-   quase some na coluna do conteúdo e ganha cor nas laterais. */
+/* Mural de colagens. No papel padrão, public/bg/mural.webp (já clareado e com
+   menos contraste). Nas opções de fundo da home (AmostraDeFundo), um dos
+   murais de public/bg/murais misturado à cor do tema: a versão clara por
+   "multiply" (o papel some, a colagem pega a cor), a escura por "screen"
+   (traço claro sobre o escuro). As medidas são as mesmas: quase some na coluna
+   do conteúdo e ganha cor nas laterais. */
 .fundo-tech__mural {
+  background-image: url('/bg/mural.webp');
+}
+.fundo-tech__mural,
+.mural-fundo {
   --mural-meio: rgb(0 0 0 / 0.17);
-  background: url('/bg/mural.webp') center / cover no-repeat;
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   opacity: 0.62;
   -webkit-mask-image: linear-gradient(to right, #000 0%, var(--mural-meio) 24%, var(--mural-meio) 76%, #000 100%);
   mask-image: linear-gradient(to right, #000 0%, var(--mural-meio) 24%, var(--mural-meio) 76%, #000 100%);
@@ -146,13 +158,28 @@ h2 {
 @media (max-width: 767px) {
   /* No celular o conteúdo ocupa a largura toda: o mural vira papel de parede,
      menor (o "cover" ampliaria uma fatia só) e por igual, mais leve. */
-  .fundo-tech__mural {
+  .fundo-tech__mural,
+  .mural-fundo {
     background-size: 820px auto;
     background-repeat: repeat;
     opacity: 0.3;
     -webkit-mask-image: none;
     mask-image: none;
   }
+}
+.mural-fundo--claro {
+  mix-blend-mode: multiply;
+}
+.mural-fundo--escuro {
+  mix-blend-mode: screen;
+}
+/* Na amostra do seletor: o mural inteiro (sem o miolo limpo), em miniatura. */
+.mural-fundo--amostra {
+  background-size: cover;
+  background-repeat: no-repeat;
+  opacity: 0.75;
+  -webkit-mask-image: none;
+  mask-image: none;
 }
 .fundo-tech__circuito {
   background: url('/bg/circuito.svg') center / cover no-repeat;

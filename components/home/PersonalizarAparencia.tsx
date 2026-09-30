@@ -3,16 +3,31 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Icon from '../icons';
 import { usePreferences } from '@/lib/preferences';
-import { APARENCIA_PADRAO, OPCOES_DE_BOTAO, OPCOES_DE_FUNDO, type OpcaoDeFundo } from '@/lib/aparencia';
+import { APARENCIA_PADRAO, OPCOES_DE_BOTAO, OPCOES_DE_FUNDO, muralDoFundo, type OpcaoDeFundo } from '@/lib/aparencia';
 
-/** Amostra do fundo: a cor (ou o degradê) do tema com a textura por cima. */
-export function AmostraDeFundo({ opcao, className = '' }: { opcao: OpcaoDeFundo | null; className?: string }) {
+/**
+ * O fundo de uma opção: a cor (ou o degradê) do tema, a textura e o mural de
+ * colagens por cima, esmaecido e misturado à cor. `tela`: o fundo da home
+ * inteira — como no papel padrão, o mural quase some no meio e ganha cor nas
+ * bordas. Sem `tela`, a amostra do seletor (o mural inteiro, em miniatura).
+ */
+export function AmostraDeFundo({ opcao, tela = false, className = '' }: { opcao: OpcaoDeFundo | null; tela?: boolean; className?: string }) {
+  const modo = tela ? '' : ' mural-fundo--amostra';
   if (!opcao) {
-    return <span className={`relative block overflow-hidden bg-zinc-950 ${className}`} style={{ backgroundImage: 'var(--grao)' }} />;
+    return (
+      <span className={`relative isolate block overflow-hidden bg-zinc-950 ${className}`} style={{ backgroundImage: 'var(--grao)' }}>
+        <span aria-hidden className={`mural-fundo${modo}`} style={{ backgroundImage: 'url(/bg/mural.webp)' }} />
+      </span>
+    );
   }
   return (
-    <span className={`relative block overflow-hidden ${className}`} style={{ background: opcao.gradiente ?? opcao.cor }}>
+    <span className={`relative isolate block overflow-hidden ${className}`} style={{ background: opcao.gradiente ?? opcao.cor }}>
       {opcao.textura && <span aria-hidden className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${opcao.textura})`, opacity: opcao.opacidade }} />}
+      <span
+        aria-hidden
+        className={`mural-fundo mural-fundo--${opcao.muralEscuro ? 'escuro' : 'claro'}${modo}`}
+        style={{ backgroundImage: `url(${muralDoFundo(opcao, !tela)})` }}
+      />
     </span>
   );
 }
@@ -79,7 +94,7 @@ export default function PersonalizarAparencia({ onFechar }: { onFechar: () => vo
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           {aba === 'fundo' ? (
             <>
-              <p className="mb-3 text-xs text-zinc-500">A cor e a textura atrás dos cartões da home. Os cartões continuam claros; em fundos escuros, os títulos ficam claros sozinhos.</p>
+              <p className="mb-3 text-xs text-zinc-500">A cor, a textura e o mural de colagens atrás dos cartões da home. Os cartões continuam claros; em fundos escuros, os títulos ficam claros sozinhos.</p>
               <ul className="grid grid-cols-3 gap-2.5">
                 <li>
                   <button type="button" onClick={() => escolher({ fundo: null })} aria-pressed={!aparencia.fundo} className="group block w-full text-left">
