@@ -17,11 +17,13 @@ const publicPaths = new Set([
 
 // Adesivos, fontes e texturas da página pública do convite.
 const INVITE_ASSET = /^\/convite-assets\/(adesivos\/[0-9]{3}\.png|fonts\/[a-z0-9-]+\.ttf|texturas\/[a-z-]+\.(jpg|png))$/;
+// Murais das opções de fundo (decorativos): sem validar a sessão a cada imagem.
+const MURAL = /^\/bg\/murais\/colagem-[1-3]-(claro|escuro)(-mini)?\.webp$/;
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
-    || INVITE_ASSET.test(path)) return NextResponse.next();
+    || INVITE_ASSET.test(path) || MURAL.test(path)) return NextResponse.next();
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });

@@ -21,7 +21,29 @@ export interface OpcaoDeFundo {
   opacidade: number;
   /** Fundo escuro: os títulos soltos na home ficam claros. */
   escuro: boolean;
+  /** Mural de colagens por trás (public/bg/murais), em rodízio entre as opções. */
+  mural: (typeof MURAIS)[number];
+  /**
+   * O mural vai na versão escura (traço claro) — pela luz do que aparece de
+   * fato: a textura, quando cobre tudo, ou a cor. Nem sempre é o mesmo que
+   * `escuro` (a cor dos títulos): a lona do "Patch Lona" é clara.
+   */
+  muralEscuro: boolean;
 }
+
+/**
+ * Os murais das opções de fundo, como no papel padrão: esmaecidos, vivos nas
+ * bordas. Cada um tem duas versões — clara (entra por "multiply" e pega a cor
+ * do fundo) e escura (a luz invertida, entra por "screen": traço claro no
+ * escuro) — e uma miniatura para as amostras.
+ */
+export const MURAIS = ['colagem-1', 'colagem-2', 'colagem-3'] as const;
+
+export const muralDoFundo = (o: Pick<OpcaoDeFundo, 'mural' | 'muralEscuro'>, mini = false) =>
+  `/bg/murais/${o.mural}-${o.muralEscuro ? 'escuro' : 'claro'}${mini ? '-mini' : ''}.webp`;
+
+/** Texturas de luz média para cima (média ≥ 140 de 255, medida nos arquivos de public/convite-assets/texturas). */
+const TEXTURAS_CLARAS = new Set(['lona.jpg', 'holo.jpg', 'rachado.jpg', 'papel.jpg', 'concreto.jpg', 'couro-caramelo.jpg']);
 
 export interface OpcaoDeBotao {
   id: string;
@@ -116,16 +138,21 @@ export const OPCOES_DE_FUNDO: OpcaoDeFundo[] = (() => {
     // Cor lisa quase igual a outra já na lista: fica só a primeira.
     if (!t.gradiente && !t.textura && lista.some((o) => !o.gradiente && !o.textura && parecidas(o.cor, t.fundo))) continue;
     vistos.add(chave);
-    const textura = t.textura ? `/convite-assets/texturas/${TEX_FILES[t.textura as TexKey]}` : null;
+    const arquivo = t.textura ? TEX_FILES[t.textura as TexKey] : null;
+    const textura = arquivo ? `/convite-assets/texturas/${arquivo}` : null;
+    const opacidade = t.textura ? Math.min(1, t.texturaOpacidade ?? 0.45) : 0;
+    // O tema de tinta clara é um fundo escuro (couro, noite, preto…).
+    const escuro = isDark(t) || luminancia(t.fundo) < 0.2;
     lista.push({
       id,
       nome: t.nome,
+      mural: MURAIS[lista.length % MURAIS.length],
       cor: t.fundo,
       gradiente: t.gradiente ?? null,
       textura,
-      opacidade: t.textura ? Math.min(1, t.texturaOpacidade ?? 0.45) : 0,
-      // O tema de tinta clara é um fundo escuro (couro, noite, preto…).
-      escuro: isDark(t) || luminancia(t.fundo) < 0.2,
+      opacidade,
+      escuro,
+      muralEscuro: arquivo && opacidade >= 0.9 ? !TEXTURAS_CLARAS.has(arquivo) : escuro,
     });
   }
   return lista;

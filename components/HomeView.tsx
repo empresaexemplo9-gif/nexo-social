@@ -82,7 +82,7 @@ export default function HomeView({ events }: Props) {
   return (
     <div className={`min-h-screen font-sans text-zinc-100 antialiased ${fundo?.escuro ? 'home-fundo-escuro' : ''}`}>
       {/* O fundo fica por trás de tudo (acima do papel padrão da plataforma). */}
-      {fundo && <AmostraDeFundo opcao={fundo} className="pointer-events-none !fixed inset-0 -z-[9]" />}
+      {fundo && <AmostraDeFundo opcao={fundo} tela className="pointer-events-none !fixed inset-0 -z-[9]" />}
       <Navbar />
 
       {/* Largura total: a home usa a tela inteira, com respiro só nas bordas. */}
