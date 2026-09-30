@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao } from '@/lib/comunidade';
 import { isUuid, notify, profilesByIds } from '@/lib/social';
-import { COLUNAS_DE_MIDIA, avataresPorId, conteudoParaCliente, linksDaMidia, pastaDaConversa, previa, validarMensagem } from '@/lib/chat-mensagens';
+import { avataresPorId, citacoesDasRespostas, conteudoParaCliente, inserirMensagem, lerMensagens, linksDaMidia, pastaDaConversa, previa, respostaPedida, validarMensagem } from '@/lib/chat-mensagens';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +15,9 @@ async function contatoAceito(sb: any, me: string, other: string) {
     .limit(1);
   return Boolean(data?.length);
 }
+
+/** Filtro das mensagens entre as duas pessoas (nos dois sentidos). */
+const daConversa = (a: string, b: string) => `and(from_user.eq.${a},to_user.eq.${b}),and(from_user.eq.${b},to_user.eq.${a})`;
 
 async function conversa(userId: string, aviso: string) {
   const s = await exigirSessao();
@@ -31,15 +34,13 @@ export async function GET(request: Request, { params }: Ctx) {
   const { s } = r;
   const depois = new URL(request.url).searchParams.get('depois');
 
+  const par = daConversa(s.user.id, params.userId);
   const consulta = (colunas: string) => {
-    let q = s.sb.from('messages')
-      .select(colunas)
-      .or(`and(from_user.eq.${s.user.id},to_user.eq.${params.userId}),and(from_user.eq.${params.userId},to_user.eq.${s.user.id})`);
+    let q = s.sb.from('messages').select(colunas).or(par);
     if (depois && !Number.isNaN(Date.parse(depois))) q = q.gt('created_at', depois);
     return q.order('created_at', { ascending: false }).limit(depois ? 100 : 200);
   };
-  let { data, error } = await consulta(`id, from_user, to_user, body, read_at, created_at, ${COLUNAS_DE_MIDIA}`);
-  if (error?.code === '42703') ({ data, error } = await consulta('id, from_user, to_user, body, read_at, created_at'));
+  const { data, error } = await lerMensagens(consulta, 'id, from_user, to_user, body, read_at, created_at');
   if (error) return NextResponse.json({ error: 'Falha ao carregar a conversa.' }, { status: 500 });
 
   await s.sb.from('messages')
@@ -49,15 +50,21 @@ export async function GET(request: Request, { params }: Ctx) {
     .is('read_at', null);
 
   const rows = ((data ?? []) as any[]).reverse();
-  const [names, links, fotos] = await Promise.all([
+  const [names, links, fotos, citacoes] = await Promise.all([
     profilesByIds(s.sb, [params.userId]),
     linksDaMidia(s.sb, rows.map((m) => m.media_path)),
     avataresPorId(s.sb, [params.userId]),
+    citacoesDasRespostas(rows, (m) => m.from_user, (ids) => s.sb.from('messages').select('id, from_user, body, kind, media_meta').or(par).in('id', ids)),
   ]);
+  const nome = names.get(params.userId)?.name ?? 'Contato';
+  const citar = (id: string) => {
+    const c = citacoes.get(id);
+    return c ? { ...c, authorName: c.authorId === s.user.id ? 'Você' : nome } : null;
+  };
   return NextResponse.json({
     pasta: pastaDaConversa(s.user.id, params.userId),
     meuId: s.user.id,
-    contact: { userId: params.userId, name: names.get(params.userId)?.name ?? 'Contato', avatar: fotos.get(params.userId) ?? null },
+    contact: { userId: params.userId, name: nome, avatar: fotos.get(params.userId) ?? null },
     messages: rows.map((m) => ({
       id: m.id,
       authorId: m.from_user,
@@ -65,11 +72,12 @@ export async function GET(request: Request, { params }: Ctx) {
       createdAt: m.created_at,
       readAt: m.read_at,
       ...conteudoParaCliente(m, links),
+      replyTo: citar(m.id),
     })),
   }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
 
-/** POST { kind, body, mediaPath?, meta? } — ou { chamada: true, video } para ligar. */
+/** POST { kind, body, mediaPath?, meta?, replyTo? } — ou { chamada: true, video } para ligar. */
 export async function POST(request: Request, { params }: Ctx) {
   const r = await conversa(params.userId, 'Adicione e aceite o contato antes de conversar.');
   if ('erro' in r) return r.erro;
@@ -94,8 +102,15 @@ export async function POST(request: Request, { params }: Ctx) {
   const nova = validarMensagem(b, pastaDaConversa(s.user.id, params.userId), s.user.id);
   if ('erro' in nova) return NextResponse.json({ error: nova.erro }, { status: 400 });
 
-  const linha = { from_user: s.user.id, to_user: params.userId, appointment_id: null, ...(nova.kind === 'texto' ? { body: nova.body } : nova) };
-  const { data, error } = await s.sb.from('messages').insert(linha).select('id, created_at').maybeSingle();
+  // Resposta: só a uma mensagem desta mesma conversa (se sumiu, vai sem citação).
+  const pedida = respostaPedida(b);
+  const { data: original } = pedida
+    ? await s.sb.from('messages').select('id').eq('id', pedida).or(daConversa(s.user.id, params.userId)).maybeSingle()
+    : { data: null };
+
+  const linha: Record<string, unknown> = { from_user: s.user.id, to_user: params.userId, appointment_id: null, ...(nova.kind === 'texto' ? { body: nova.body } : nova) };
+  if (original) linha.reply_to = original.id;
+  const { data, error } = await inserirMensagem((l) => s.sb.from('messages').insert(l).select('id, created_at').maybeSingle(), linha);
   if (error?.code === '42703') return NextResponse.json({ error: 'Fotos, vídeos e áudios no chat ainda não foram ativados no banco.' }, { status: 503 });
   if (error || !data) return NextResponse.json({ error: 'Não foi possível enviar a mensagem.' }, { status: 500 });
 

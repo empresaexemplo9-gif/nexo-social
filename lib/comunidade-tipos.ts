@@ -70,6 +70,8 @@ export interface Post {
   podeApagar: boolean;
   /** Só nas publicações do tipo 'foto'. */
   fotos: Foto[];
+  /** Quantos comentários a publicação tem. */
+  comentarios: number;
 }
 
 export interface Foto {
@@ -138,3 +140,16 @@ export function youtubeIdDe(url?: string | null): string | null {
 
 /** Caminho do convite por link (o domínio entra no navegador). */
 export const caminhoDoConvite = (token: string) => `/comunidade/convite/${token}`;
+
+/** Comentário numa publicação do Mural (pode responder a outro comentário). */
+export interface Comentario {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar: string | null;
+  body: string;
+  createdAt: string;
+  podeApagar: boolean;
+  replyTo: { id: string; authorName: string; texto: string } | null;
+}

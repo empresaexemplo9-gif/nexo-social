@@ -25,6 +25,8 @@ export interface Msg {
   mediaUrl: string | null;
   mediaPath: string | null;
   meta: Record<string, number | string> | null;
+  /** Mensagem respondida (citação em cima da bolha). */
+  replyTo?: { id: string; authorId: string; authorName: string; texto: string } | null;
 }
 
 interface Props {
@@ -40,6 +42,8 @@ interface Props {
   altura?: string;
   /** Sem borda e cantos (quando já está dentro de outra moldura). */
   semMoldura?: boolean;
+  /** Avisa quem está em volta (ex.: o resumo da home) que algo foi enviado. */
+  aoEnviar?: () => void;
 }
 
 const MAX_VIDEO = 50 * 1024 * 1024;
@@ -54,6 +58,17 @@ const dia = (iso: string) => {
   if (d.toDateString() === ontem.toDateString()) return 'Ontem';
   return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: d.getFullYear() === hoje.getFullYear() ? undefined : 'numeric' });
 };
+/** Prévia curta da mensagem (citação no campo de resposta). */
+function previaDe(m: Msg): string {
+  switch (m.kind) {
+    case 'imagem': return m.body ? `📷 ${m.body}` : '📷 Foto';
+    case 'video': return m.body ? `🎬 ${m.body}` : '🎬 Vídeo';
+    case 'audio': return '🎤 Mensagem de voz';
+    case 'figurinha': return String(m.meta?.emoji ?? '🖼️ Figurinha');
+    case 'adesivo': return '🏷️ Adesivo';
+    default: return m.body;
+  }
+}
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 const nomeDeArquivo = (ext: string) => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
@@ -63,7 +78,7 @@ function formatoDeAudio(): string {
   return '';
 }
 
-export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma mensagem ainda.', placeholder = 'Mensagem…', onLigar, cabecalho, altura = 'h-[32rem]', semMoldura = false }: Props) {
+export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma mensagem ainda.', placeholder = 'Mensagem…', onLigar, cabecalho, altura = 'h-[32rem]', semMoldura = false, aoEnviar }: Props) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [pasta, setPasta] = useState('');
   const [meuId, setMeuId] = useState('');
@@ -75,6 +90,9 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
   const [ampliada, setAmpliada] = useState<string | null>(null);
   const [gravando, setGravando] = useState<{ inicio: number } | null>(null);
   const [agora, setAgora] = useState(Date.now());
+  const [respondendo, setRespondendo] = useState<Msg | null>(null);
+  const [destacada, setDestacada] = useState<string | null>(null);
+  const [contato, setContato] = useState('');
   const rolagem = useRef<HTMLDivElement>(null);
   const arquivo = useRef<HTMLInputElement>(null);
   const campo = useRef<HTMLTextAreaElement>(null);
@@ -94,6 +112,7 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
     setErro('');
     setPasta(j.pasta ?? '');
     setMeuId(j.meuId ?? '');
+    if (j.contact?.name) setContato(j.contact.name);
     const novas: Msg[] = j.messages ?? [];
     setMsgs((atuais) => {
       if (completo || !depois) return novas;
@@ -131,11 +150,29 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
 
   // --- Enviar ------------------------------------------------------------------
   const postar = async (corpo: Record<string, unknown>) => {
-    const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) });
+    const replyTo = respondendo?.id;
+    const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(replyTo ? { ...corpo, replyTo } : corpo) });
     const j = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(j.error || 'Falha ao enviar.');
+    setRespondendo(null);
     pertoDoFim.current = true;
     await carregar();
+    aoEnviar?.();
+  };
+
+  const responder = (m: Msg) => {
+    setRespondendo(m);
+    setPainel(false);
+    requestAnimationFrame(() => campo.current?.focus());
+  };
+
+  /** Toca na citação: rola até a mensagem original e pisca nela. */
+  const irPara = (id: string) => {
+    const el = rolagem.current?.querySelector<HTMLElement>(`[data-msg="${id}"]`);
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    setDestacada(id);
+    window.setTimeout(() => setDestacada((d) => (d === id ? null : d)), 1400);
   };
 
   const subir = async (blob: Blob, ext: string, tipo: string) => {
@@ -280,7 +317,10 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
     const res = await fetch(`${endpoint}?msg=${m.id}`, { method: 'DELETE' });
     const j = await res.json().catch(() => ({}));
     if (!res.ok) setErro(j.error || 'Não deu para apagar.');
-    else setMsgs((atuais) => atuais.filter((x) => x.id !== m.id));
+    else {
+      setMsgs((atuais) => atuais.filter((x) => x.id !== m.id).map((x) => (x.replyTo?.id === m.id ? { ...x, replyTo: null } : x)));
+      setRespondendo((r) => (r?.id === m.id ? null : r));
+    }
   };
 
   // --- Desenho ------------------------------------------------------------------------
@@ -321,7 +361,7 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
               {novoDia && (
                 <p className="sticky top-0 z-10 mx-auto my-3 w-fit rounded-full bg-zinc-900/90 px-3 py-1 text-[11px] font-medium text-zinc-400 backdrop-blur">{dia(m.createdAt)}</p>
               )}
-              <Bolha m={m} emGrupo={emGrupo} mostrarAutor={emGrupo && !m.fromMe && !mesmoAutor} onAmpliar={setAmpliada} onApagar={apagar} onCarregou={descer} />
+              <Bolha m={m} emGrupo={emGrupo} mostrarAutor={emGrupo && !m.fromMe && !mesmoAutor} destacada={destacada === m.id} onAmpliar={setAmpliada} onApagar={apagar} onResponder={responder} onIrPara={irPara} onCarregou={descer} />
             </React.Fragment>
           );
         })}
@@ -336,6 +376,18 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
       {erro && <p className="border-t border-zinc-800 px-4 py-2 text-xs text-clay-300">{erro}</p>}
 
       <div className="relative border-t border-zinc-800 p-2.5">
+        {respondendo && (
+          <div className="mb-2 flex items-center gap-2 rounded-xl border-l-4 border-emerald-400 bg-zinc-900 py-1.5 pl-3 pr-1.5">
+            <Icon name="reply" size={14} className="shrink-0 text-emerald-400" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[11px] font-semibold text-emerald-400">Respondendo a {respondendo.fromMe ? 'você' : respondendo.authorName || contato || 'mensagem'}</span>
+              <span className="block truncate text-xs text-zinc-400">{previaDe(respondendo)}</span>
+            </span>
+            <button type="button" onClick={() => setRespondendo(null)} aria-label="Cancelar resposta" className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-100">
+              <Icon name="close" size={14} />
+            </button>
+          </div>
+        )}
         {painel && meuId && <PainelDeFigurinhas meuId={meuId} onEscolher={(e) => void escolher(e)} onFechar={() => setPainel(false)} />}
         {gravando ? (
           <div className="flex items-center gap-3 rounded-xl bg-zinc-900 px-3 py-2">
@@ -363,6 +415,7 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={(e) => {
+                if (e.key === 'Escape' && respondendo) setRespondendo(null);
                 if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   void enviarTexto();
@@ -397,8 +450,24 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
   );
 }
 
-function Bolha({ m, emGrupo, mostrarAutor, onAmpliar, onApagar, onCarregou }: { m: Msg; emGrupo: boolean; mostrarAutor: boolean; onAmpliar: (url: string) => void; onApagar: (m: Msg) => void; onCarregou: () => void }) {
+type BolhaProps = {
+  m: Msg;
+  emGrupo: boolean;
+  mostrarAutor: boolean;
+  destacada: boolean;
+  onAmpliar: (url: string) => void;
+  onApagar: (m: Msg) => void;
+  onResponder: (m: Msg) => void;
+  onIrPara: (id: string) => void;
+  onCarregou: () => void;
+};
+
+function Bolha({ m, emGrupo, mostrarAutor, destacada, onAmpliar, onApagar, onResponder, onIrPara, onCarregou }: BolhaProps) {
   const [salva, setSalva] = useState(false);
+  // Arrastar a mensagem para a direita (no toque) responde, como nos apps de conversa.
+  const [arraste, setArraste] = useState(0);
+  const toque = useRef<{ x: number; y: number; id: number; horizontal: boolean | null } | null>(null);
+  const LIMIAR = 56;
   const semBolha = m.kind === 'figurinha' || m.kind === 'adesivo';
   const lado = m.fromMe ? 'justify-end' : 'justify-start';
   const cor = m.fromMe ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900 text-zinc-100';
@@ -455,24 +524,74 @@ function Bolha({ m, emGrupo, mostrarAutor, onAmpliar, onApagar, onCarregou }: { 
       conteudo = null;
   }
 
-  return (
-    <div className={`group/msg flex items-end gap-2 ${lado}`}>
-      {emGrupo && !m.fromMe && (
-        <span className="w-7 shrink-0">{mostrarAutor && <Avatar nome={m.authorName || '?'} path={m.authorAvatar} tamanho={28} />}</span>
-      )}
+  const citacao = m.replyTo && (
+    <button type="button" onClick={() => onIrPara(m.replyTo!.id)}
+      className={`mb-1 block w-full rounded-lg border-l-4 px-2 py-1 text-left ${m.fromMe && !semBolha ? 'border-zinc-950/40 bg-zinc-950/10' : 'border-emerald-400 bg-zinc-950/40'}`}>
+      <span className={`block text-[11px] font-semibold ${m.fromMe && !semBolha ? 'text-zinc-950/80' : 'text-emerald-400'}`}>{m.replyTo.authorName}</span>
+      <span className={`line-clamp-2 block text-xs ${m.fromMe && !semBolha ? 'text-zinc-950/70' : 'text-zinc-400'}`}>{m.replyTo.texto}</span>
+    </button>
+  );
+  const acoes = (
+    <span className="mb-2 flex shrink-0 gap-0.5 opacity-0 transition group-hover/msg:opacity-100 group-focus-within/msg:opacity-100">
+      <button type="button" onClick={() => onResponder(m)} className="rounded-full p-1 text-zinc-500 hover:text-emerald-400" aria-label="Responder mensagem" title="Responder">
+        <Icon name="reply" size={14} />
+      </button>
       {m.fromMe && (
-        <button type="button" onClick={() => onApagar(m)} className="mb-2 rounded-full p-1 text-zinc-600 opacity-0 transition hover:text-clay-300 group-hover/msg:opacity-100 focus:opacity-100" aria-label="Apagar mensagem" title="Apagar">
+        <button type="button" onClick={() => onApagar(m)} className="rounded-full p-1 text-zinc-600 hover:text-clay-300" aria-label="Apagar mensagem" title="Apagar">
           <Icon name="trash" size={13} />
         </button>
       )}
-      <div className={`max-w-[85%] sm:max-w-[70%] ${semBolha ? '' : `rounded-2xl px-3 py-2 text-sm ${cor}`} ${!semBolha && m.kind !== 'texto' ? 'p-1.5' : ''}`}>
+    </span>
+  );
+
+  return (
+    <div
+      data-msg={m.id}
+      className={`group/msg relative flex items-end gap-2 rounded-xl transition-colors duration-700 [touch-action:pan-y] ${lado} ${destacada ? 'bg-emerald-400/15' : ''}`}
+      onPointerDown={(e) => {
+        if (e.pointerType !== 'touch') return;
+        toque.current = { x: e.clientX, y: e.clientY, id: e.pointerId, horizontal: null };
+      }}
+      onPointerMove={(e) => {
+        const t = toque.current;
+        if (!t || t.id !== e.pointerId) return;
+        const dx = e.clientX - t.x;
+        const dy = e.clientY - t.y;
+        if (t.horizontal === null && Math.hypot(dx, dy) > 8) t.horizontal = Math.abs(dx) > Math.abs(dy);
+        if (t.horizontal) setArraste(Math.max(0, Math.min(dx, 80)));
+      }}
+      onPointerUp={() => {
+        if (arraste >= LIMIAR) onResponder(m);
+        toque.current = null;
+        setArraste(0);
+      }}
+      onPointerCancel={() => {
+        toque.current = null;
+        setArraste(0);
+      }}
+    >
+      {arraste > 0 && (
+        <span className="absolute left-1 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-emerald-400" style={{ opacity: Math.min(1, arraste / LIMIAR) }}>
+          <Icon name="reply" size={14} />
+        </span>
+      )}
+      {m.fromMe && acoes}
+      {emGrupo && !m.fromMe && (
+        <span className="w-7 shrink-0">{mostrarAutor && <Avatar nome={m.authorName || '?'} path={m.authorAvatar} tamanho={28} />}</span>
+      )}
+      <div
+        className={`max-w-[85%] sm:max-w-[70%] ${semBolha ? '' : `rounded-2xl px-3 py-2 text-sm ${cor}`} ${!semBolha && m.kind !== 'texto' ? 'p-1.5' : ''}`}
+        style={arraste ? { transform: `translateX(${arraste}px)` } : undefined}
+      >
         {mostrarAutor && <p className={`mb-1 text-[11px] font-semibold text-emerald-400 ${semBolha ? 'px-1' : ''}`}>{m.authorName}</p>}
+        {citacao}
         {conteudo}
         {m.body && m.kind !== 'figurinha' && m.kind !== 'adesivo' && (
           <p className={`whitespace-pre-wrap break-words ${m.kind === 'texto' ? '' : 'px-1.5 pt-1.5'} ${SO_EMOJI.test(m.body.trim()) ? 'text-4xl leading-tight' : ''}`}>{m.body}</p>
         )}
         <span className={m.kind === 'texto' || semBolha ? '' : 'px-1.5'}>{rodape}</span>
       </div>
+      {!m.fromMe && acoes}
     </div>
   );
 }

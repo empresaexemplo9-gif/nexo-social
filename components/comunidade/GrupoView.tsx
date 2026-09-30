@@ -107,7 +107,8 @@ export default function GrupoView({ id }: { id: string }) {
   }, [estado]);
 
   // Veio de um aviso de chamada: ?chamada=grupo ou ?chamada=<quem ligou>.
-  // Com &atender=1 (botão Atender do toque) já entra; senão, pergunta.
+  // Com &atender=1 (botão Atender do toque) já entra; com &ligar=1 começa a
+  // chamada (e avisa o grupo); senão, pergunta.
   useEffect(() => {
     if (estado !== 'ok' || !d) return;
     const params = new URLSearchParams(window.location.search);
@@ -119,10 +120,14 @@ export default function GrupoView({ id }: { id: string }) {
     params.delete('chamada');
     params.delete('voz');
     const atender = params.get('atender') === '1';
+    // &ligar=1: a própria pessoa começou a chamada em outra tela (ex.: a home).
+    const iniciar = params.get('ligar') === '1';
     params.delete('atender');
+    params.delete('ligar');
     window.history.replaceState(null, '', `${window.location.pathname}${params.toString() ? `?${params}` : ''}`);
     if (!modo) return;
-    if (atender) setChamada({ modo, comVideo });
+    if (iniciar) ligar(modo, comVideo);
+    else if (atender) setChamada({ modo, comVideo });
     else setChegando({ modo, comVideo });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estado, d, pedidoDeChamada]);

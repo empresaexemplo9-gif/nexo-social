@@ -84,7 +84,8 @@ export type IconName =
   | 'micOff'
   | 'videoOff'
   | 'maximize'
-  | 'cameraSwitch';
+  | 'cameraSwitch'
+  | 'reply';
 
 interface Props extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -404,6 +405,7 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   send: <path d="M21 3 10 14M21 3l-7 18-4-7-7-4 18-7Z" />,
+  reply: <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />,
   chat: <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />,
   mail: (
     <>

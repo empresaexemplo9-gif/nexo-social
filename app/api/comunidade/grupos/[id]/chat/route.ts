@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao, idInvalido, minhaParticipacao } from '@/lib/comunidade';
 import { profilesByIds, isUuid } from '@/lib/social';
-import { COLUNAS_DE_MIDIA, avataresPorId, conteudoParaCliente, linksDaMidia, validarMensagem } from '@/lib/chat-mensagens';
+import { avataresPorId, citacoesDasRespostas, conteudoParaCliente, inserirMensagem, lerMensagens, linksDaMidia, respostaPedida, validarMensagem } from '@/lib/chat-mensagens';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,17 +32,24 @@ export async function GET(request: Request, { params }: Ctx) {
     if (depois && !Number.isNaN(Date.parse(depois))) q = q.gt('created_at', depois);
     return q.order('created_at', { ascending: false }).limit(depois ? 100 : 200);
   };
-  let { data, error } = await consulta(`id, author_id, body, created_at, ${COLUNAS_DE_MIDIA}`);
-  // Banco ainda sem a migração da mídia: segue só com texto.
-  if (error?.code === '42703') ({ data, error } = await consulta('id, author_id, body, created_at'));
+  // Banco ainda sem as migrações de mídia e respostas: segue com o que houver.
+  const { data, error } = await lerMensagens(consulta, 'id, author_id, body, created_at');
   if (error) return NextResponse.json({ error: 'Falha ao carregar o chat do grupo.' }, { status: 500 });
 
   const rows = ((data ?? []) as any[]).reverse();
+  const citacoes = await citacoesDasRespostas(rows, (m) => m.author_id, (ids) =>
+    s.sb.from('community_chat_messages').select('id, author_id, body, kind, media_meta').eq('group_id', params.id).in('id', ids),
+  );
+  const autores = [...rows.map((m) => m.author_id), ...Array.from(citacoes.values(), (c) => c.authorId)];
   const [names, links, fotos] = await Promise.all([
-    profilesByIds(s.sb, rows.map((m) => m.author_id)),
+    profilesByIds(s.sb, autores),
     linksDaMidia(s.sb, rows.map((m) => m.media_path)),
     avataresPorId(s.sb, rows.map((m) => m.author_id)),
   ]);
+  const citar = (id: string) => {
+    const c = citacoes.get(id);
+    return c ? { ...c, authorName: c.authorId === s.user.id ? 'Você' : names.get(c.authorId)?.name ?? 'Membro' } : null;
+  };
 
   return NextResponse.json({
     pasta: `grupos/${params.id}`,
@@ -55,23 +62,32 @@ export async function GET(request: Request, { params }: Ctx) {
       fromMe: m.author_id === s.user.id,
       createdAt: m.created_at,
       ...conteudoParaCliente(m, links),
+      replyTo: citar(m.id),
     })),
   }, { headers: { 'Cache-Control': 'private, no-store' } });
 }
 
-/** POST { kind, body, mediaPath?, meta? } — texto, foto, vídeo, áudio, figurinha ou adesivo. */
+/** POST { kind, body, mediaPath?, meta?, replyTo? } — texto, foto, vídeo, áudio, figurinha ou adesivo. */
 export async function POST(request: Request, { params }: Ctx) {
   const r = await membroAtivo(params.id);
   if ('erro' in r) return r.erro;
   const { s } = r;
 
-  const nova = validarMensagem(await request.json().catch(() => null), `grupos/${params.id}`, s.user.id);
+  const b = await request.json().catch(() => null);
+  const nova = validarMensagem(b, `grupos/${params.id}`, s.user.id);
   if ('erro' in nova) return NextResponse.json({ error: nova.erro }, { status: 400 });
 
-  const linha = nova.kind === 'texto'
+  // Resposta: só a uma mensagem deste mesmo grupo (se sumiu, vai sem citação).
+  const pedida = respostaPedida(b);
+  const { data: original } = pedida
+    ? await s.sb.from('community_chat_messages').select('id').eq('id', pedida).eq('group_id', params.id).maybeSingle()
+    : { data: null };
+
+  const linha: Record<string, unknown> = nova.kind === 'texto'
     ? { group_id: params.id, author_id: s.user.id, body: nova.body }
     : { group_id: params.id, author_id: s.user.id, ...nova };
-  const { data, error } = await s.sb.from('community_chat_messages').insert(linha).select('id, created_at').maybeSingle();
+  if (original) linha.reply_to = original.id;
+  const { data, error } = await inserirMensagem((l) => s.sb.from('community_chat_messages').insert(l).select('id, created_at').maybeSingle(), linha);
   if (error?.code === '42703') return NextResponse.json({ error: 'Fotos, vídeos e áudios no chat ainda não foram ativados no banco.' }, { status: 503 });
   if (error || !data) return NextResponse.json({ error: 'Não foi possível enviar a mensagem.' }, { status: 500 });
   return NextResponse.json({ ok: true, id: data.id, createdAt: data.created_at });
