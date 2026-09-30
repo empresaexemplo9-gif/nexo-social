@@ -134,6 +134,26 @@ h2 {
     transform: translate3d(-3%, 5%, 0) scale(0.97);
   }
 }
+/* Mural de colagens (public/bg/mural.webp, já clareado e com menos contraste):
+   quase some na coluna do conteúdo e ganha cor nas laterais. */
+.fundo-tech__mural {
+  --mural-meio: rgb(0 0 0 / 0.17);
+  background: url('/bg/mural.webp') center / cover no-repeat;
+  opacity: 0.62;
+  -webkit-mask-image: linear-gradient(to right, #000 0%, var(--mural-meio) 24%, var(--mural-meio) 76%, #000 100%);
+  mask-image: linear-gradient(to right, #000 0%, var(--mural-meio) 24%, var(--mural-meio) 76%, #000 100%);
+}
+@media (max-width: 767px) {
+  /* No celular o conteúdo ocupa a largura toda: o mural vira papel de parede,
+     menor (o "cover" ampliaria uma fatia só) e por igual, mais leve. */
+  .fundo-tech__mural {
+    background-size: 820px auto;
+    background-repeat: repeat;
+    opacity: 0.3;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}
 .fundo-tech__circuito {
   background: url('/bg/circuito.svg') center / cover no-repeat;
   opacity: 0.11;

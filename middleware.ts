@@ -12,7 +12,7 @@ const publicPaths = new Set([
   '/icon-192.png', '/icon-512.png', '/icon-maskable-192.png', '/icon-maskable-512.png',
   '/logo.png', '/logo.svg', '/google12ea32661b84e35f.html',
   '/bg/linhas-luz.svg', '/bg/grade.svg', '/bg/chip.svg', '/bg/hud.svg',
-  '/bg/rede.svg', '/bg/hexagonos.svg', '/bg/circuito.svg',
+  '/bg/rede.svg', '/bg/hexagonos.svg', '/bg/circuito.svg', '/bg/mural.webp',
 ]);
 
 // Adesivos, fontes e texturas da página pública do convite.
