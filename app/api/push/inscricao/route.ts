@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/api-helpers';
 import { createAdminClient } from '@/lib/supabase-server';
 import { configurarDespacho, pushConfigurado } from '@/lib/push';
+import { semTabela as tabelaFaltando } from '@/lib/erros-banco';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
     { onConflict: 'endpoint' },
   );
   if (error) {
-    const semTabela = error.code === '42P01' || /push_subscriptions/.test(error.message);
+    const semTabela = tabelaFaltando(error) || /push_subscriptions/.test(error.message);
     return NextResponse.json({ error: semTabela ? 'Os avisos no aparelho ainda não foram ativados no banco.' : 'Não foi possível ativar os avisos.' }, { status: semTabela ? 503 : 500 });
   }
   await configurarDespacho(new URL(request.url).origin).catch(() => undefined);

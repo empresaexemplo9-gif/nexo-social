@@ -2,13 +2,14 @@ import { NextResponse } from 'next/server';
 import { exigirSessao, idInvalido, minhaParticipacao, texto } from '@/lib/comunidade';
 import { isUuid, notify, profilesByIds } from '@/lib/social';
 import { avataresPorId } from '@/lib/chat-mensagens';
+import { semTabela } from '@/lib/erros-banco';
 import type { Comentario } from '@/lib/comunidade-tipos';
 
 export const dynamic = 'force-dynamic';
 
 type Ctx = { params: { id: string; postId: string } };
 
-// 42P01: a tabela de comentários ainda não foi criada no banco.
+// A tabela de comentários ainda não foi criada no banco (semTabela).
 const SEM_TABELA = () => NextResponse.json({ error: 'Os comentários ainda não foram ativados no banco.' }, { status: 503 });
 
 /** Sessão + membro ativo do grupo + a publicação é deste grupo. */
@@ -38,7 +39,7 @@ export async function GET(_request: Request, { params }: Ctx) {
     .eq('group_id', params.id)
     .order('created_at', { ascending: true })
     .limit(300);
-  if (error?.code === '42P01') return SEM_TABELA();
+  if (semTabela(error)) return SEM_TABELA();
   if (error) return NextResponse.json({ error: 'Falha ao carregar os comentários.' }, { status: 500 });
 
   const rows = (data ?? []) as { id: string; post_id: string; author_id: string; reply_to: string | null; body: string; created_at: string }[];
@@ -85,7 +86,7 @@ export async function POST(request: Request, { params }: Ctx) {
     .insert({ post_id: params.postId, group_id: params.id, author_id: s.user.id, reply_to: original?.id ?? null, body })
     .select('id, created_at')
     .maybeSingle();
-  if (error?.code === '42P01') return SEM_TABELA();
+  if (semTabela(error)) return SEM_TABELA();
   if (error || !data) return NextResponse.json({ error: 'Não foi possível comentar.' }, { status: 500 });
 
   // Avisa quem publicou e quem teve o comentário respondido (menos a própria pessoa).
@@ -114,6 +115,7 @@ export async function DELETE(request: Request, { params }: Ctx) {
   const id = new URL(request.url).searchParams.get('comentario');
   if (!isUuid(id)) return NextResponse.json({ error: 'Comentário inválido.' }, { status: 400 });
   const { data, error } = await s.sb.from('community_post_comments').delete().eq('id', id).eq('post_id', params.postId).select('id');
+  if (semTabela(error)) return SEM_TABELA();
   if (error) return NextResponse.json({ error: 'Não foi possível apagar.' }, { status: 500 });
   if (!data?.length) return NextResponse.json({ error: 'Só quem comentou ou o dono do grupo apagam.' }, { status: 403 });
   return NextResponse.json({ ok: true });

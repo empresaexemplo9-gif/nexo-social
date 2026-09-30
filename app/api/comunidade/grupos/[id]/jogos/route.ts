@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { exigirSessao, idInvalido, minhaParticipacao } from '@/lib/comunidade';
 import { isUuid, profilesByIds } from '@/lib/social';
 import { avataresPorId } from '@/lib/chat-mensagens';
+import { semTabela } from '@/lib/erros-banco';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,8 +31,8 @@ export async function GET(_request: Request, { params }: Ctx) {
     .eq('group_id', params.id)
     .order('created_at', { ascending: false })
     .limit(500);
-  // 42P01: o placar ainda não foi criado no banco — os jogos funcionam, só sem ranking.
-  if (error?.code === '42P01') return NextResponse.json({ ativo: false, ranking: { trilha: [], arcanos: [] }, recentes: [] });
+  // O placar ainda não foi criado no banco — os jogos funcionam, só sem ranking.
+  if (semTabela(error)) return NextResponse.json({ ativo: false, ranking: { trilha: [], arcanos: [] }, recentes: [] });
   if (error) return NextResponse.json({ error: 'Falha ao carregar o placar.' }, { status: 500 });
 
   const linhas = (data ?? []) as { id: string; game: string; winner_id: string | null; players: string[]; details: any; created_at: string }[];
@@ -95,9 +96,9 @@ export async function POST(request: Request, { params }: Ctx) {
     details: { resumo: typeof b?.resumo === 'string' ? b.resumo.slice(0, 200) : null },
     created_by: s.user.id,
   });
-  // 23505: a outra pessoa da partida já gravou. 42P01: placar ainda não existe.
+  // 23505: a outra pessoa da partida já gravou. semTabela: placar ainda não existe.
   if (error && error.code !== '23505') {
-    if (error.code === '42P01') return NextResponse.json({ ok: false, ativo: false });
+    if (semTabela(error)) return NextResponse.json({ ok: false, ativo: false });
     return NextResponse.json({ error: 'Não foi possível gravar a partida.' }, { status: 500 });
   }
   return NextResponse.json({ ok: true });

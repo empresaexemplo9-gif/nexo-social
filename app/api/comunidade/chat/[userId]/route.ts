@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { exigirSessao } from '@/lib/comunidade';
 import { isUuid, notify, profilesByIds } from '@/lib/social';
 import { avataresPorId, citacoesDasRespostas, conteudoParaCliente, inserirMensagem, lerMensagens, linksDaMidia, pastaDaConversa, previa, respostaPedida, validarMensagem } from '@/lib/chat-mensagens';
+import { semColuna } from '@/lib/erros-banco';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,7 +112,7 @@ export async function POST(request: Request, { params }: Ctx) {
   const linha: Record<string, unknown> = { from_user: s.user.id, to_user: params.userId, appointment_id: null, ...(nova.kind === 'texto' ? { body: nova.body } : nova) };
   if (original) linha.reply_to = original.id;
   const { data, error } = await inserirMensagem((l) => s.sb.from('messages').insert(l).select('id, created_at').maybeSingle(), linha);
-  if (error?.code === '42703') return NextResponse.json({ error: 'Fotos, vídeos e áudios no chat ainda não foram ativados no banco.' }, { status: 503 });
+  if (semColuna(error)) return NextResponse.json({ error: 'Fotos, vídeos e áudios no chat ainda não foram ativados no banco.' }, { status: 503 });
   if (error || !data) return NextResponse.json({ error: 'Não foi possível enviar a mensagem.' }, { status: 500 });
 
   await notify([{

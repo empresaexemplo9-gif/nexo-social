@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { exigirSessao, grupoResumo } from '@/lib/comunidade';
 import { profilesByIds } from '@/lib/social';
 import { avataresPorId, previaDaLinha } from '@/lib/chat-mensagens';
+import { semColuna } from '@/lib/erros-banco';
 import type { GrupoResumo } from '@/lib/comunidade-tipos';
 
 export const dynamic = 'force-dynamic';
@@ -29,7 +30,7 @@ export async function GET() {
   const ultimaDoGrupo = async (id: string) => {
     const q = (cols: string) => s.sb.from('community_chat_messages').select(cols).eq('group_id', id).order('created_at', { ascending: false }).limit(1).maybeSingle();
     let { data, error: e } = await q('author_id, body, kind, media_meta, created_at');
-    if (e?.code === '42703') ({ data } = await q('author_id, body, created_at'));
+    if (semColuna(e)) ({ data } = await q('author_id, body, created_at'));
     return (data ?? null) as any;
   };
   const ultimas = await Promise.all(grupos.slice(0, 4).map((g) => ultimaDoGrupo(g.id)));
@@ -37,7 +38,7 @@ export async function GET() {
   // Conversas diretas: a mensagem mais recente com cada contato e as não lidas.
   const q = (cols: string) => s.sb.from('messages').select(cols).or(`from_user.eq.${eu},to_user.eq.${eu}`).is('appointment_id', null).order('created_at', { ascending: false }).limit(80);
   let { data: diretas, error: e2 } = await q('from_user, to_user, body, kind, media_meta, read_at, created_at');
-  if (e2?.code === '42703') ({ data: diretas } = await q('from_user, to_user, body, read_at, created_at'));
+  if (semColuna(e2)) ({ data: diretas } = await q('from_user, to_user, body, read_at, created_at'));
   const porContato = new Map<string, { ultima: any; naoLidas: number }>();
   for (const m of (diretas ?? []) as any[]) {
     const outro = m.from_user === eu ? m.to_user : m.from_user;
