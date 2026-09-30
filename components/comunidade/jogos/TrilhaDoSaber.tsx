@@ -23,9 +23,10 @@ import {
   sortearPergunta,
   type EstadoTrilha,
 } from '@/lib/jogos/trilha';
-import { novoId, type Mensagem, type useCanalDeJogos } from '@/lib/jogos/canal';
+import { novoId, type Mensagem } from '@/lib/jogos/canal';
+import type { CanalDeJogos } from '@/lib/jogos/sala-local';
 
-type Canal = ReturnType<typeof useCanalDeJogos>;
+type Canal = CanalDeJogos;
 type Eu = { userId: string; nome: string; avatar: string | null };
 
 // Estética de jogo de tabuleiro: feltro verde-petróleo, tabuleiro de papelão
@@ -46,12 +47,17 @@ const categoriaDaCasa = (i: number): CategoriaDoQuiz | null => (i === 0 || i ===
 
 interface Props {
   canal: Canal;
-  groupId: string;
+  /** Sem grupo (jogo local): o placar não é gravado. */
+  groupId?: string | null;
   mesa: string;
   papel: 'host' | 'jogador' | 'espectador';
   eu: Eu;
   hostNome?: string;
+  /** Mesa só deste aparelho (sozinho ou contra o computador). */
+  local?: boolean;
   aoSair: () => void;
+  /** O palco chama isto no "Fechar jogo". */
+  fecharRef?: React.MutableRefObject<(() => void) | null>;
 }
 
 interface Privado {
@@ -62,7 +68,7 @@ interface Privado {
   respostas: Record<string, { opcao: number; ms: number }>;
 }
 
-export default function TrilhaDoSaber({ canal, groupId, mesa, papel, eu, hostNome, aoSair }: Props) {
+export default function TrilhaDoSaber({ canal, groupId, mesa, papel, eu, hostNome, local = false, aoSair, fecharRef }: Props) {
   const { enviar, ouvir, anunciar, presentes } = canal;
   const [estado, setEstado] = useState<EstadoTrilha | null>(() => (papel === 'host' ? novaTrilha(mesa, eu) : null));
   const [fimLocal, setFimLocal] = useState(0);
@@ -228,7 +234,7 @@ export default function TrilhaDoSaber({ canal, groupId, mesa, papel, eu, hostNom
 
   // Fim: grava o placar (uma vez por partida).
   useEffect(() => {
-    if (!estado || estado.fase !== 'fim' || !souHost || gravado.current === estado.partida) return;
+    if (!estado || estado.fase !== 'fim' || !souHost || !groupId || gravado.current === estado.partida) return;
     gravado.current = estado.partida;
     const [primeiro] = classificacao(estado);
     void fetch(`/api/comunidade/grupos/${groupId}/jogos`, {
@@ -352,13 +358,14 @@ export default function TrilhaDoSaber({ canal, groupId, mesa, papel, eu, hostNom
     void anunciar(null);
     aoSair();
   };
+  if (fecharRef) fecharRef.current = sair;
 
   // --- Desenho --------------------------------------------------------------------------
   const ranking = useMemo(() => (estado ? classificacao(estado) : []), [estado]);
   const restante = estado?.fase === 'pergunta' ? Math.max(0, fimLocal - agora) : 0;
 
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col overflow-hidden text-white" style={{ background: FELTRO }}>
+    <div className="absolute inset-0 flex flex-col overflow-hidden text-white" style={{ background: FELTRO }}>
       <header className="flex items-center gap-3 border-b border-white/15 px-3 py-2 sm:px-5">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: PAPELAO, color: TINTA, boxShadow: `0 0 0 2px ${TINTA}` }}>
           <Arte nome="owl" className="h-6 w-6" />
@@ -368,10 +375,10 @@ export default function TrilhaDoSaber({ canal, groupId, mesa, papel, eu, hostNom
           <p className="truncate text-[11px] text-white/65">
             {estado ? (estado.fase === 'lobby' ? 'Mesa aberta · esperando começar' : estado.fase === 'fim' ? 'Partida encerrada' : `Rodada ${estado.rodada} de ${estado.totalRodadas}`) : `Mesa de ${hostNome ?? 'alguém do grupo'}`}
             {souJogador ? '' : ' · assistindo'}
+            {local ? (estado && estado.jogadores.length > 1 ? ' · contra o computador' : ' · sozinho') : ''}
           </p>
         </div>
         <button type="button" onClick={() => setRegras(true)} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white/80 hover:bg-white/10">Regras</button>
-        <button type="button" onClick={sair} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-[#fecaca] hover:bg-[#ef4444]/20">Sair</button>
       </header>
 
       {!estado ? (
@@ -397,6 +404,8 @@ export default function TrilhaDoSaber({ canal, groupId, mesa, papel, eu, hostNom
                 onComecar={comecar}
                 onDeNovo={deNovo}
                 onConfig={(mudanca) => souHost && publicar({ ...estado, ...mudanca })}
+                local={local}
+                comPlacar={Boolean(groupId)}
               />
               <Placar estado={estado} ranking={ranking} eu={eu.userId} />
             </div>
@@ -546,6 +555,8 @@ function Painel({
   onComecar,
   onDeNovo,
   onConfig,
+  local,
+  comPlacar,
 }: {
   estado: EstadoTrilha;
   eu: Eu;
@@ -558,6 +569,8 @@ function Painel({
   onComecar: () => void;
   onDeNovo: () => void;
   onConfig: (m: Partial<EstadoTrilha>) => void;
+  local: boolean;
+  comPlacar: boolean;
 }) {
   const host = estado.jogadores.find((j) => j.userId === estado.host);
 
@@ -565,7 +578,7 @@ function Painel({
     return (
       <Cartao cor="#e11d48">
         <p className="font-display text-2xl font-extrabold uppercase">Mesa aberta</p>
-        <p className="mt-1 text-sm opacity-80">{estado.jogadores.length} {estado.jogadores.length === 1 ? 'pessoa' : 'pessoas'} na mesa. Quem estiver na sala de jogos do grupo pode entrar.</p>
+        <p className="mt-1 text-sm opacity-80">{estado.jogadores.length} {estado.jogadores.length === 1 ? 'pessoa' : 'pessoas'} na mesa. {local ? (estado.jogadores.length > 1 ? 'Os adversários do computador já sentaram.' : 'Só você: vença o tabuleiro no seu tempo.') : 'Quem estiver na sala de jogos do grupo pode entrar.'}</p>
         <ul className="mt-3 flex flex-wrap gap-2">
           {estado.jogadores.map((j) => (
             <li key={j.userId} className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-sm font-semibold" style={{ boxShadow: `0 0 0 2px ${j.cor}` }}>
@@ -613,7 +626,7 @@ function Painel({
             <button type="button" onClick={onComecar} className="w-full rounded-2xl py-3 font-display text-lg font-extrabold uppercase tracking-wide text-white" style={{ background: 'linear-gradient(180deg,#f43f5e,#be123c)', boxShadow: `0 0 0 3px ${TINTA}, 0 6px 0 ${TINTA}` }}>
               Começar a partida
             </button>
-            {estado.jogadores.length === 1 && <p className="text-center text-xs opacity-70">Dá para jogar sozinho, mas é bem mais divertido com o grupo.</p>}
+            {estado.jogadores.length === 1 && !local && <p className="text-center text-xs opacity-70">Dá para jogar sozinho, mas é bem mais divertido com o grupo.</p>}
           </div>
         ) : (
           <p className="mt-4 rounded-2xl p-3 text-center text-sm font-semibold" style={{ boxShadow: `inset 0 0 0 2px ${TINTA}33` }}>
@@ -760,9 +773,9 @@ function Painel({
           <button type="button" onClick={onDeNovo} className="mt-4 w-full rounded-2xl py-3 font-display text-lg font-extrabold uppercase text-white" style={{ background: 'linear-gradient(180deg,#f43f5e,#be123c)', boxShadow: `0 0 0 3px ${TINTA}, 0 6px 0 ${TINTA}` }}>
             Jogar de novo
           </button>
-        ) : (
+        ) : comPlacar ? (
           <p className="mt-4 text-center text-sm opacity-70">O placar do grupo foi atualizado.</p>
-        )}
+        ) : null}
       </Cartao>
     );
   }
