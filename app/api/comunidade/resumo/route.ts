@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/comunidade/resumo — a Comunidade em uma olhada, para a home:
  * grupos com a última mensagem de cada um, conversas recentes com contatos
- * (com as não lidas), pedidos de contato e convites para grupos.
+ * (com as não lidas), as publicações mais novas dos murais (com comentários),
+ * pedidos de contato e convites para grupos.
  */
 export async function GET() {
   const s = await exigirSessao();
@@ -46,16 +47,42 @@ export async function GET() {
   }
   const conversas = Array.from(porContato.entries()).slice(0, 4);
 
+  // O que saiu por último nos murais dos grupos, com a conversa de cada publicação.
+  const nomeDoGrupo = new Map(grupos.map((g) => [g.id, g.name]));
+  const { data: postsBrutos } = grupos.length
+    ? await s.sb.from('community_posts').select('id, group_id, author_id, kind, title, subtitle, body, created_at')
+      .in('group_id', grupos.map((g) => g.id)).order('created_at', { ascending: false }).limit(3)
+    : { data: [] as any[] };
+  const posts = (postsBrutos ?? []) as any[];
+  const { data: comentariosBrutos } = posts.length
+    ? await s.sb.from('community_post_comments').select('post_id, author_id, body, created_at').in('post_id', posts.map((p) => p.id)).order('created_at', { ascending: false }).limit(500)
+    : { data: [] as any[] };
+  const comentarios = new Map<string, { total: number; ultimo: any }>();
+  for (const c of (comentariosBrutos ?? []) as any[]) {
+    const atual = comentarios.get(c.post_id) ?? { total: 0, ultimo: c };
+    atual.total += 1;
+    comentarios.set(c.post_id, atual);
+  }
+
   const { count: pedidos } = await s.sb.from('connections').select('id', { count: 'exact', head: true }).eq('contact_id', eu).eq('status', 'pendente');
 
-  const pessoas = [...ultimas.filter(Boolean).map((u) => u.author_id), ...conversas.map(([id]) => id)];
-  const [nomes, fotos] = await Promise.all([profilesByIds(s.sb, pessoas), avataresPorId(s.sb, conversas.map(([id]) => id))]);
+  const pessoas = [
+    ...ultimas.filter(Boolean).map((u) => u.author_id),
+    ...conversas.map(([id]) => id),
+    ...posts.map((p) => p.author_id),
+    ...Array.from(comentarios.values(), (c) => c.ultimo.author_id),
+  ];
+  const [nomes, fotos] = await Promise.all([
+    profilesByIds(s.sb, pessoas),
+    avataresPorId(s.sb, [...conversas.map(([id]) => id), ...posts.map((p) => p.author_id)]),
+  ]);
+  const primeiroNome = (id: string) => (id === eu ? 'Você' : nomes.get(id)?.name?.split(' ')[0] ?? 'Alguém');
 
   return NextResponse.json({
     grupos: grupos.slice(0, 4).map((g, i) => ({
       id: g.id, name: g.name, imagePath: g.imagePath, memberCount: g.memberCount, playingTitle: g.playingTitle,
       ultima: ultimas[i] ? {
-        autor: ultimas[i].author_id === eu ? 'Você' : nomes.get(ultimas[i].author_id)?.name?.split(' ')[0] ?? 'Alguém',
+        autor: primeiroNome(ultimas[i].author_id),
         texto: previaDaLinha(ultimas[i]).slice(0, 90),
         em: ultimas[i].created_at,
       } : null,
@@ -69,6 +96,23 @@ export async function GET() {
       em: c.ultima.created_at,
       naoLidas: c.naoLidas,
     })),
+    posts: posts.map((p) => {
+      const c = comentarios.get(p.id);
+      return {
+        id: p.id,
+        groupId: p.group_id,
+        groupName: nomeDoGrupo.get(p.group_id) ?? 'Grupo',
+        kind: p.kind,
+        title: p.title ?? null,
+        subtitle: p.subtitle ?? null,
+        body: p.body ? String(p.body).slice(0, 220) : null,
+        createdAt: p.created_at,
+        authorName: p.author_id === eu ? 'Você' : nomes.get(p.author_id)?.name ?? 'Membro',
+        authorAvatar: fotos.get(p.author_id) ?? null,
+        comentarios: c?.total ?? 0,
+        ultimoComentario: c ? { autor: primeiroNome(c.ultimo.author_id), texto: String(c.ultimo.body).slice(0, 90) } : null,
+      };
+    }),
     pedidosDeContato: pedidos ?? 0,
     convites: convites.map((g) => ({ id: g.id, name: g.name, invitedByName: g.invitedByName })),
   }, { headers: { 'Cache-Control': 'private, no-store' } });

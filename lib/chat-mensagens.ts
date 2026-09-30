@@ -116,3 +116,62 @@ export function previaDaLinha(row: { kind?: string | null; body?: string | null;
   const kind = (TIPOS as readonly string[]).includes(row.kind ?? '') ? (row.kind as TipoDeMensagem) : 'texto';
   return previa({ kind, body: row.body ?? '', media_path: null, media_meta: row.media_meta ?? null });
 }
+
+type Resultado = { data: any; error: { code?: string } | null };
+
+/**
+ * Lê as mensagens tentando as colunas mais novas primeiro: com resposta e
+ * mídia, só com mídia e só texto — o chat funciona antes das migrações.
+ */
+export async function lerMensagens(consulta: (colunas: string) => PromiseLike<Resultado>, base: string): Promise<Resultado> {
+  let r: Resultado = { data: null, error: null };
+  for (const extra of [`${COLUNAS_DE_MIDIA}, reply_to`, COLUNAS_DE_MIDIA, '']) {
+    r = await consulta(extra ? `${base}, ${extra}` : base);
+    if (r.error?.code !== '42703') return r;
+  }
+  return r;
+}
+
+/** O pedaço da mensagem original que aparece em cima da resposta. */
+export interface Citacao {
+  id: string;
+  authorId: string;
+  texto: string;
+}
+
+/**
+ * Citações das respostas. As originais que não vieram na página são buscadas
+ * com `buscar`, que já filtra pela mesma conversa — uma resposta nunca mostra
+ * mensagem de outra conversa.
+ */
+export async function citacoesDasRespostas(
+  rows: any[],
+  autorDe: (row: any) => string,
+  buscar: (ids: string[]) => PromiseLike<{ data: any[] | null }>,
+): Promise<Map<string, Citacao>> {
+  const porId = new Map<string, any>(rows.map((r) => [r.id, r]));
+  const faltam = Array.from(new Set(rows.map((r) => r.reply_to).filter((id): id is string => Boolean(id) && !porId.has(id))));
+  if (faltam.length) for (const r of (await buscar(faltam.slice(0, 100))).data ?? []) porId.set(r.id, r);
+  const mapa = new Map<string, Citacao>();
+  for (const r of rows) {
+    const o = r.reply_to ? porId.get(r.reply_to) : null;
+    if (o) mapa.set(r.id, { id: o.id, authorId: autorDe(o), texto: previaDaLinha(o).slice(0, 140) });
+  }
+  return mapa;
+}
+
+/** `replyTo` do corpo do pedido, quando é um id válido. */
+export const respostaPedida = (b: any): string | null => {
+  const v = typeof b?.replyTo === 'string' ? b.replyTo : '';
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v) ? v : null;
+};
+
+/** Grava a mensagem; se o banco ainda não tem a coluna da resposta, grava sem ela. */
+export async function inserirMensagem(inserir: (linha: Record<string, unknown>) => PromiseLike<Resultado>, linha: Record<string, unknown>): Promise<Resultado> {
+  const r = await inserir(linha);
+  if (r.error?.code === '42703' && 'reply_to' in linha) {
+    const { reply_to: _sem, ...resto } = linha;
+    return inserir(resto);
+  }
+  return r;
+}

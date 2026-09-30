@@ -51,6 +51,13 @@ export async function GET(request: Request, { params }: Ctx) {
     : { data: [] as any[] };
   const fotos = await fotosDasLinhas(s.sb, linhasDeFoto ?? [], { nomes, meuId: s.user.id, souDono });
 
+  // Quantos comentários cada publicação tem (sem a tabela ainda, zero).
+  const comentarios = new Map<string, number>();
+  if (rows.length) {
+    const { data: cs } = await s.sb.from('community_post_comments').select('post_id').in('post_id', rows.map((r) => r.id)).limit(5000);
+    for (const c of (cs ?? []) as { post_id: string }[]) comentarios.set(c.post_id, (comentarios.get(c.post_id) ?? 0) + 1);
+  }
+
   const posts: Post[] = rows
     .map((r) => ({
       id: r.id,
@@ -66,6 +73,7 @@ export async function GET(request: Request, { params }: Ctx) {
       authorAvatar: avatares.get(r.author_id) ?? null,
       podeApagar: souDono || r.author_id === s.user.id,
       fotos: fotos.filter((f) => f.postId === r.id),
+      comentarios: comentarios.get(r.id) ?? 0,
     }))
     // Publicação de fotos que ficou sem foto e sem texto não tem o que mostrar.
     .filter((p) => p.kind !== 'foto' || p.fotos.length || p.body);

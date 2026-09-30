@@ -8,6 +8,7 @@ import { formatEventDateLong } from '@/lib/datetime';
 import { TIPOS_POST, youtubeIdDe, type Album, type Foto, type Post, type TipoPost } from '@/lib/comunidade-tipos';
 import { tocarParaOGrupo } from './SalaSincronizada';
 import EnviarFotos from './EnviarFotos';
+import Comentarios from './Comentarios';
 import { GradeDoPost, Lightbox } from './Galeria';
 
 const campo =
@@ -27,6 +28,16 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
   const [tocando, setTocando] = useState<string | null>(null);
   const [albuns, setAlbuns] = useState<Album[]>([]);
   const [aberta, setAberta] = useState<{ fotos: Foto[]; i: number } | null>(null);
+  const [comentando, setComentando] = useState<Set<string>>(() => new Set());
+  const alternarComentarios = (id: string) =>
+    setComentando((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
+  const contarComentarios = (id: string, total: number) =>
+    setPosts((prev) => prev.map((p) => (p.id === id && p.comentarios !== total ? { ...p, comentarios: total } : p)));
 
   const carregar = useCallback(
     async (antes?: string) => {
@@ -285,6 +296,16 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
                           <Icon name="external" size={13} /> Abrir link
                         </a>
                       )}
+                      <button
+                        type="button"
+                        onClick={() => alternarComentarios(p.id)}
+                        aria-expanded={comentando.has(p.id)}
+                        className={`action-collage action-collage--paper inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs transition ${
+                          comentando.has(p.id) ? 'border-emerald-700 text-emerald-300' : 'border-zinc-800 text-zinc-300 hover:border-emerald-700 hover:text-emerald-300'
+                        }`}
+                      >
+                        <Icon name="chat" size={13} /> {p.comentarios ? `${p.comentarios} ${p.comentarios === 1 ? 'comentário' : 'comentários'}` : 'Comentar'}
+                      </button>
                       {p.podeApagar && (
                         <button
                           onClick={() => apagar(p)}
@@ -296,6 +317,11 @@ export default function Mural({ groupId, aoMudarFotos }: { groupId: string; aoMu
                         </button>
                       )}
                     </div>
+                    {comentando.has(p.id) && (
+                      <div className="mt-3">
+                        <Comentarios groupId={groupId} postId={p.id} aoMudar={(n) => contarComentarios(p.id, n)} />
+                      </div>
+                    )}
                   </div>
                 </div>
               </li>
