@@ -383,7 +383,7 @@ export const PAUTA: Record<CategorySlug, Pauta[]> = {
     p('Free Fire', 'curiosidades'),
     p('Campeonato Brasileiro de League of Legends', 'dossie'),
     p('Brasil Game Show', 'curiosidades'),
-    p('Fliperama', 'curiosidades'),
+    p('Arcade', 'curiosidades'),
     p('LAN house', 'curiosidades'),
     // Clássicos do mundo.
     p('Shigeru Miyamoto', 'perfil'),

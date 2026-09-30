@@ -10,6 +10,8 @@ import SportsHub from '@/components/SportsHub';
 import HeritageShelf from '@/components/HeritageShelf';
 import ClipsShelf from '@/components/ClipsShelf';
 import RevistaDoTema from '@/components/revista/RevistaDoTema';
+import NoticiasDoTema from '@/components/temas/NoticiasDoTema';
+import KitDoTema from '@/components/temas/KitDoTema';
 import { usePreferences } from '@/lib/preferences';
 import { getTopic, type CategorySlug, type ContentItem, type EventItem } from '@/lib/data';
 import Icon from './icons';
@@ -71,9 +73,30 @@ export default function TopicView({ slug, contents, events }: Props) {
           </div>
         </section>
 
+        {/* Atalhos para as seções da página */}
+        <nav aria-label={`Seções de ${topic.label}`} className="sticky top-14 z-20 -mx-4 overflow-x-auto lg:top-2 bg-zinc-950/85 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-2xl sm:border sm:border-zinc-800">
+          <ul className="flex gap-1.5 whitespace-nowrap text-xs font-semibold">
+            {[
+              ...(slug === 'esporte' ? [['#ao-vivo', 'Ao vivo']] : []),
+              ['#noticias', 'Notícias'],
+              ['#so-no-nexo', 'Só no nexo'],
+              ['#revista', 'Revista'],
+              ['#videos', 'Vídeos'],
+              ['#marcos', 'Marcos'],
+              ['#agenda', 'Agenda'],
+            ].map(([href, rotulo]) => (
+              <li key={href}>
+                <a href={href} className={`inline-block rounded-full border px-3 py-1.5 transition hover:opacity-80 ${topic.accent.border} ${topic.accent.bg} ${topic.accent.text}`}>
+                  {rotulo}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
         {/* Esporte tem quadro próprio: placar ao vivo, transmissões e replays. */}
         {slug === 'esporte' && (
-          <section id="ao-vivo" className="scroll-mt-20 space-y-6">
+          <section id="ao-vivo" className="scroll-mt-32 space-y-6">
             <div>
               <h2 className="text-2xl font-semibold text-zinc-50">Ao vivo, resultados e melhores momentos</h2>
               <p className="text-sm text-zinc-300">
@@ -84,8 +107,16 @@ export default function TopicView({ slug, contents, events }: Props) {
           </section>
         )}
 
+        {/* Notícias do dia, de veículos brasileiros (RSS), lidas aqui dentro */}
+        <NoticiasDoTema tema={slug} />
+
+        {/* Ferramentas exclusivas do tema: guias, glossário, receitas, jogos grátis… */}
+        <div id="so-no-nexo" className="scroll-mt-32">
+          <KitDoTema tema={slug} />
+        </div>
+
         {/* Revista do tema: matérias no formato da plataforma, de fontes abertas */}
-        <section id="revista" className="scroll-mt-20 space-y-5">
+        <section id="revista" className="scroll-mt-32 space-y-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="rotulo-hud">Revista nexo</p>
@@ -100,10 +131,14 @@ export default function TopicView({ slug, contents, events }: Props) {
         </section>
 
         {/* Clipes do tema — vídeos curtos que tocam aqui dentro */}
-        <ClipsShelf topic={slug} />
+        <div id="videos" className="scroll-mt-32">
+          <ClipsShelf topic={slug} />
+        </div>
 
         {/* Acervo histórico do tema */}
-        <HeritageShelf topic={slug} titulo={`Marcos de ${topic.label}`} />
+        <div id="marcos" className="scroll-mt-32">
+          <HeritageShelf topic={slug} titulo={`Marcos de ${topic.label}`} />
+        </div>
 
         {/* Conteúdos */}
         <section className="space-y-6">
@@ -131,7 +166,7 @@ export default function TopicView({ slug, contents, events }: Props) {
         </section>
 
         {/* Agenda do tema */}
-        <section id="agenda" className="scroll-mt-20 space-y-6">
+        <section id="agenda" className="scroll-mt-32 space-y-6">
           <div>
             <h2 className="text-2xl font-semibold text-zinc-50">Agenda de {topic.label}</h2>
             <p className="text-sm text-zinc-300">
