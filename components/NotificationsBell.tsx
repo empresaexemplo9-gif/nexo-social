@@ -6,6 +6,7 @@ import Icon from './icons';
 import { formatEventDateLong } from '@/lib/datetime';
 import { supabase } from '@/lib/supabase';
 import { EVENTO_CONVITES, responderConvite } from '@/lib/convites';
+import { ConviteParaAvisos } from './AvisosNoAparelho';
 
 interface Notification {
   id: string;
@@ -153,6 +154,7 @@ export default function NotificationsBell({ lateral = false, rotulo, className =
                 </button>
               )}
             </div>
+            <ConviteParaAvisos />
             <div className="max-h-[26rem] overflow-y-auto">
               {erro && <p className="border-b border-zinc-800/60 bg-clay-950/20 px-4 py-2 text-[11px] text-clay-300">{erro}</p>}
 

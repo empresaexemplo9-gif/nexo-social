@@ -1,6 +1,7 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from './supabase-server';
+import { despacharAgora } from './push';
 
 // Tipos e utilidades da agenda social (compromissos, convites, recados).
 
@@ -136,6 +137,8 @@ export async function notify(
     console.error('[notify] falha:', error.message);
     return { ok: false, sent: 0, reason: error.message };
   }
+  // Avisos no aparelho: saem já (o que não der tempo, o banco entrega em 1 minuto).
+  await despacharAgora(2000);
   return { ok: true, sent: rows.length };
 }
 

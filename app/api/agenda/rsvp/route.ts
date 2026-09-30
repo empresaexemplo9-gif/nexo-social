@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/api-helpers';
+import { despacharAgora } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,5 +36,6 @@ export async function POST(request: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   if (!data) return NextResponse.json({ error: 'Você não está marcado neste compromisso.' }, { status: 404 });
 
+  await despacharAgora();
   return NextResponse.json({ ok: true, status });
 }

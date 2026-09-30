@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao, falha, idInvalido } from '@/lib/comunidade';
 import { isUuid } from '@/lib/social';
+import { despacharAgora } from '@/lib/push';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   if (error) return falha(error, 'Falha ao convidar.');
 
   const por = (r: string) => (data ?? []).filter((x: { resultado: string }) => x.resultado === r).length;
+  if (por('convidado')) await despacharAgora();
   return NextResponse.json({
     ok: true,
     convidados: por('convidado'),

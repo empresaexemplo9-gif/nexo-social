@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { renovarInscricao } from '@/lib/push-cliente';
 
 /**
  * Registra o service worker — é ele que torna o app instalável e evita a tela
@@ -15,9 +16,13 @@ export default function PWARegister() {
     if (!('serviceWorker' in navigator)) return;
 
     const registrar = () => {
-      navigator.serviceWorker.register('/sw.js').catch((e) => {
-        console.warn('[pwa] service worker não registrado:', e?.message || e);
-      });
+      navigator.serviceWorker
+        .register('/sw.js')
+        // Aparelho com avisos ligados: o servidor confirma de quem ele é (troca de conta).
+        .then(() => renovarInscricao())
+        .catch((e) => {
+          console.warn('[pwa] service worker não registrado:', e?.message || e);
+        });
     };
 
     // Espera a página assentar para não competir com o carregamento inicial.

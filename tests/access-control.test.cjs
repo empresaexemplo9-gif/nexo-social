@@ -47,14 +47,14 @@ test('all internal pages and APIs require login', async () => {
     assert.equal(res.status, 307, path);
     assert.equal(new URL(res.headers.get('location')).pathname, '/login');
   }
-  for (const path of ['/api/contents', '/api/events', '/api/admin/events', '/api/health']) {
+  for (const path of ['/api/contents', '/api/events', '/api/admin/events', '/api/health', '/api/push/inscricao', '/api/push/teste', '/api/push/chave']) {
     assert.equal((await app.run(path)).status, 401, path);
   }
 });
 
 test('login, signup, invite validation and static assets stay public', async () => {
   const app = load({ throws: true });
-  for (const path of ['/auth/callback?code=valid-code', '/termos', '/privacidade', '/login', '/api/signup', '/api/invites/validate?token=x', '/offline', '/sw.js', '/manifest.webmanifest', '/icon-192.png', '/google12ea32661b84e35f.html']) {
+  for (const path of ['/auth/callback?code=valid-code', '/termos', '/privacidade', '/login', '/api/signup', '/api/invites/validate?token=x', '/offline', '/sw.js', '/manifest.webmanifest', '/icon-192.png', '/google12ea32661b84e35f.html', '/api/push/despachar']) {
     assert.equal((await app.run(path)).headers.get('x-middleware-next'), '1', path);
   }
   assert.equal(app.calls(), 0);
