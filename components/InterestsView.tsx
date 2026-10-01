@@ -233,7 +233,7 @@ export function HeroDoPerfil({ onMontar, montando, onPersonalizar }: { onMontar:
           </div>
 
           <Etiqueta giro={-7} atraso={0} className="left-0 top-2">
-            <div className="fita relative rounded-md bg-[#fff8dc] px-4 pb-2 pt-3 shadow-soft">
+            <div className="fita q-papel relative rounded-md bg-[#fff8dc] px-4 pb-2 pt-3 shadow-soft">
               <p className="font-mao text-2xl leading-none text-zinc-100">no seu ritmo</p>
               <svg aria-hidden viewBox="0 0 90 8" className="mt-1 h-2 w-20 text-clay-500">
                 <path d="M2 5 C 25 1, 55 8, 88 3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />

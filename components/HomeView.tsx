@@ -21,6 +21,7 @@ import { usePreferences } from '@/lib/preferences';
 import { getTopic, type ContentItem, type EventItem } from '@/lib/data';
 import { widgetDeTema } from '@/lib/widgets';
 import { opcaoDeFundo } from '@/lib/aparencia';
+import { AREAS } from '@/lib/areas';
 import PersonalizarAparencia, { AmostraDeFundo } from '@/components/home/PersonalizarAparencia';
 
 interface Props {
@@ -80,10 +81,17 @@ export default function HomeView({ events }: Props) {
     [events, prefs.interests],
   );
 
+  // Sem fundo próprio, a home veste o tema dela (o muro da marca, lib/areas.ts).
+  const muro = ready && !fundo ? AREAS.inicio : null;
+
   return (
-    <div className={`min-h-screen font-sans text-zinc-100 antialiased ${fundo?.escuro ? 'home-fundo-escuro' : ''}`}>
+    <div
+      className={`min-h-screen font-sans text-zinc-100 antialiased ${fundo?.escuro ? 'home-fundo-escuro' : ''} ${muro ? 'tema-mural' : ''}`}
+      {...(muro ? { 'data-area': 'inicio', 'data-parede': muro.parede, 'data-quadro': muro.quadro, 'data-moldura': muro.moldura } : {})}
+    >
       {/* O fundo fica por trás de tudo (acima do papel padrão da plataforma). */}
       {fundo && <AmostraDeFundo opcao={fundo} tela className="pointer-events-none !fixed inset-0 -z-[9]" />}
+      {muro && <div aria-hidden className="parede-mural" />}
       <Navbar />
 
       {/* Largura total: a home usa a tela inteira, com respiro só nas bordas. */}

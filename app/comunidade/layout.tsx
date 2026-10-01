@@ -7,8 +7,8 @@ import React from 'react';
  */
 export default function LayoutDaComunidade({ children }: { children: React.ReactNode }) {
   return (
-    <div className="tema-comunidade">
-      <div aria-hidden className="parede-comunidade" />
+    <div className="tema-mural">
+      <div aria-hidden className="parede-mural" />
       {children}
     </div>
   );
