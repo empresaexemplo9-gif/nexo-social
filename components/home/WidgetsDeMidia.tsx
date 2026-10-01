@@ -160,7 +160,7 @@ export function RevistaWidget() {
         label="Revista nexo"
         title="Revista do dia"
         icon="jornal"
-        subtitle="Dossiês, perfis e curiosidades dos seus temas — com as fontes no fim."
+        subtitle="O que é notícia nos seus temas agora — com a foto em alta, o contexto e as fontes."
         action={
           <Link href="/revista" className="shrink-0 font-mono text-xs uppercase tracking-widest text-emerald-400 hover:text-clay-400">
             revista completa →

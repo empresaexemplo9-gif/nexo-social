@@ -3,9 +3,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
 import Navbar from '@/components/Navbar';
-import MateriaView from '@/components/revista/MateriaView';
-import { montarMateria } from '@/lib/revista';
-import { pautaPorSlug } from '@/lib/revista-pauta';
+import MateriaView from '@/components/historicas/MateriaView';
+import { montarMateria } from '@/lib/historicas';
+import { pautaPorSlug } from '@/lib/historicas-pauta';
 import { getTopic, type CategorySlug } from '@/lib/data';
 
 export const revalidate = 86400;
@@ -34,12 +34,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!getTopic(params.tema)) return {};
   const m = await materia(params.tema as CategorySlug, params.slug).catch(() => null);
   if (!m) return { title: 'Matéria não encontrada — nexo.social' };
-  const titulo = `${m.titulo} — Revista nexo`;
+  const titulo = `${m.titulo} — Matérias históricas e curiosidades | nexo`;
   const descricao = (m.linhaFina ? `${m.linhaFina}. ` : '') + m.abertura.slice(0, 150);
   return {
     title: titulo,
     description: descricao,
-    alternates: { canonical: `/revista/${m.tema}/${m.slug}` },
+    alternates: { canonical: `/historicas/${m.tema}/${m.slug}` },
     openGraph: { type: 'article', title: titulo, description: descricao, images: m.capa ? [{ url: m.capa.url }] : undefined },
     twitter: { card: m.capa ? 'summary_large_image' : 'summary', title: titulo, description: descricao },
   };

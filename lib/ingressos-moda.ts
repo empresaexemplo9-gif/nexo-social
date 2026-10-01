@@ -18,7 +18,7 @@ export interface EventoDeModa {
   ingresso: { rotulo: string; url: string; /** Verbo do botão quando não é compra (ex.: credenciamento). */ acao?: string };
   /** Página oficial com programação e regras. */
   oficial?: { rotulo: string; url: string };
-  /** Matéria da Revista sobre o evento, quando houver. */
+  /** Matéria histórica sobre o evento (/historicas/moda/…), quando houver. */
   materia?: string;
 }
 

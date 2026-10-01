@@ -30,6 +30,7 @@ const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/descobrir', label: 'Descobrir', icon: 'grade' },
   { href: '/shorts', label: 'Shorts', icon: 'shorts' },
   { href: '/revista', label: 'Revista', icon: 'jornal' },
+  { href: '/historicas', label: 'Matérias históricas e curiosidades', icon: 'clock' },
   { href: '/agenda', label: 'Agenda', icon: 'calendarCheck' },
   { href: '/comunidade', label: 'Comunidade', icon: 'users' },
   { href: '/esporte', label: 'Esporte ao vivo', icon: 'trophy' },
@@ -131,7 +132,8 @@ function ConteudoMenu({
         {PRINCIPAIS.map((l) => (
           <Link key={l.href} href={l.href} onClick={onNavegar} className={item(ativo(pathname, l.href))} aria-current={ativo(pathname, l.href) ? 'page' : undefined} aria-label={l.label} title={l.label}>
             <Icon name={l.icon} size={19} className="shrink-0" />
-            <span className="rotulo-menu truncate">{l.label}</span>
+            {/* Rótulo longo ("Matérias históricas e curiosidades") quebra em duas linhas em vez de cortar. */}
+            <span className="rotulo-menu line-clamp-2 min-w-0 leading-tight">{l.label}</span>
           </Link>
         ))}
 

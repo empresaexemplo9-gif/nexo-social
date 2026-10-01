@@ -82,13 +82,28 @@ const itensDoFeed = unstable_cache(
   { revalidate: 900 },
 );
 
-/** As notícias mais recentes do tema, de todas as fontes dele, alternando os veículos. */
-export async function noticiasDoTema(tema: CategorySlug, limite = 18): Promise<NoticiasDoTema> {
+async function listasDoTema(tema: CategorySlug) {
   const fontes = FONTES_DE_NOTICIA[tema] ?? [];
   const resultados = await Promise.allSettled(fontes.map((f) => itensDoFeed(f.feed)));
-  const listas = resultados.map((r, i) => (r.status === 'fulfilled' ? paraNoticias(r.value, fontes[i]) : []));
   return {
-    itens: juntarNoticias(listas, { limite }),
+    listas: resultados.map((r, i) => (r.status === 'fulfilled' ? paraNoticias(r.value, fontes[i]) : [])),
     fontes: fontes.map((f, i) => ({ nome: f.nome, site: f.site, ok: resultados[i].status === 'fulfilled' })),
   };
+}
+
+/** As notícias mais recentes do tema, de todas as fontes dele, alternando os veículos. */
+export async function noticiasDoTema(tema: CategorySlug, limite = 18): Promise<NoticiasDoTema> {
+  const { listas, fontes } = await listasDoTema(tema);
+  return { itens: juntarNoticias(listas, { limite }), fontes };
+}
+
+/**
+ * Para a Revista: mais notícias, só dos últimos `dias` — o que é assunto
+ * agora. Se a semana estiver fraca no tema, volta à janela do "ao vivo".
+ */
+export async function noticiasRecentes(tema: CategorySlug, { dias = 10, limite = 80 } = {}): Promise<{ itens: Noticia[]; dias: number }> {
+  const { listas } = await listasDoTema(tema);
+  const itens = juntarNoticias(listas, { limite, dias });
+  if (itens.length >= 12 || dias >= DIAS_NO_AR) return { itens, dias };
+  return { itens: juntarNoticias(listas, { limite, dias: DIAS_NO_AR }), dias: DIAS_NO_AR };
 }
