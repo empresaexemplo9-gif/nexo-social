@@ -1,34 +1,14 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { conteudoParaCliente, validarMensagem, type MensagemNova } from './chat-mensagens';
+import { urlDoItem } from './exclusivos';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-async function adesivoExclusivoPorIndice(sb: SupabaseClient, uid: string, index: number) {
-  const { data: grants, error: grantError } = await sb
-    .from('exclusive_asset_grants')
-    .select('asset_id')
-    .eq('user_id', uid);
-  if (grantError) return null;
-  const ids = (grants ?? []).map((g: any) => g.asset_id).filter(Boolean);
-  if (!ids.length) return null;
-  const { data, error } = await sb
-    .from('exclusive_assets')
-    .select('id, kind, image_path, active, sort_order, created_at')
-    .in('id', ids)
-    .eq('kind', 'sticker')
-    .eq('active', true)
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
-  if (error) return null;
-  return (data ?? [])[index] ?? null;
-}
-
 /**
- * Valida mensagens comuns e, no caso de adesivo exclusivo, confirma no banco
- * que o remetente recebeu o item do superadministrador. O painel codifica os
- * exclusivos como n=-1,-2,… para continuar usando o mesmo contrato do chat;
- * o servidor resolve esse índice só entre os itens liberados para a conta.
+ * Valida mensagens comuns e, no caso de adesivo ou botton exclusivo
+ * (meta.exclusiveId), confirma no banco que quem envia recebeu o item do
+ * superadministrador. O endereço da imagem fica guardado na mensagem.
  */
 export async function validarMensagemComExclusivos(
   sb: SupabaseClient,
@@ -36,51 +16,46 @@ export async function validarMensagemComExclusivos(
   pasta: string,
   uid: string,
 ): Promise<MensagemNova | { erro: string }> {
-  if (body?.kind !== 'adesivo') return validarMensagem(body, pasta, uid);
+  const exclusiveId = body?.kind === 'adesivo' && typeof body?.meta?.exclusiveId === 'string' ? body.meta.exclusiveId : '';
+  if (!exclusiveId) return validarMensagem(body, pasta, uid);
+  if (!UUID.test(exclusiveId)) return { erro: 'Adesivo exclusivo inválido.' };
 
-  const n = Number(body?.meta?.n);
-  const explicitId = typeof body?.meta?.exclusiveId === 'string' ? body.meta.exclusiveId : '';
-  const wantsExclusive = (Number.isInteger(n) && n < 0) || Boolean(explicitId);
-  if (!wantsExclusive) return validarMensagem(body, pasta, uid);
+  const { data: grant, error: grantError } = await sb
+    .from('exclusive_asset_grants')
+    .select('asset_id')
+    .eq('asset_id', exclusiveId)
+    .eq('user_id', uid)
+    .maybeSingle();
+  if (grantError || !grant) return { erro: 'Esse adesivo não foi liberado para a sua conta.' };
+  const { data: asset } = await sb
+    .from('exclusive_assets')
+    .select('id, kind, image_path')
+    .eq('id', exclusiveId)
+    .in('kind', ['sticker', 'button'])
+    .eq('active', true)
+    .maybeSingle();
+  if (!asset?.image_path) return { erro: 'Esse adesivo não foi liberado para a sua conta.' };
 
-  let asset: any = null;
-  if (Number.isInteger(n) && n < 0) {
-    const index = -1 - n;
-    if (index < 0 || index > 9999) return { erro: 'Adesivo exclusivo inválido.' };
-    asset = await adesivoExclusivoPorIndice(sb, uid, index);
-  } else {
-    if (!UUID.test(explicitId)) return { erro: 'Adesivo exclusivo inválido.' };
-    const { data: grant, error: grantError } = await sb
-      .from('exclusive_asset_grants')
-      .select('asset_id')
-      .eq('asset_id', explicitId)
-      .eq('user_id', uid)
-      .maybeSingle();
-    if (grantError || !grant) return { erro: 'Esse adesivo não foi liberado para a sua conta.' };
-    const { data, error } = await sb
-      .from('exclusive_assets')
-      .select('id, kind, image_path, active')
-      .eq('id', explicitId)
-      .eq('kind', 'sticker')
-      .eq('active', true)
-      .maybeSingle();
-    if (!error) asset = data;
-  }
-
-  if (!asset?.id || !asset?.image_path) return { erro: 'Esse adesivo não foi liberado para a sua conta.' };
-  const exclusiveUrl = sb.storage.from('exclusivos').getPublicUrl(asset.image_path).data.publicUrl;
+  const exclusiveUrl = urlDoItem(asset.image_path, (p) => sb.storage.from('exclusivos').getPublicUrl(p).data.publicUrl);
+  if (!exclusiveUrl) return { erro: 'Adesivo exclusivo indisponível.' };
   return {
     kind: 'adesivo',
     body: '',
     media_path: null,
-    media_meta: { exclusiveId: asset.id, exclusiveUrl },
+    media_meta: { exclusiveId: asset.id, exclusiveUrl, ...(asset.kind === 'button' ? { botton: 1 } : {}) },
   };
 }
 
-/** Mensagem para o cliente: adesivo exclusivo usa o URL validado salvo no meta. */
+/** Endereço guardado na mensagem: adesivo ou botton da coleção embutida, ou do bucket `exclusivos`. */
+const DA_COLECAO = /^\/colecao\/[a-z0-9-]+\/(adesivos|bottons)\/[a-z0-9-]+\.webp$/;
+const DO_BUCKET = /^https:\/\/[a-z0-9-]+\.supabase\.co\/storage\/v1\/object\/public\/exclusivos\//i;
+
+/** Mensagem para o cliente: adesivo exclusivo usa o endereço validado salvo no meta. */
 export function conteudoParaClienteComExclusivos(row: any, links: Map<string, string>) {
   const base = conteudoParaCliente(row, links);
-  const exclusiveUrl = typeof row?.media_meta?.exclusiveUrl === 'string' ? row.media_meta.exclusiveUrl : '';
-  if (base.kind === 'adesivo' && /^https:\/\//i.test(exclusiveUrl)) return { ...base, mediaUrl: exclusiveUrl };
+  const url = typeof row?.media_meta?.exclusiveUrl === 'string' ? row.media_meta.exclusiveUrl : '';
+  if (base.kind === 'adesivo' && (DA_COLECAO.test(url) || (DO_BUCKET.test(url) && !url.includes('..')))) {
+    return { ...base, mediaUrl: url };
+  }
   return base;
 }

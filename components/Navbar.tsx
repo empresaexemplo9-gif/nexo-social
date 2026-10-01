@@ -35,6 +35,7 @@ const PRINCIPAIS: { href: string; label: string; icon: IconName }[] = [
   { href: '/historicas', label: 'Matérias históricas e curiosidades', icon: 'clock' },
   { href: '/agenda', label: 'Agenda', icon: 'calendarCheck' },
   { href: '/comunidade', label: 'Comunidade', icon: 'users' },
+  { href: '/colecionaveis', label: 'Colecionáveis', icon: 'star' },
   { href: '/esporte', label: 'Esporte ao vivo', icon: 'trophy' },
   { href: '/livros', label: 'Livros que li esse ano', icon: 'library' },
   { href: '/bom-dia', label: 'Bom Dia', icon: 'sunrise' },

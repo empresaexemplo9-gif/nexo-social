@@ -15,8 +15,6 @@ import TechBackdrop from '@/components/TechBackdrop';
 import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
 import { MidiaProvider } from '@/components/midia/MidiaProvider';
 import AplicarAparencia from '@/components/AplicarAparencia';
-import FundoExclusivo from '@/components/FundoExclusivo';
-import ExclusivosAtalho from '@/components/ExclusivosAtalho';
 
 // Barlow Condensed: títulos firmes e condensados, como nos cartazes.
 const display = Barlow_Condensed({
@@ -124,13 +122,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               // Cor dos botões escolhida pela pessoa (ver components/AplicarAparencia.tsx).
               "try{var a=JSON.parse(localStorage.getItem('nexo:aparencia:vars')||'null');if(a)for(var k in a)if(/^--[a-z0-9-]+$/.test(k)&&/^[0-9 ]+$/.test(a[k]))document.documentElement.style.setProperty(k,a[k])}catch(e){}" +
               // Versão clara dos murais das áreas (ver components/AplicarAparencia.tsx).
-              "try{if(localStorage.getItem('nexo:muro')==='claro')document.documentElement.dataset.muro='claro'}catch(e){}",
+              "try{if(localStorage.getItem('nexo:muro')==='claro')document.documentElement.dataset.muro='claro'}catch(e){}" +
+              // Plano de fundo exclusivo: só na home ou em todas as abas (ver components/AplicarAparencia.tsx).
+              "try{var f=JSON.parse(localStorage.getItem('nexo:fundo-exclusivo')||'null');if(f&&(f.escopo==='home'||f.escopo==='todas')&&/^(\\/colecao\\/[a-z0-9-]+\\/fundos\\/[a-z0-9-]+\\.webp|https:\\/\\/[a-z0-9-]+\\.supabase\\.co\\/storage\\/v1\\/object\\/public\\/exclusivos\\/[A-Za-z0-9_\\/.-]+)$/.test(f.url)&&f.url.indexOf('..')<0){document.documentElement.dataset.fundoExclusivo=f.escopo;document.documentElement.style.setProperty('--fundo-exclusivo','url(\"'+f.url+'\")')}}catch(e){}",
           }}
         />
       </head>
       <body className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
         <TechBackdrop />
-        <FundoExclusivo />
         <PreferencesProvider>
           <AplicarAparencia />
           <AgendaProvider>
@@ -138,7 +137,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SpotifyProvider>
                 <MidiaProvider>
                   {children}
-                  <ExclusivosAtalho />
                   <MobileTabBar />
                   <AvisoDeChamada />
                 </MidiaProvider>

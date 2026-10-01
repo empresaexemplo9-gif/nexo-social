@@ -63,14 +63,14 @@ test('cada área do site está vestida pelo seu layout', () => {
   const rotas = {
     agenda: 'agenda', evento: 'agenda', 'bom-dia': 'bomdia', busca: 'busca', descobrir: 'descobrir', esporte: 'esporte',
     historicas: 'historicas', livros: 'livros', questionario: 'questionario', revista: 'revista', shorts: 'shorts',
-    conta: 'pessoal', convites: 'pessoal', pessoa: 'pessoal',
+    conta: 'pessoal', convites: 'pessoal', pessoa: 'pessoal', colecionaveis: 'colecionaveis',
   };
   for (const [rota, area] of Object.entries(rotas)) {
     assert.ok(fs.readFileSync(`app/${rota}/layout.tsx`, 'utf8').includes(`<TemaDaArea area="${area}">`), rota);
   }
   assert.ok(fs.readFileSync('app/tema/[slug]/layout.tsx', 'utf8').includes('temaDoAssunto(params.slug)'));
   // A home só veste o muro de início quando a pessoa não escolheu um fundo.
-  assert.match(fs.readFileSync('components/HomeView.tsx', 'utf8'), /ready && !fundo \? AREAS\.inicio : null/);
+  assert.match(fs.readFileSync('components/HomeView.tsx', 'utf8'), /ready && \(!fundo \|\| exclusivo\) \? AREAS\.inicio : null/);
 });
 
 test('o middleware libera só os muros das áreas', () => {

@@ -19,6 +19,7 @@ export type Area =
   | 'bomdia'
   | 'questionario'
   | 'busca'
+  | 'colecionaveis'
   | 'pessoal';
 
 export interface TemaDeArea {
@@ -53,6 +54,8 @@ export const AREAS: Record<Area, TemaDeArea> = {
   questionario: { parede: 'questionario', quadro: 'halftone', moldura: 'grafite', acento: '#1f5bff' },
   // Placas, sinais e o metrô: achar o caminho.
   busca: { parede: 'busca', quadro: 'placa', moldura: 'metro', acento: '#0891b2' },
+  // Colecionáveis: vilões, F1, Oxford e o DRAP — e o holográfico dos adesivos.
+  colecionaveis: { parede: 'colecionaveis', quadro: 'holo', moldura: 'holo', acento: '#9333ea' },
   // Minha conta, convites e a página de cada pessoa: o muro da marca.
   pessoal: { parede: 'parede', quadro: 'selo', moldura: 'lambe', acento: '#2f6bff' },
 };

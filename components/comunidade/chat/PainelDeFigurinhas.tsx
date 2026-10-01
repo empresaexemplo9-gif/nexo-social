@@ -5,12 +5,14 @@ import Icon from '../../icons';
 import { supabase } from '@/lib/supabase';
 import { CATEGORIAS_DE_EMOJI, FIGURINHAS_DE_REACAO } from '@/lib/emojis';
 import { STICKERS } from '@/lib/invite-stickers';
-import type { ItemExclusivo } from '@/lib/exclusivos';
+import { porTema, type ItemExclusivo } from '@/lib/exclusivos';
 
 export type Escolha =
   | { tipo: 'emoji'; emoji: string }
   | { tipo: 'figurinha'; emoji?: string; mediaPath?: string }
-  | { tipo: 'adesivo'; n: number };
+  | { tipo: 'adesivo'; n: number }
+  /** Adesivo ou botton exclusivo que o superadministrador enviou para a conta. */
+  | { tipo: 'exclusivo'; id: string };
 
 const SALVAS = 'nexo:figurinhas:salvas';
 
@@ -89,7 +91,7 @@ export default function PainelDeFigurinhas({ meuId, onEscolher, onFechar }: { me
     if (!meuId) return;
     setCarregandoExclusivos(true);
     try {
-      const res = await fetch('/api/exclusivos?kind=sticker', { cache: 'no-store' });
+      const res = await fetch('/api/exclusivos?kind=sticker,button', { cache: 'no-store' });
       if (!res.ok) {
         if (res.status === 401 || res.status === 503) return setExclusivos([]);
         throw new Error('Não foi possível carregar os adesivos exclusivos.');
@@ -209,16 +211,24 @@ export default function PainelDeFigurinhas({ meuId, onEscolher, onFechar }: { me
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-300">Exclusivos da sua conta</p>
                 {carregandoExclusivos && <span className="text-[10px] text-zinc-500">carregando…</span>}
               </div>
-              {exclusivos.length > 0 && (
-                <div className="grid grid-cols-4 gap-2 rounded-xl border border-amber-500/20 bg-amber-950/10 p-2">
-                  {exclusivos.map((s, index) => (
-                    <button key={s.id} type="button" onClick={() => onEscolher({ tipo: 'adesivo', n: -1 - index })} className="flex items-center justify-center rounded-xl p-1 transition hover:bg-amber-500/10" aria-label={`Adesivo exclusivo ${s.title}`} title={`${s.title} · ${s.collection}`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.url} alt="" loading="lazy" className="max-h-20 w-full object-contain" />
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* Cada tema/banda no seu espaço; dentro dele, adesivos e bottons. */}
+              <div className="space-y-2">
+                {porTema(exclusivos).map((t) => (
+                  <div key={t.tema} className="rounded-xl border border-amber-500/20 bg-amber-950/10 p-2">
+                    <p className="mb-1 px-1 text-[11px] font-bold text-zinc-200">{t.tema}</p>
+                    {t.tipos.map((k) => (
+                      <div key={k.tipo} className="grid grid-cols-4 gap-2">
+                        {k.edicoes.flatMap((e) => e.itens).map((s) => (
+                          <button key={s.id} type="button" onClick={() => onEscolher({ tipo: 'exclusivo', id: s.id })} className="flex items-center justify-center rounded-xl p-1 transition hover:bg-amber-500/10" aria-label={`${s.kind === 'button' ? 'Botton' : 'Adesivo'} exclusivo ${s.title}`} title={[s.title, s.edition].filter(Boolean).join(' · ')}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={s.thumbUrl} alt="" loading="lazy" className={`max-h-20 w-full object-contain ${s.kind === 'button' ? 'rounded-full' : ''}`} />
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 

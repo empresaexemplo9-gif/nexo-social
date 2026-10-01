@@ -1,23 +1,38 @@
 -- nexo.social — itens exclusivos enviados pelo superadministrador
 --
--- O catálogo é global, mas cada item só aparece para quem recebeu uma concessão.
--- Imagens ficam no bucket `exclusivos`; o catálogo/grants controlam quem pode
--- escolher e usar o item na plataforma.
+-- Planos de fundo, adesivos e bottons, organizados por tema/banda
+-- (collection), edição e tipo. O catálogo é global, mas cada item só aparece
+-- para quem recebeu: o superadministrador monta o kit e envia. O que a pessoa
+-- ganha não expira. As imagens ficam no site (public/colecao, a coleção
+-- embutida — db/exclusivos-catalogo.sql) ou no bucket `exclusivos` (o que o
+-- superadministrador envia pelo painel).
+-- Pode rodar mais de uma vez.
 
 CREATE TABLE IF NOT EXISTS exclusive_assets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL CHECK (char_length(title) BETWEEN 1 AND 120),
-  kind TEXT NOT NULL CHECK (kind IN ('sticker', 'wallpaper')),
+  kind TEXT NOT NULL CHECK (kind IN ('sticker', 'wallpaper', 'button')),
   collection TEXT NOT NULL DEFAULT 'geral' CHECK (char_length(collection) BETWEEN 1 AND 80),
+  edition TEXT NOT NULL DEFAULT '' CHECK (char_length(edition) <= 80),
   image_path TEXT NOT NULL UNIQUE,
+  -- Miniatura (planos de fundo): a imagem leve das grades.
+  thumb_path TEXT,
   sort_order INTEGER NOT NULL DEFAULT 0,
   active BOOLEAN NOT NULL DEFAULT TRUE,
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Quem criou a tabela antes do botton e da edição.
+ALTER TABLE exclusive_assets ADD COLUMN IF NOT EXISTS edition TEXT NOT NULL DEFAULT '';
+ALTER TABLE exclusive_assets ADD COLUMN IF NOT EXISTS thumb_path TEXT;
+ALTER TABLE exclusive_assets DROP CONSTRAINT IF EXISTS exclusive_assets_kind_check;
+ALTER TABLE exclusive_assets ADD CONSTRAINT exclusive_assets_kind_check CHECK (kind IN ('sticker', 'wallpaper', 'button'));
+
 CREATE INDEX IF NOT EXISTS exclusive_assets_kind_order_idx
   ON exclusive_assets(kind, sort_order, created_at);
+CREATE INDEX IF NOT EXISTS exclusive_assets_collection_idx
+  ON exclusive_assets(collection, edition, kind, sort_order);
 
 CREATE TABLE IF NOT EXISTS exclusive_asset_grants (
   asset_id UUID NOT NULL REFERENCES exclusive_assets(id) ON DELETE CASCADE,
@@ -42,7 +57,7 @@ USING (
     SELECT 1
     FROM exclusive_asset_grants g
     WHERE g.asset_id = exclusive_assets.id
-      AND g.user_id = auth.uid()
+      AND g.user_id = (SELECT auth.uid())
   )
 );
 
@@ -65,7 +80,7 @@ USING (is_platform_admin());
 DROP POLICY IF EXISTS exclusive_grants_select ON exclusive_asset_grants;
 CREATE POLICY exclusive_grants_select ON exclusive_asset_grants
 FOR SELECT TO authenticated
-USING (user_id = auth.uid() OR is_platform_admin());
+USING (user_id = (SELECT auth.uid()) OR is_platform_admin());
 
 DROP POLICY IF EXISTS exclusive_grants_admin_insert ON exclusive_asset_grants;
 CREATE POLICY exclusive_grants_admin_insert ON exclusive_asset_grants

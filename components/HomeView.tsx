@@ -81,16 +81,20 @@ export default function HomeView({ events }: Props) {
     [events, prefs.interests],
   );
 
+  // Plano de fundo exclusivo (Meus exclusivos): vale na home em qualquer escolha
+  // ("só na home" ou "todas as abas") e passa na frente do fundo dos convites.
+  const exclusivo = ready ? prefs.aparencia?.exclusivo ?? null : null;
+  const fundoDaHome = exclusivo ? null : fundo;
   // Sem fundo próprio, a home veste o tema dela (o muro da marca, lib/areas.ts).
-  const muro = ready && !fundo ? AREAS.inicio : null;
+  const muro = ready && (!fundo || exclusivo) ? AREAS.inicio : null;
 
   return (
     <div
-      className={`min-h-screen font-sans text-zinc-100 antialiased ${fundo?.escuro ? 'home-fundo-escuro' : ''} ${muro ? 'tema-mural' : ''}`}
+      className={`min-h-screen font-sans text-zinc-100 antialiased ${fundoDaHome?.escuro ? 'home-fundo-escuro' : ''} ${muro ? 'tema-mural' : ''}`}
       {...(muro ? { 'data-area': 'inicio', 'data-parede': muro.parede, 'data-quadro': muro.quadro, 'data-moldura': muro.moldura } : {})}
     >
       {/* O fundo fica por trás de tudo (acima do papel padrão da plataforma). */}
-      {fundo && <AmostraDeFundo opcao={fundo} tela className="pointer-events-none !fixed inset-0 -z-[9]" />}
+      {fundoDaHome && <AmostraDeFundo opcao={fundoDaHome} tela className="pointer-events-none !fixed inset-0 -z-[9]" />}
       {muro && <div aria-hidden className="parede-mural" />}
       <Navbar />
 
