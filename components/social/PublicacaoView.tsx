@@ -9,6 +9,7 @@ import { CAMPO, dataCompleta, haQuanto } from './util';
 import { supabase } from '@/lib/supabase';
 import { LEMBRETE_DAS_REGRAS } from '@/lib/regras';
 import type { Opiniao, Publicacao } from '@/lib/mural-tipos';
+import { QUADRO_DA_PUBLICACAO } from '@/lib/comunidade-quadros';
 
 /** Uma opinião (e, embaixo, as respostas a ela). */
 function UmaOpiniao({
@@ -135,7 +136,8 @@ export default function PublicacaoView({ id }: { id: string }) {
       {pub.assunto && (
         <Link
           href={`/comunidade?${new URLSearchParams({ aba: 'rodas', tema: pub.assunto, ...(pub.assuntoTipo ? { assunto: pub.assuntoTipo } : {}) })}`}
-          className="flex items-center gap-3 rounded-2xl border border-emerald-800/50 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 transition hover:border-emerald-600"
+          data-quadro="grafite"
+          className="q-botao flex items-center gap-3 px-4 py-3 text-sm"
         >
           <Icon name="users" size={16} className="shrink-0" />
           <span className="min-w-0 flex-1">Quer conversar ao vivo sobre <b className="font-semibold">{pub.assunto}</b>? Abra uma roda de conversa.</span>
@@ -165,7 +167,7 @@ export default function PublicacaoView({ id }: { id: string }) {
           />
           {erro && <p role="alert" className="text-xs text-clay-300">{erro}</p>}
           <div className="flex flex-wrap items-center gap-3">
-            <button type="submit" disabled={enviando || !texto.trim()} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50">
+            <button type="submit" disabled={enviando || !texto.trim()} data-quadro={QUADRO_DA_PUBLICACAO[pub.tipo]} className="q-botao inline-flex items-center gap-2 px-4 py-2 text-sm">
               <Icon name="send" size={14} /> {enviando ? 'Enviando…' : respondendo ? 'Responder' : 'Opinar'}
             </button>
             <span className="ml-auto text-[11px] text-zinc-500">{LEMBRETE_DAS_REGRAS}</span>

@@ -21,11 +21,13 @@ const publicPaths = new Set([
 const INVITE_ASSET = /^\/convite-assets\/(adesivos\/[0-9]{3}\.png|fonts\/[a-z0-9-]+\.ttf|texturas\/[a-z-]+\.(jpg|png))$/;
 // Murais das opções de fundo (decorativos): sem validar a sessão a cada imagem.
 const MURAL = /^\/bg\/murais\/colagem-[1-3]-(claro|escuro)(-mini)?\.webp$/;
+// Os murais da Comunidade (parede e quadros): decorativos, também sem sessão.
+const MURAL_DA_COMUNIDADE = /^\/bg\/comunidade\/(parede(-cel)?|quadros\/[a-z]+(-[a-z])?(-mini)?)\.webp$/;
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
-    || INVITE_ASSET.test(path) || MURAL.test(path)) return NextResponse.next();
+    || INVITE_ASSET.test(path) || MURAL.test(path) || MURAL_DA_COMUNIDADE.test(path)) return NextResponse.next();
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });

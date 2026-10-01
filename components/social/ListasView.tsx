@@ -9,6 +9,8 @@ import { CAMPO } from './util';
 import { TIPOS_LISTA, type ListaResumo, type TipoLista } from '@/lib/listas-tipos';
 import type { Visibilidade } from '@/lib/mural-tipos';
 import { LEMBRETE_DAS_REGRAS } from '@/lib/regras';
+import { QUADRO_DA_LISTA } from '@/lib/comunidade-quadros';
+import { MiniDoQuadro } from './Quadro';
 
 /** Criar lista: nome, tipo, descrição e quem vê. Os itens entram na página dela. */
 function NovaLista() {
@@ -61,7 +63,7 @@ function NovaLista() {
         onClick={() => setAberto(true)}
         className="card-soft flex w-full items-center gap-4 p-5 text-left transition hover:border-emerald-700/60"
       >
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-zinc-950"><Icon name="plus" size={22} /></span>
+        <span className="q-botao flex h-12 w-12 shrink-0 items-center justify-center"><Icon name="plus" size={22} /></span>
         <span>
           <span className="block font-semibold text-zinc-50">Criar uma lista</span>
           <span className="block text-xs text-zinc-400">Playlist de músicas ou clipes, livros, filmes, séries, jogos — para todos, para os contatos ou para um grupo.</span>
@@ -79,12 +81,11 @@ function NovaLista() {
             type="button"
             role="radio"
             aria-checked={tipo === t.id}
+            data-quadro={QUADRO_DA_LISTA[t.id]}
             onClick={() => setTipo(t.id)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-              tipo === t.id ? 'bg-emerald-500 text-zinc-950' : 'border border-zinc-800 text-zinc-300 hover:text-zinc-50'
-            }`}
+            className="q-chip"
           >
-            <Icon name={t.icone} size={13} /> {t.rotulo}
+            <MiniDoQuadro quadro={QUADRO_DA_LISTA[t.id]} /> {t.rotulo}
           </button>
         ))}
       </div>
@@ -97,7 +98,8 @@ function NovaLista() {
         <button
           type="submit"
           disabled={enviando || !titulo.trim() || (visibilidade === 'grupo' && !grupoId)}
-          className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+          data-quadro={QUADRO_DA_LISTA[tipo]}
+          className="q-botao inline-flex items-center gap-2 px-5 py-2.5 text-sm"
         >
           <Icon name="plus" size={15} /> {enviando ? 'Criando…' : 'Criar e pôr os itens'}
         </button>
@@ -162,7 +164,7 @@ export default function ListasView() {
   }, [carregar]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-quadro="holo">
       <NovaLista />
       {erro && <p role="alert" className="rounded-2xl border border-clay-800/60 bg-clay-950/25 p-3 text-xs text-clay-200">{erro}</p>}
       <Secao titulo="Minhas listas" listas={minhas} vazio="Você ainda não criou nenhuma lista." />

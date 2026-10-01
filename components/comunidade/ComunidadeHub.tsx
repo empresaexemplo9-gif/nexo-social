@@ -16,8 +16,11 @@ import ListasView from '../social/ListasView';
 import RodasView from '../social/RodasView';
 import type { Rascunho } from '../social/NovaPublicacao';
 import { ehAssuntoTipo, type AssuntoTipo } from '@/lib/mural-tipos';
+import { ABAS_DA_COMUNIDADE } from '@/lib/comunidade-quadros';
+import { CapaDaAba, MiniDoQuadro } from '../social/Quadro';
 
 type Secao = 'mural' | 'listas' | 'rodas' | 'grupos' | 'jogos';
+const SECOES: Secao[] = ['mural', 'listas', 'rodas', 'grupos', 'jogos'];
 const ehSecao = (v: unknown): v is Secao => v === 'mural' || v === 'listas' || v === 'rodas' || v === 'grupos' || v === 'jogos';
 
 const campo =
@@ -157,40 +160,39 @@ export default function ComunidadeHub() {
     );
   }
 
+  // Cada aba veste um quadro dos murais: a etiqueta da aba, a capa, os
+  // botões e a moldura dos cartões dela (app/globals.css, [data-aba]).
   const abas = (
-    <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-zinc-800 px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Seções da Comunidade">
-      {(
-        [
-          ['mural', 'Mural', 'chat'],
-          ['listas', 'Listas', 'music'],
-          ['rodas', 'Rodas', 'sparkles'],
-          ['grupos', 'Grupos', 'users'],
-          ['jogos', 'Jogos', 'gamepad'],
-        ] as const
-      ).map(([k, rotulo, icone]) => (
+    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0" role="tablist" aria-label="Seções da Comunidade">
+      {SECOES.map((k) => (
         <button
           key={k}
           type="button"
           role="tab"
           aria-selected={secao === k}
+          data-quadro={ABAS_DA_COMUNIDADE[k].quadro}
           onClick={() => {
             setSecao(k);
             window.history.replaceState(null, '', k === 'mural' ? '/comunidade' : `/comunidade?aba=${k}`);
           }}
-          className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition ${
-            secao === k ? 'border-emerald-500 text-emerald-300' : 'border-transparent text-zinc-400 hover:text-zinc-100'
-          }`}
+          className="q-chip q-aba shrink-0 whitespace-nowrap"
         >
-          <Icon name={icone} size={15} /> {rotulo}
+          <MiniDoQuadro quadro={ABAS_DA_COMUNIDADE[k].quadro} /> {ABAS_DA_COMUNIDADE[k].rotulo}
         </button>
       ))}
     </div>
   );
+  const naAba = (conteudo: React.ReactNode, espaco = 'space-y-6') => (
+    <div className={espaco} data-aba={secao} data-quadro={ABAS_DA_COMUNIDADE[secao].quadro}>
+      {abas}
+      <CapaDaAba aba={secao} />
+      {conteudo}
+    </div>
+  );
 
   if (secao === 'mural') {
-    return (
-      <div className="space-y-6">
-        {abas}
+    return naAba(
+      <>
         {convites.length > 0 && (
           <button
             type="button"
@@ -204,37 +206,28 @@ export default function ComunidadeHub() {
           </button>
         )}
         <MuralSocial rascunho={rascunho} />
-      </div>
+      </>,
     );
   }
 
   if (secao === 'listas' || secao === 'rodas') {
-    return (
-      <div className="space-y-6">
-        {abas}
-        {secao === 'listas' ? <ListasView /> : <RodasView inicial={rodaInicial} />}
-      </div>
-    );
+    return naAba(secao === 'listas' ? <ListasView /> : <RodasView inicial={rodaInicial} />);
   }
 
   if (secao === 'jogos') {
-    return (
-      <div className="space-y-6">
-        {abas}
-        <JogosDaComunidade
-          grupos={grupos}
-          aoCriarGrupo={() => {
-            setSecao('grupos');
-            setCriando(true);
-          }}
-        />
-      </div>
+    return naAba(
+      <JogosDaComunidade
+        grupos={grupos}
+        aoCriarGrupo={() => {
+          setSecao('grupos');
+          setCriando(true);
+        }}
+      />,
     );
   }
 
-  return (
-    <div className="space-y-8">
-      {abas}
+  return naAba(
+    <>
       {erro && (
         <div className="flex items-start gap-2 rounded-2xl border border-clay-800/60 bg-clay-950/25 p-3 text-xs text-clay-200">
           <Icon name="alert" size={14} className="mt-0.5 shrink-0" />
@@ -429,6 +422,7 @@ export default function ComunidadeHub() {
           </ul>
         )}
       </section>
-    </div>
+    </>,
+    'space-y-8',
   );
 }

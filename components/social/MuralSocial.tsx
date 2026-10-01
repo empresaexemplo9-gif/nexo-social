@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import Icon from '../icons';
 import PublicacaoCard from './PublicacaoCard';
 import NovaPublicacao, { type Rascunho } from './NovaPublicacao';
+import { MiniDoQuadro } from './Quadro';
+import { QUADRO_DA_PUBLICACAO } from '@/lib/comunidade-quadros';
 import { TIPOS_PUBLICACAO, type Publicacao, type TipoPublicacao } from '@/lib/mural-tipos';
 
 type Escopo = 'todos' | 'contatos' | 'meus';
@@ -64,7 +65,7 @@ export default function MuralSocial({ autor, rascunho, comFormulario = true }: {
         : 'O mural está vazio. Seja a primeira pessoa a puxar uma conversa.';
 
   return (
-    <section className="space-y-4" aria-label="Mural">
+    <section className="space-y-4" aria-label="Mural" data-quadro="lambe">
       {comFormulario && !autor && (
         <NovaPublicacao key={rascunho ? JSON.stringify(rascunho) : 'nova'} inicial={rascunho} aoPublicar={(p) => setPublicacoes((atual) => [p, ...atual.filter((x) => x.id !== p.id)])} />
       )}
@@ -77,9 +78,7 @@ export default function MuralSocial({ autor, rascunho, comFormulario = true }: {
               type="button"
               aria-pressed={escopo === e.id}
               onClick={() => setEscopo(e.id)}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                escopo === e.id ? 'bg-zinc-50 text-zinc-950' : 'border border-zinc-800 text-zinc-300 hover:text-zinc-50'
-              }`}
+              className="q-chip q-chip--simples"
             >
               {e.rotulo}
             </button>
@@ -90,12 +89,11 @@ export default function MuralSocial({ autor, rascunho, comFormulario = true }: {
             key={t.id}
             type="button"
             aria-pressed={tipo === t.id}
+            data-quadro={QUADRO_DA_PUBLICACAO[t.id]}
             onClick={() => setTipo(tipo === t.id ? null : t.id)}
-            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] transition ${
-              tipo === t.id ? 'bg-emerald-500 text-zinc-950' : 'text-zinc-400 hover:text-zinc-100'
-            }`}
+            className="q-chip"
           >
-            <Icon name={t.icone} size={11} /> {t.rotulo}
+            <MiniDoQuadro quadro={QUADRO_DA_PUBLICACAO[t.id]} className="!h-5 !w-5" /> {t.rotulo}
           </button>
         ))}
       </div>

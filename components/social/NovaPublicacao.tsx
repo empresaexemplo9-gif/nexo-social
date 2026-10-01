@@ -8,6 +8,8 @@ import { CAMPO } from './util';
 import { ASSUNTO_TIPOS, TIPOS_PUBLICACAO, type AssuntoTipo, type Publicacao, type TipoPublicacao, type Visibilidade } from '@/lib/mural-tipos';
 import { LEMBRETE_DAS_REGRAS } from '@/lib/regras';
 import { TOPICS } from '@/lib/data';
+import { QUADRO_DA_PUBLICACAO } from '@/lib/comunidade-quadros';
+import { MiniDoQuadro } from './Quadro';
 
 /** O assunto que cada tipo sugere de início. */
 const ASSUNTO_INICIAL: Partial<Record<TipoPublicacao, AssuntoTipo>> = { resenha: 'filme', experiencia: 'show', livro: 'livro' };
@@ -107,12 +109,11 @@ export default function NovaPublicacao({ inicial, aoPublicar }: { inicial?: Rasc
             type="button"
             role="radio"
             aria-checked={tipo === t.id && aberto}
+            data-quadro={QUADRO_DA_PUBLICACAO[t.id]}
             onClick={() => escolherTipo(t.id)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-              tipo === t.id && aberto ? 'bg-emerald-500 text-zinc-950' : 'border border-zinc-800 text-zinc-300 hover:text-zinc-50'
-            }`}
+            className="q-chip"
           >
-            <Icon name={t.icone} size={13} /> {t.rotulo}
+            <MiniDoQuadro quadro={QUADRO_DA_PUBLICACAO[t.id]} /> {t.rotulo}
           </button>
         ))}
       </div>
@@ -191,7 +192,8 @@ export default function NovaPublicacao({ inicial, aoPublicar }: { inicial?: Rasc
             <button
               type="submit"
               disabled={enviando || (visibilidade === 'grupo' && !grupoId)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+              data-quadro={QUADRO_DA_PUBLICACAO[tipo]}
+              className="q-botao inline-flex items-center gap-2 px-5 py-2.5 text-sm"
             >
               <Icon name="send" size={15} /> {enviando ? 'Publicando…' : 'Publicar'}
             </button>

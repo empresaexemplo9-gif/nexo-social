@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { RODA_ENCERRA_PARADA_HORAS, RODA_FICA_DIAS, type ParticipanteDaRoda, type RodaCompleta } from '@/lib/listas-tipos';
 import { ASSUNTO_TIPOS } from '@/lib/mural-tipos';
 import { LEMBRETE_DAS_REGRAS } from '@/lib/regras';
+import { quadroDoAssunto } from '@/lib/comunidade-quadros';
 
 /** Alguém da roda, com o botão de contato (o que importa no fim da conversa). */
 function Pessoa({ p, aoMudar }: { p: ParticipanteDaRoda; aoMudar: () => void }) {
@@ -43,12 +44,12 @@ function Pessoa({ p, aoMudar }: { p: ParticipanteDaRoda; aoMudar: () => void }) 
       {p.vinculo === 'aceito' && <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-300"><Icon name="check" size={12} /> Contato</span>}
       {p.vinculo === 'enviado' && <span className="text-[11px] text-zinc-500">Pedido enviado</span>}
       {p.vinculo === 'recebido' && p.conexaoId && (
-        <button type="button" disabled={ocupado} onClick={() => void contato('aceitar')} className="rounded-xl bg-emerald-500 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-950 disabled:opacity-50">
+        <button type="button" disabled={ocupado} onClick={() => void contato('aceitar')} className="q-botao px-2.5 py-1.5 text-[11px]">
           Aceitar contato
         </button>
       )}
       {p.vinculo === 'nenhum' && (
-        <button type="button" disabled={ocupado} onClick={() => void contato('pedir')} className="inline-flex items-center gap-1 rounded-xl bg-emerald-500 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-950 disabled:opacity-50">
+        <button type="button" disabled={ocupado} onClick={() => void contato('pedir')} className="q-botao inline-flex items-center gap-1 px-2.5 py-1.5 text-[11px]">
           <Icon name="plus" size={12} /> Adicionar
         </button>
       )}
@@ -157,8 +158,8 @@ export default function RodaView({ id }: { id: string }) {
   const outros = roda.pessoas.filter((p) => p.vinculo !== 'eu');
 
   return (
-    <div className="space-y-6">
-      <header className="card-soft space-y-2 p-5 sm:p-6">
+    <div className="space-y-6" data-quadro={quadroDoAssunto(roda.assuntoTipo)}>
+      <header className="card-soft q-moldura space-y-2 p-5 pt-6 sm:p-6 sm:pt-7">
         <p className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-500">
           {roda.aberta ? (
             <span className="inline-flex items-center gap-1 font-semibold uppercase tracking-wider text-emerald-400">
@@ -179,7 +180,7 @@ export default function RodaView({ id }: { id: string }) {
         {roda.aberta && (
           <div className="flex flex-wrap gap-2 pt-2">
             {!roda.participo && (
-              <button type="button" disabled={ocupado} onClick={() => void agir('entrar')} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50">
+              <button type="button" disabled={ocupado} onClick={() => void agir('entrar')} className="q-botao inline-flex items-center gap-2 px-5 py-2.5 text-sm">
                 <Icon name="plus" size={15} /> Entrar na roda
               </button>
             )}
@@ -189,7 +190,7 @@ export default function RodaView({ id }: { id: string }) {
               </button>
             )}
             {roda.souCriador && (
-              <button type="button" disabled={ocupado} onClick={() => void agir('encerrar')} className="inline-flex items-center gap-1.5 rounded-2xl border border-clay-700/70 px-4 py-2 text-xs font-semibold text-clay-200 hover:bg-clay-950/40">
+              <button type="button" disabled={ocupado} onClick={() => void agir('encerrar')} data-quadro="pincel" className="q-botao inline-flex items-center gap-1.5 px-4 py-2 text-xs">
                 <Icon name="check" size={13} /> Encerrar a roda
               </button>
             )}
@@ -211,7 +212,7 @@ export default function RodaView({ id }: { id: string }) {
                   {roda.mensagens.map((m) => (
                     <li key={m.id} className={`flex gap-2 ${m.minha ? 'flex-row-reverse' : ''}`}>
                       {!m.minha && <Avatar nome={m.autor.nome} path={m.autor.avatarPath} tamanho={28} />}
-                      <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 ${m.minha ? 'bg-emerald-500/90 text-zinc-950' : 'bg-zinc-900/80 text-zinc-100'}`}>
+                      <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 ${m.minha ? 'q-bolha' : 'bg-zinc-900/80 text-zinc-100'}`}>
                         {!m.minha && <p className="text-[11px] font-semibold text-emerald-300">{m.autor.nome}</p>}
                         <p className="whitespace-pre-wrap text-sm leading-relaxed">{m.corpo}</p>
                         <p className={`mt-0.5 text-right text-[10px] ${m.minha ? 'text-zinc-800' : 'text-zinc-500'}`}>
@@ -238,7 +239,7 @@ export default function RodaView({ id }: { id: string }) {
                     aria-label="Mensagem"
                     className={`${CAMPO} min-h-[2.75rem] resize-none`}
                   />
-                  <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50">
+                  <button type="submit" disabled={enviando || !texto.trim()} aria-label="Enviar" className="q-botao flex h-11 w-11 shrink-0 items-center justify-center">
                     <Icon name="send" size={16} />
                   </button>
                 </form>
