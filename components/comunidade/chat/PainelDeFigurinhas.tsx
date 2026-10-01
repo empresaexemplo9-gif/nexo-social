@@ -10,8 +10,7 @@ import type { ItemExclusivo } from '@/lib/exclusivos';
 export type Escolha =
   | { tipo: 'emoji'; emoji: string }
   | { tipo: 'figurinha'; emoji?: string; mediaPath?: string }
-  | { tipo: 'adesivo'; n: number }
-  | { tipo: 'adesivo-exclusivo'; id: string };
+  | { tipo: 'adesivo'; n: number };
 
 const SALVAS = 'nexo:figurinhas:salvas';
 
@@ -212,8 +211,8 @@ export default function PainelDeFigurinhas({ meuId, onEscolher, onFechar }: { me
               </div>
               {exclusivos.length > 0 && (
                 <div className="grid grid-cols-4 gap-2 rounded-xl border border-amber-500/20 bg-amber-950/10 p-2">
-                  {exclusivos.map((s) => (
-                    <button key={s.id} type="button" onClick={() => onEscolher({ tipo: 'adesivo-exclusivo', id: s.id })} className="flex items-center justify-center rounded-xl p-1 transition hover:bg-amber-500/10" aria-label={`Adesivo exclusivo ${s.title}`} title={`${s.title} · ${s.collection}`}>
+                  {exclusivos.map((s, index) => (
+                    <button key={s.id} type="button" onClick={() => onEscolher({ tipo: 'adesivo', n: -1 - index })} className="flex items-center justify-center rounded-xl p-1 transition hover:bg-amber-500/10" aria-label={`Adesivo exclusivo ${s.title}`} title={`${s.title} · ${s.collection}`}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={s.url} alt="" loading="lazy" className="max-h-20 w-full object-contain" />
                     </button>
