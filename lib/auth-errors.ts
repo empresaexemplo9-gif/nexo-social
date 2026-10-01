@@ -12,6 +12,8 @@ import { AVISO_DA_SENHA } from './senha';
 const TRANSLATIONS: { match: RegExp; text: string }[] = [
   { match: /provider is not enabled|unsupported provider/i, text: 'A entrada com Google ainda está sendo configurada. Use e-mail e senha por enquanto.' },
   { match: /invalid login credentials/i, text: 'E-mail ou senha incorretos.' },
+  // Conta banida pelas regras da comunidade (banned_until no Auth).
+  { match: /user is banned|banned/i, text: 'Esta conta foi banida permanentemente por violar as regras da comunidade.' },
   { match: /email not confirmed/i, text: 'E-mail ainda não confirmado. Verifique sua caixa de entrada (e o spam).' },
   { match: /user already registered|already been registered/i, text: 'Este e-mail já possui conta. Use "Fazer login".' },
   // Senha fora da política do projeto (tamanho ou tipos de caractere).

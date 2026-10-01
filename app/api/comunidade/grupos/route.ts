@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exigirSessao, falha, grupoResumo, texto } from '@/lib/comunidade';
+import { exigirSessao, falha, grupoResumo, seBanido, texto } from '@/lib/comunidade';
 import type { GrupoResumo } from '@/lib/comunidade-tipos';
 
 export const dynamic = 'force-dynamic';
@@ -40,6 +40,8 @@ export async function POST(request: Request) {
     })
     .select('id')
     .maybeSingle();
+  const banido = await seBanido(s.sb, s.user.id, { error, data });
+  if (banido) return banido;
   if (error || !data) return falha(error, 'Falha ao criar o grupo.');
   return NextResponse.json({ ok: true, id: data.id });
 }

@@ -40,7 +40,8 @@ Abra http://localhost:3000.
 3. (Opcional) rode **`db/seed.sql`** para um seed mínimo, ou use o passo 5.
 4. Em Auth → Providers, habilite **Email**.
 5. Cadastre-se em `/login` com `thiagohccarvalho00@gmail.com` para virar admin, entre em `/admin` e clique em **🌱 Popular banco** para semear todo o dataset.
-6. Depois do `schema.sql` e das outras migrações de `db/`, rode **`db/desempenho-e-seguranca.sql`** (de novo sempre que rodar o `schema.sql` outra vez): fixa o `search_path` das funções, faz as políticas de RLS calcularem o usuário uma vez por consulta e cria os índices das chaves estrangeiras.
+6. Regras da comunidade: rode **`db/moderacao.sql`** depois das migrações da Comunidade e de `platform-invites.sql`. Ele cria a lista de palavras proibidas (editável no painel, aba Moderação), o gatilho que confere todo texto escrito na plataforma — o texto com palavra proibida não é gravado e quem o escreveu é banido na hora, perde o acesso e não entra mais — e o registro do aceite das regras (no cadastro ou no aviso que aparece uma vez para quem já tinha conta).
+7. Depois do `schema.sql` e das outras migrações de `db/`, rode **`db/desempenho-e-seguranca.sql`** (de novo sempre que rodar o `schema.sql` outra vez): fixa o `search_path` das funções, faz as políticas de RLS calcularem o usuário uma vez por consulta e cria os índices das chaves estrangeiras.
 
 > **Ingressos:** a plataforma não vende ingresso — cada evento leva à bilheteria oficial. Em bancos que tiveram a antiga bilheteria própria, rodar o `db/schema.sql` já desliga a compra; para apagar também as tabelas de pedidos, exporte o que precisar e rode **`db/remover-bilheteria.sql`**.
 
@@ -94,7 +95,7 @@ foi descontinuada e a do Sympla é restrita ao organizador).
 - `lib/repo.ts` — leitura de dados (Supabase → tipos do app, com _fallback_).
 - `lib/supabase*.ts` — clientes de navegador, servidor (cookies) e service role.
 - `middleware.ts` — renovação de sessão + proteção de `/admin` e `/conta`.
-- `db/` — `schema.sql` e `seed.sql`; `test-multitenant.sql` e `test-comunidade.sql` testam as regras num Postgres local (nunca no Supabase).
+- `db/` — `schema.sql` e `seed.sql`; `test-multitenant.sql`, `test-comunidade.sql` e `test-moderacao.sql` testam as regras num Postgres local (nunca no Supabase).
 
 > **Comunidade e convites:** depois de atualizar o código, rode de novo o **`db/schema.sql`** no SQL Editor. Ele cria as tabelas `community_*`, os gatilhos que geram as notificações de convite e resposta (sem depender da service role) e liga o Realtime em `notifications`, `community_sessions` e `community_posts`. Também cria no Storage os buckets **`perfis`** (público: fotos de perfil e imagens dos grupos) e **`comunidade`** (privado: fotos do mural e dos álbuns, abertas só para membros por link assinado), com as políticas de quem envia e quem apaga. As imagens são reduzidas no navegador antes do envio (e perdem os dados de GPS da câmera). E libera os canais privados do Realtime das chamadas (`realtime.messages`: `grupo:<id>:chamada` para membros, `grupo:<id>:dupla:<a>:<b>` só para as duas pessoas).
 

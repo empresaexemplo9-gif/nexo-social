@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { arquivosDaPasta, exigirSessao, falha, idInvalido, membrosDoGrupo, minhaParticipacao, texto } from '@/lib/comunidade';
+import { arquivosDaPasta, exigirSessao, falha, idInvalido, membrosDoGrupo, minhaParticipacao, seBanido, texto } from '@/lib/comunidade';
 import { salaDaLinha } from '@/lib/comunidade-tipos';
 import { caminhoValido } from '@/lib/imagens-url';
 
@@ -109,6 +109,8 @@ export async function PATCH(request: Request, { params }: Ctx) {
     .eq('owner_id', s.user.id)
     .select('name, description, privacy, image_path')
     .maybeSingle();
+  const banido = await seBanido(s.sb, s.user.id, { error, data });
+  if (banido) return banido;
   if (error || !data) return falha(error, 'Falha ao salvar o grupo.');
 
   if (mudancas.image_path !== undefined && antes.image_path && antes.image_path !== mudancas.image_path) {

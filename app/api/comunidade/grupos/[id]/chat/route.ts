@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exigirSessao, idInvalido, minhaParticipacao } from '@/lib/comunidade';
+import { exigirSessao, idInvalido, minhaParticipacao, seBanido } from '@/lib/comunidade';
 import { profilesByIds, isUuid } from '@/lib/social';
 import { avataresPorId, citacoesDasRespostas, conteudoParaCliente, inserirMensagem, lerMensagens, linksDaMidia, previa, respostaPedida, validarMensagem } from '@/lib/chat-mensagens';
 import { semColuna } from '@/lib/erros-banco';
@@ -92,6 +92,8 @@ export async function POST(request: Request, { params }: Ctx) {
   if (original) linha.reply_to = original.id;
   const { data, error } = await inserirMensagem((l) => s.sb.from('community_chat_messages').insert(l).select('id, created_at').maybeSingle(), linha);
   if (semColuna(error)) return NextResponse.json({ error: 'Fotos, vídeos e áudios no chat ainda não foram ativados no banco.' }, { status: 503 });
+  const banido = await seBanido(s.sb, s.user.id, { error, data });
+  if (banido) return banido;
   if (error || !data) return NextResponse.json({ error: 'Não foi possível enviar a mensagem.' }, { status: 500 });
   await avisarOGrupo(s.sb, params.id, s.user.id, previa(nova)).catch(() => undefined);
   return NextResponse.json({ ok: true, id: data.id, createdAt: data.created_at });

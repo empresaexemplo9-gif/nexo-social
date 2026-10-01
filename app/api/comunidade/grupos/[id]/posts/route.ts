@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { arquivosDasFotos, exigirSessao, falha, fotosDasLinhas, idInvalido, membrosDoGrupo, texto } from '@/lib/comunidade';
+import { arquivosDasFotos, exigirSessao, falha, fotosDasLinhas, idInvalido, membrosDoGrupo, seBanido, texto } from '@/lib/comunidade';
 import { ehTipoPost, youtubeIdDe, type Post } from '@/lib/comunidade-tipos';
 import { caminhoValido } from '@/lib/imagens-url';
 import { isUuid, profilesByIds } from '@/lib/social';
@@ -139,6 +139,8 @@ export async function POST(request: Request, { params }: Ctx) {
     })
     .select('id')
     .maybeSingle();
+  const banido = await seBanido(s.sb, s.user.id, { error, data });
+  if (banido) return banido;
   if (error || !data) return falha(error, 'Falha ao publicar.');
 
   if (fotos.length) {

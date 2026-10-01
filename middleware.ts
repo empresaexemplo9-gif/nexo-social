@@ -5,6 +5,8 @@ import { resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config'
 
 const publicPaths = new Set([
   '/sobre', '/login', '/auth/callback', '/privacidade', '/termos', '/offline', '/api/signup', '/api/invites/validate',
+  // Quem foi banido pelas regras da comunidade cai aqui (e a página encerra a sessão).
+  '/banido',
   // Chamada pelo banco a cada minuto; vale só com o segredo do despacho.
   '/api/push/despachar',
   '/manifest.webmanifest', '/sw.js',
@@ -33,6 +35,11 @@ export async function middleware(request: NextRequest) {
     result.headers.set('Cache-Control', 'private, no-store');
     return result;
   };
+
+  // Conta banida pelas regras da comunidade: perde o acesso para sempre.
+  const banned = () => finish(isApi
+    ? NextResponse.json({ error: 'Sua conta foi banida permanentemente por violar as regras da comunidade.', banido: true }, { status: 403 })
+    : NextResponse.redirect(new URL('/banido', request.url)));
 
   const deny = (unavailable = false, invitation = false) => {
     // A raiz apresenta o serviço a visitantes sem liberar a home privada.
@@ -91,7 +98,14 @@ export async function middleware(request: NextRequest) {
         const schemaPending = code === '42P01' || code === 'PGRST205' || /platform_access|schema cache|does not exist/i.test(msg);
         if (!schemaPending) return deny(true);
       } else if (!access) {
-        return deny(false, true);
+        // Sem acesso: banimento (o banco tira o acesso de quem é banido) ou conta sem convite.
+        const { data: ban } = await supabase
+          .from('user_bans')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .is('revogado_em', null)
+          .maybeSingle();
+        return ban ? banned() : deny(false, true);
       }
     }
 

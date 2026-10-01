@@ -6,8 +6,9 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
 import { CITIES, TOPICS, cityCoords } from '@/lib/data';
 import AdminIntegrations from '@/components/AdminIntegrations';
+import AdminModeracao from '@/components/AdminModeracao';
 
-type Tab = 'content' | 'event' | 'bom-dia' | 'integrations';
+type Tab = 'content' | 'event' | 'bom-dia' | 'integrations' | 'moderacao';
 
 export default function AdminPage() {
   const [authState, setAuthState] = useState<'loading' | 'allowed' | 'denied' | 'demo'>('loading');
@@ -164,7 +165,7 @@ export default function AdminPage() {
         )}
 
         <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
-          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', 'Editar Bom Dia'], ['integrations', 'Integrações']] as [Tab, string][]).map(
+          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', 'Editar Bom Dia'], ['integrations', 'Integrações'], ['moderacao', 'Moderação']] as [Tab, string][]).map(
             ([tab, label]) => (
               <button
                 key={tab}
@@ -284,6 +285,7 @@ export default function AdminPage() {
 
         {/* Integrações de APIs */}
         {activeTab === 'integrations' && <AdminIntegrations demo={authState === 'demo'} />}
+        {activeTab === 'moderacao' && <AdminModeracao demo={authState === 'demo'} />}
 
         {/* Bom Dia */}
         {activeTab === 'bom-dia' && (

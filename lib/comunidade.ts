@@ -24,6 +24,20 @@ export function idInvalido(id: string) {
   return isUuid(id) ? null : NextResponse.json({ error: 'Grupo inválido.' }, { status: 400 });
 }
 
+/**
+ * Quando a escrita "some" (o banco descarta texto com palavra proibida e bane
+ * quem escreveu — db/moderacao.sql), a resposta tem de dizer isso. Chame com
+ * o erro da escrita; devolve a resposta do banimento ou null.
+ */
+export async function seBanido(sb: SupabaseClient, userId: string, r: { error: { code?: string } | null; data: unknown }) {
+  // A escrita não devolveu linha: PGRST116 (com .single()) ou nada (com .maybeSingle()).
+  if (!(r.error?.code === 'PGRST116' || (!r.error && !r.data))) return null;
+  const { data } = await sb.from('user_bans').select('user_id').eq('user_id', userId).is('revogado_em', null).maybeSingle();
+  return data
+    ? NextResponse.json({ error: 'Sua conta foi banida permanentemente por violar as regras da comunidade.', banido: true }, { status: 403 })
+    : null;
+}
+
 /** Erro do Postgres/RPC → resposta. `RAISE EXCEPTION` das funções já vem em português. */
 export function falha(error: { message?: string; code?: string } | null, padrao: string) {
   const msg = error?.message || padrao;

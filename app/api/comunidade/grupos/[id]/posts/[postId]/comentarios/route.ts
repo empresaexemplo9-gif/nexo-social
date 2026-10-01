@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exigirSessao, idInvalido, minhaParticipacao, texto } from '@/lib/comunidade';
+import { exigirSessao, idInvalido, minhaParticipacao, seBanido, texto } from '@/lib/comunidade';
 import { isUuid, notify, profilesByIds } from '@/lib/social';
 import { avataresPorId } from '@/lib/chat-mensagens';
 import { semTabela } from '@/lib/erros-banco';
@@ -87,6 +87,8 @@ export async function POST(request: Request, { params }: Ctx) {
     .select('id, created_at')
     .maybeSingle();
   if (semTabela(error)) return SEM_TABELA();
+  const banido = await seBanido(s.sb, s.user.id, { error, data });
+  if (banido) return banido;
   if (error || !data) return NextResponse.json({ error: 'Não foi possível comentar.' }, { status: 500 });
 
   // Avisa quem publicou e quem teve o comentário respondido (menos a própria pessoa).

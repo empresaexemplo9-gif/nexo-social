@@ -22,6 +22,7 @@ export async function POST(request: Request) {
   if (!senhaValida(password)) return reply({ error: AVISO_DA_SENHA }, 400);
   if (!fullName || !tenantName) return reply({ error: 'Preencha seu nome e o nome da organização, quando aplicável.' }, 400);
   if (!/^[0-9a-f]{64}$/i.test(inviteToken)) return reply({ error: 'Você precisa de um convite válido para criar uma conta.' }, 403);
+  if (body?.aceitouRegras !== true) return reply({ error: 'Para criar a conta, leia e aceite as regras da comunidade.' }, 400);
 
   try {
     const anon = createAnonServerClient();
@@ -49,6 +50,13 @@ export async function POST(request: Request) {
     if (claimError || claimed !== true) {
       await admin.auth.admin.deleteUser(data.user.id).catch(() => null);
       return reply({ error: 'Este convite acabou de ser utilizado. Peça um novo convite.' }, 409);
+    }
+
+    // O aceite das regras fica registrado (sem a tabela ainda, o aviso aparece no primeiro acesso).
+    try {
+      await admin.from('community_rules_acceptance').upsert({ user_id: data.user.id });
+    } catch {
+      /* segue: o aviso das regras aparece no primeiro acesso */
     }
 
     return reply({ ok: true, confirmacaoPendente: !data.session });

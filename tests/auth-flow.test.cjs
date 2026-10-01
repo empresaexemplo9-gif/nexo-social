@@ -65,9 +65,15 @@ function signup(session, validInvite = true) {
   const calls = [];
   const sb = { auth: { signUp: async data => { calls.push(data); return { data: { session, user: { id: 'new-user' } }, error: null }; } } };
   const anon = { rpc: async () => ({ data: { valid: validInvite }, error: null }) };
-  const admin = { rpc: async () => ({ data: true, error: null }), auth: { admin: { deleteUser: async () => ({}) } } };
+  const aceites = [];
+  const admin = {
+    rpc: async () => ({ data: true, error: null }),
+    auth: { admin: { deleteUser: async () => ({}) } },
+    from: (tabela) => ({ upsert: async (linha) => { aceites.push({ tabela, ...linha }); return { error: null }; } }),
+  };
   return {
     calls,
+    aceites,
     POST: load('app/api/signup/route.ts', {
       'next/server': { NextResponse },
       '@/lib/supabase-server': { createServerSupabase: () => sb, createAnonServerClient: () => anon, createAdminClient: () => admin },
@@ -80,7 +86,7 @@ function signup(session, validInvite = true) {
 }
 
 const token = 'b'.repeat(64);
-const payload = { email: ' PERSON@example.com ', password: 'Teste-senha9', fullName: 'Pessoa', accountType: 'organizacao', tenantName: 'Empresa', next: '//evil.test', inviteToken: token };
+const payload = { email: ' PERSON@example.com ', password: 'Teste-senha9', fullName: 'Pessoa', accountType: 'organizacao', tenantName: 'Empresa', next: '//evil.test', inviteToken: token, aceitouRegras: true };
 const request = (body = payload, origin = 'https://nexo.test') => new Request('https://nexo.test/api/signup', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
 test('signup validates and consumes an invite', async () => {
@@ -90,6 +96,17 @@ test('signup validates and consumes an invite', async () => {
   assert.equal((await res.json()).confirmacaoPendente, true);
   assert.equal(app.calls[0].email, 'person@example.com');
   assert.match(app.calls[0].options.emailRedirectTo, /convite=/);
+  assert.deepEqual(app.aceites, [{ tabela: 'community_rules_acceptance', user_id: 'new-user' }], 'o aceite das regras fica registrado');
+});
+
+test('signup exige aceitar as regras da comunidade', async () => {
+  for (const aceitouRegras of [undefined, false, 'true']) {
+    const app = signup(null, true);
+    const res = await app.POST(request({ ...payload, aceitouRegras }));
+    assert.equal(res.status, 400, String(aceitouRegras));
+    assert.match((await res.json()).error, /regras da comunidade/);
+    assert.equal(app.calls.length, 0, 'nem chega ao Supabase');
+  }
 });
 
 test('signup rejects missing, invalid, used or cross-origin invitations', async () => {

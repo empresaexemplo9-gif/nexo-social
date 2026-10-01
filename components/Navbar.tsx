@@ -233,7 +233,11 @@ export default function Navbar() {
     if (!email) { setPerfil(null); return; }
     let active = true;
     fetch('/api/me', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
+      .then(async (r) => {
+        // Banida pelas regras da comunidade durante o uso: vai para a página do banimento.
+        if (r.status === 403 && (await r.clone().json().catch(() => ({})))?.banido) window.location.href = '/banido';
+        return r.ok ? r.json() : null;
+      })
       .then((j) => {
         if (active && j) setPerfil({ nome: j.profile?.full_name || '', avatar: j.profile?.avatar_path ?? null });
       })

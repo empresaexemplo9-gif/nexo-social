@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { exigirSessao, falha, idInvalido, membrosDoGrupo, texto } from '@/lib/comunidade';
+import { exigirSessao, falha, idInvalido, membrosDoGrupo, seBanido, texto } from '@/lib/comunidade';
 import type { Album } from '@/lib/comunidade-tipos';
 
 export const dynamic = 'force-dynamic';
@@ -77,6 +77,8 @@ export async function POST(request: Request, { params }: Ctx) {
     .insert({ group_id: params.id, created_by: s.user.id, title, description: texto(b?.description, 500) })
     .select('id')
     .maybeSingle();
+  const banido = await seBanido(s.sb, s.user.id, { error, data });
+  if (banido) return banido;
   if (error || !data) return falha(error, 'Falha ao criar o álbum.');
   return NextResponse.json({ ok: true, id: data.id });
 }

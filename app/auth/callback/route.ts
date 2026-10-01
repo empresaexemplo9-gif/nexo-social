@@ -60,6 +60,15 @@ export async function GET(request: Request) {
         await sb.auth.signOut();
         return fail('invite_invalid');
       }
+      // Conta nova pelo Google: aceitou as regras na tela de cadastro. Sem o
+      // registro, o aviso das regras aparece no primeiro acesso.
+      if (url.searchParams.get('regras') === '1') {
+        try {
+          await admin.from('community_rules_acceptance').upsert({ user_id: user.id });
+        } catch {
+          /* o aviso aparece no primeiro acesso */
+        }
+      }
     }
 
     const meta = user.user_metadata ?? {};
