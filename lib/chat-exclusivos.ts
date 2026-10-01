@@ -1,6 +1,6 @@
 import 'server-only';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { validarMensagem, type MensagemNova } from './chat-mensagens';
+import { conteudoParaCliente, validarMensagem, type MensagemNova } from './chat-mensagens';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -44,4 +44,12 @@ export async function validarMensagemComExclusivos(
     media_path: null,
     media_meta: { exclusiveId, exclusiveUrl },
   };
+}
+
+/** Mensagem para o cliente: adesivo exclusivo usa o URL validado salvo no meta. */
+export function conteudoParaClienteComExclusivos(row: any, links: Map<string, string>) {
+  const base = conteudoParaCliente(row, links);
+  const exclusiveUrl = typeof row?.media_meta?.exclusiveUrl === 'string' ? row.media_meta.exclusiveUrl : '';
+  if (base.kind === 'adesivo' && /^https:\/\//i.test(exclusiveUrl)) return { ...base, mediaUrl: exclusiveUrl };
+  return base;
 }
