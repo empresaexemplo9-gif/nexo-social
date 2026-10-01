@@ -2,16 +2,32 @@
 
 import { useEffect } from 'react';
 import { usePreferences } from '@/lib/preferences';
-import { CACHE_DA_APARENCIA } from '@/lib/aparencia-tipos';
+import { CACHE_DA_APARENCIA, CACHE_DO_MURO } from '@/lib/aparencia-tipos';
 
 /**
  * Aplica a cor dos botões e destaques escolhida pela pessoa em todas as
  * páginas (variáveis CSS no <html>). As variáveis prontas ficam guardadas no
  * aparelho: o script do layout as aplica antes de pintar, sem piscar o azul.
+ * Também marca no <html> a versão dos murais (data-muro="claro"), lida pelo
+ * CSS do .tema-mural.
  */
 export default function AplicarAparencia() {
   const { prefs, ready } = usePreferences();
   const botoes = prefs.aparencia?.botoes ?? null;
+  const muro = prefs.aparencia?.muro ?? 'escuro';
+
+  useEffect(() => {
+    if (!ready) return;
+    const raiz = document.documentElement;
+    if (muro === 'claro') raiz.dataset.muro = 'claro';
+    else delete raiz.dataset.muro;
+    try {
+      if (muro === 'claro') localStorage.setItem(CACHE_DO_MURO, 'claro');
+      else localStorage.removeItem(CACHE_DO_MURO);
+    } catch {
+      /* sem armazenamento */
+    }
+  }, [muro, ready]);
 
   useEffect(() => {
     if (!ready) return;

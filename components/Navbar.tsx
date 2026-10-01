@@ -11,6 +11,8 @@ import Avatar from './Avatar';
 import { supabase } from '@/lib/supabase';
 import { isPlatformAdmin } from '@/lib/auth';
 import { TOPICS } from '@/lib/data';
+import { usePreferences } from '@/lib/preferences';
+import { APARENCIA_PADRAO } from '@/lib/aparencia-tipos';
 
 // Navegação na lateral esquerda. No computador é uma barra fixa que o menu de
 // três barras recolhe para só os ícones; no celular é uma gaveta que o mesmo
@@ -98,6 +100,26 @@ function CartaoPerfil({ perfil, email, ativoAgora, onNavegar }: { perfil: Perfil
   );
 }
 
+/** Troca a versão dos murais das áreas (escuros ou claros); fica na conta. */
+function AlternarMuro({ className }: { className: string }) {
+  const { prefs, ready, save } = usePreferences();
+  if (!ready) return null;
+  const aparencia = prefs.aparencia ?? APARENCIA_PADRAO;
+  const claro = aparencia.muro === 'claro';
+  const rotulo = claro ? 'Murais escuros' : 'Murais claros';
+  return (
+    <button
+      type="button"
+      onClick={() => void save({ aparencia: { ...aparencia, muro: claro ? 'escuro' : 'claro' } })}
+      className={className}
+      title={claro ? 'Voltar à versão escura dos murais' : 'Usar a versão clara dos murais'}
+    >
+      <Icon name={claro ? 'moon' : 'sun'} size={19} className="shrink-0" />
+      <span className="rotulo-menu">{rotulo}</span>
+    </button>
+  );
+}
+
 /** Conteúdo da navegação — o mesmo na barra do computador e na gaveta do celular. */
 function ConteudoMenu({
   pathname,
@@ -179,6 +201,7 @@ function ConteudoMenu({
         <div className="so-expandida px-1 pb-1">
           <InstallApp compacto className="menu-denim" />
         </div>
+        <AlternarMuro className={`${item(false)} w-full`} />
         {email ? (
           <>
             <NotificationsBell lateral={lateral} rotulo={lateral ? undefined : 'Notificações'} className="menu-denim" />
