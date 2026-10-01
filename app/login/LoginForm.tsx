@@ -10,6 +10,7 @@ import { ensureProfile } from '@/lib/provisioning';
 import { safeAuthDestination } from '@/lib/auth-redirect';
 import { getSupabaseEnv } from '@/lib/supabase-config';
 import { AVISO_DA_SENHA, REGRAS_DA_SENHA, SENHA_MINIMO, senhaValida } from '@/lib/senha';
+import { REGRAS, REGRAS_RESUMO, REGRAS_TITULO } from '@/lib/regras';
 
 function destinoSeguro(raw: string | null): string | null {
   return safeAuthDestination(raw);
@@ -27,6 +28,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  // Criar conta exige ler e aceitar as regras da comunidade (e-mail ou Google).
+  const [aceitouRegras, setAceitouRegras] = useState(false);
+  const bloqueadoPelasRegras = isRegistering && !aceitouRegras;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -59,6 +63,7 @@ export default function LoginPage() {
   const handleGoogle = async () => {
     if (!supabase) { setMessage('Login temporariamente indisponível.'); return; }
     if (isRegistering && inviteValid !== true) { setMessage('Este convite não pode ser usado.'); return; }
+    if (bloqueadoPelasRegras) { setMessage('Para criar a conta, leia e aceite as regras da comunidade.'); return; }
     setLoading(true);
     setMessage('');
     try {
@@ -72,7 +77,10 @@ export default function LoginPage() {
 
       const callback = new URL('/auth/callback', window.location.origin);
       if (next) callback.searchParams.set('next', next);
-      if (isRegistering && inviteToken) callback.searchParams.set('convite', inviteToken);
+      if (isRegistering && inviteToken) {
+        callback.searchParams.set('convite', inviteToken);
+        callback.searchParams.set('regras', '1');
+      }
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google', options: { redirectTo: callback.toString(), queryParams: { prompt: 'select_account' } },
       });
@@ -96,12 +104,13 @@ export default function LoginPage() {
       const tenantName = accountType === 'organizacao' ? organizationName : fullName;
       if (isRegistering) {
         if (inviteValid !== true) throw new Error('Você precisa de um convite válido para criar a conta.');
+        if (!aceitouRegras) throw new Error('Para criar a conta, leia e aceite as regras da comunidade.');
         if (!senhaValida(password)) throw new Error(AVISO_DA_SENHA);
         const res = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            email: email.trim().toLowerCase(), password, fullName, accountType, tenantName, next, inviteToken,
+            email: email.trim().toLowerCase(), password, fullName, accountType, tenantName, next, inviteToken, aceitouRegras,
           }),
         });
         const json = await res.json().catch(() => ({}));
@@ -156,7 +165,21 @@ export default function LoginPage() {
 
         {message && <div role="status" aria-live="polite" className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-center text-xs">{message}</div>}
 
-        <button type="button" onClick={handleGoogle} disabled={loading || (isRegistering && inviteValid !== true)}
+        {isRegistering && (
+          <section aria-labelledby="regras-titulo" className="space-y-2 rounded-xl border border-clay-500/50 bg-clay-500/10 p-4 text-xs leading-relaxed text-zinc-200">
+            <h3 id="regras-titulo" className="text-sm font-semibold text-zinc-50">{REGRAS_TITULO}</h3>
+            <p>{REGRAS_RESUMO}</p>
+            <ul className="list-disc space-y-1 pl-4">
+              {REGRAS.map((r) => <li key={r}>{r}</li>)}
+            </ul>
+            <label className="flex cursor-pointer items-start gap-2 pt-1 font-semibold text-zinc-50">
+              <input type="checkbox" checked={aceitouRegras} onChange={(e) => setAceitouRegras(e.target.checked)} className="mt-0.5 h-4 w-4 shrink-0 accent-emerald-500" />
+              <span>Li e aceito as regras. Sei que palavras grotescas levam ao banimento permanente da conta.</span>
+            </label>
+          </section>
+        )}
+
+        <button type="button" onClick={handleGoogle} disabled={loading || (isRegistering && inviteValid !== true) || bloqueadoPelasRegras}
           className="w-full rounded-xl border border-zinc-600 bg-white px-4 py-3 text-sm font-semibold text-zinc-950 disabled:opacity-60">
           {loading ? 'Aguarde…' : isRegistering ? 'Criar conta com Google' : 'Entrar com Google'}
         </button>
@@ -213,7 +236,7 @@ export default function LoginPage() {
               </ul>
             )}
           </div>
-          <button type="submit" disabled={loading || (isRegistering && inviteValid !== true)}
+          <button type="submit" disabled={loading || (isRegistering && inviteValid !== true) || bloqueadoPelasRegras}
             className="w-full rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60">
             {loading ? 'Processando…' : isRegistering ? 'Criar conta' : 'Entrar'}
           </button>

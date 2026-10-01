@@ -1,5 +1,6 @@
 import React from 'react';
 import MediaSessionMaintenance from '@/components/MediaSessionMaintenance';
+import AvisoDeRegras from '@/components/AvisoDeRegras';
 import ExternalNavigation from '@/components/ExternalNavigation';
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
@@ -140,6 +141,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </AgendaProvider>
         </PreferencesProvider>
         <MediaSessionMaintenance />
+        <AvisoDeRegras />
         <ExternalNavigation />
         <PWARegister />
       </body>

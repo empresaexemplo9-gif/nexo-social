@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const ts = require('typescript');
 const { NextRequest, NextResponse } = require('next/server');
 
-function load({ user = null, error = null, throws = false, url = 'https://example.supabase.co', refresh = false, access = true } = {}) {
+function load({ user = null, error = null, throws = false, url = 'https://example.supabase.co', refresh = false, access = true, banned = false } = {}) {
   let calls = 0;
   const exports = {};
   const source = ts.transpileModule(readFileSync('middleware.ts', 'utf8'), {
@@ -26,11 +26,15 @@ function load({ user = null, error = null, throws = false, url = 'https://exampl
             return { data: { user }, error };
           },
         },
-        from() {
+        from(table) {
           return {
             select() { return this; },
             eq() { return this; },
-            async maybeSingle() { return { data: access ? { user_id: user?.id || 'u' } : null, error: null }; },
+            is() { return this; },
+            async maybeSingle() {
+              if (table === 'user_bans') return { data: banned ? { user_id: user?.id } : null, error: null };
+              return { data: access ? { user_id: user?.id || 'u' } : null, error: null };
+            },
           };
         },
       }) };
@@ -86,6 +90,23 @@ test('authenticated invited accounts enter and uninvited accounts fail closed', 
   const blocked = load({ user: { id: '2', email: 'member@example.com' }, access: false });
   assert.equal((await blocked.run('/')).status, 307);
   assert.equal((await blocked.run('/api/me')).status, 403);
+});
+
+test('conta banida pelas regras da comunidade vai para /banido e a API responde 403', async () => {
+  const banida = load({ user: { id: 'b', email: 'member@example.com' }, access: false, banned: true });
+  for (const path of ['/', '/comunidade', '/agenda']) {
+    const res = await banida.run(path);
+    assert.equal(res.status, 307, path);
+    assert.equal(new URL(res.headers.get('location')).pathname, '/banido', path);
+  }
+  const api = await banida.run('/api/me');
+  assert.equal(api.status, 403);
+  assert.equal((await api.json()).banido, true);
+  // A página do banimento é pública (encerra a sessão por lá).
+  assert.equal((await load({ throws: true }).run('/banido')).headers.get('x-middleware-next'), '1');
+  // Sem banimento, quem não tem acesso continua sendo "sem convite".
+  const semConvite = await load({ user: { id: 's', email: 'member@example.com' }, access: false }).run('/agenda');
+  assert.equal(new URL(semConvite.headers.get('location')).searchParams.get('error'), 'invite_required');
 });
 
 test('admin retains access without ordinary invite lookup and members cannot use admin APIs', async () => {
