@@ -5,11 +5,13 @@ import Icon from '../../icons';
 import { supabase } from '@/lib/supabase';
 import { CATEGORIAS_DE_EMOJI, FIGURINHAS_DE_REACAO } from '@/lib/emojis';
 import { STICKERS } from '@/lib/invite-stickers';
+import type { ItemExclusivo } from '@/lib/exclusivos';
 
 export type Escolha =
   | { tipo: 'emoji'; emoji: string }
   | { tipo: 'figurinha'; emoji?: string; mediaPath?: string }
-  | { tipo: 'adesivo'; n: number };
+  | { tipo: 'adesivo'; n: number }
+  | { tipo: 'adesivo-exclusivo'; id: string };
 
 const SALVAS = 'nexo:figurinhas:salvas';
 
@@ -53,6 +55,8 @@ export default function PainelDeFigurinhas({ meuId, onEscolher, onFechar }: { me
   const [aba, setAba] = useState<'emoji' | 'figurinhas' | 'adesivos'>('emoji');
   const [categoria, setCategoria] = useState(CATEGORIAS_DE_EMOJI[0].id);
   const [minhas, setMinhas] = useState<{ path: string; url: string }[]>([]);
+  const [exclusivos, setExclusivos] = useState<ItemExclusivo[]>([]);
+  const [carregandoExclusivos, setCarregandoExclusivos] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState('');
   const arquivo = useRef<HTMLInputElement>(null);
@@ -82,9 +86,28 @@ export default function PainelDeFigurinhas({ meuId, onEscolher, onFechar }: { me
     setMinhas((links ?? []).flatMap((l) => (l.signedUrl && l.path ? [{ path: l.path, url: l.signedUrl }] : [])));
   }, [meuId]);
 
+  const carregarExclusivos = useCallback(async () => {
+    if (!meuId) return;
+    setCarregandoExclusivos(true);
+    try {
+      const res = await fetch('/api/exclusivos?kind=sticker', { cache: 'no-store' });
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 503) return setExclusivos([]);
+        throw new Error('Não foi possível carregar os adesivos exclusivos.');
+      }
+      const json = await res.json().catch(() => ({}));
+      setExclusivos(Array.isArray(json.items) ? json.items : []);
+    } catch {
+      setExclusivos([]);
+    } finally {
+      setCarregandoExclusivos(false);
+    }
+  }, [meuId]);
+
   useEffect(() => {
     if (aba === 'figurinhas') void carregarMinhas();
-  }, [aba, carregarMinhas]);
+    if (aba === 'adesivos') void carregarExclusivos();
+  }, [aba, carregarMinhas, carregarExclusivos]);
 
   const criar = async (file: File) => {
     if (!supabase) return;
@@ -180,13 +203,37 @@ export default function PainelDeFigurinhas({ meuId, onEscolher, onFechar }: { me
       )}
 
       {aba === 'adesivos' && (
-        <div className="grid grid-cols-4 gap-2 overflow-y-auto p-3">
-          {STICKERS.map((s) => (
-            <button key={s.index} type="button" onClick={() => onEscolher({ tipo: 'adesivo', n: s.index })} className="flex items-center justify-center rounded-xl p-1 transition hover:bg-zinc-800" aria-label={`Adesivo ${s.index + 1}`}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={s.file} alt="" loading="lazy" className="max-h-20 w-full object-contain" />
-            </button>
-          ))}
+        <div className="space-y-3 overflow-y-auto p-3">
+          {(carregandoExclusivos || exclusivos.length > 0) && (
+            <section>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-300">Exclusivos da sua conta</p>
+                {carregandoExclusivos && <span className="text-[10px] text-zinc-500">carregando…</span>}
+              </div>
+              {exclusivos.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 rounded-xl border border-amber-500/20 bg-amber-950/10 p-2">
+                  {exclusivos.map((s) => (
+                    <button key={s.id} type="button" onClick={() => onEscolher({ tipo: 'adesivo-exclusivo', id: s.id })} className="flex items-center justify-center rounded-xl p-1 transition hover:bg-amber-500/10" aria-label={`Adesivo exclusivo ${s.title}`} title={`${s.title} · ${s.collection}`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={s.url} alt="" loading="lazy" className="max-h-20 w-full object-contain" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          <section>
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Coleção geral</p>
+            <div className="grid grid-cols-4 gap-2">
+              {STICKERS.map((s) => (
+                <button key={s.index} type="button" onClick={() => onEscolher({ tipo: 'adesivo', n: s.index })} className="flex items-center justify-center rounded-xl p-1 transition hover:bg-zinc-800" aria-label={`Adesivo ${s.index + 1}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={s.file} alt="" loading="lazy" className="max-h-20 w-full object-contain" />
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
       )}
     </div>
