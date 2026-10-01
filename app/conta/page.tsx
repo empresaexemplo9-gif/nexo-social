@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import FotoDePerfil from '@/components/FotoDePerfil';
 import YoutubeAccount from '@/components/YoutubeAccount';
 import AvisosNoAparelho from '@/components/AvisosNoAparelho';
+import MinhaPagina from '@/components/social/MinhaPagina';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
 import { ensureProfile } from '@/lib/provisioning';
@@ -147,6 +148,8 @@ export default function ContaPage() {
             </div>
           )}
         </section>
+
+        {account && <MinhaPagina />}
 
         {account && (
           <section id="avisos" className="scroll-mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">

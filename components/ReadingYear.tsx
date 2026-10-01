@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
 import Icon from './icons';
 import { MESES_CURTOS, summarizeYear, useReading, type ReadingEntry, type ReadingStatus } from '@/lib/reading';
 import { usePreferences } from '@/lib/preferences';
@@ -89,6 +90,13 @@ function EntryRow({ entry }: { entry: ReadingEntry }) {
               Abrir na fonte <Icon name="external" size={11} />
             </a>
           )}
+          {/* Contar o que achou do livro no mural da comunidade */}
+          <Link
+            href={`/comunidade?${new URLSearchParams({ nova: 'livro', assunto: entry.title, autor: entry.author ?? '' })}`}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300"
+          >
+            <Icon name="chat" size={11} /> Comentar na comunidade
+          </Link>
           <button
             onClick={() => remove(entry.id)}
             className="action-collage action-collage--paper ml-auto inline-flex items-center gap-1 text-[11px] text-zinc-500 transition hover:text-red-300"

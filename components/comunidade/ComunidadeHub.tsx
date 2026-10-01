@@ -11,11 +11,13 @@ import { EVENTO_CONVITES, responderConvite } from '@/lib/convites';
 import { trocarImagemDoGrupo } from '@/lib/imagens';
 import type { GrupoResumo, Privacidade } from '@/lib/comunidade-tipos';
 import JogosDaComunidade from './jogos/JogosDaComunidade';
+import MuralSocial from '../social/MuralSocial';
+import type { Rascunho } from '../social/NovaPublicacao';
 
 const campo =
   'w-full rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-600 focus:outline-none';
 
-/** Página da Comunidade: convites de grupo, meus grupos e criar grupo. */
+/** Página da Comunidade: o mural (conversas, opiniões, resenhas), os grupos e os jogos. */
 export default function ComunidadeHub() {
   const router = useRouter();
   const [estado, setEstado] = useState<'carregando' | 'ok' | 'anon' | 'off'>('carregando');
@@ -29,7 +31,9 @@ export default function ComunidadeHub() {
     description: '',
     privacy: 'fechado',
   });
-  const [secao, setSecao] = useState<'grupos' | 'jogos'>('grupos');
+  const [secao, setSecao] = useState<'mural' | 'grupos' | 'jogos'>('mural');
+  // "Comentar na comunidade" (de Livros que li, por exemplo) chega com o rascunho na URL.
+  const [rascunho, setRascunho] = useState<Rascunho | null>(null);
   const [imagem, setImagem] = useState<File | null>(null);
   const [previa, setPrevia] = useState<string | null>(null);
   const seletorDeImagem = useRef<HTMLInputElement>(null);
@@ -58,9 +62,16 @@ export default function ComunidadeHub() {
     }
   }, []);
 
-  // /comunidade?aba=jogos abre direto nos jogos.
+  // /comunidade?aba=grupos|jogos abre direto na aba; ?nova=livro&assunto=… abre o mural com o rascunho.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('aba') === 'jogos') setSecao('jogos');
+    const p = new URLSearchParams(window.location.search);
+    const aba = p.get('aba');
+    if (aba === 'jogos' || aba === 'grupos') setSecao(aba);
+    const nova = p.get('nova');
+    if (nova === 'livro' || nova === 'resenha' || nova === 'experiencia' || nova === 'pergunta') {
+      setSecao('mural');
+      setRascunho({ tipo: nova, assunto: (p.get('assunto') || '').slice(0, 85), autorDoLivro: (p.get('autor') || '').slice(0, 70) });
+    }
   }, []);
 
   useEffect(() => {
@@ -136,6 +147,7 @@ export default function ComunidadeHub() {
     <div className="flex gap-1.5 border-b border-zinc-800" role="tablist" aria-label="Seções da Comunidade">
       {(
         [
+          ['mural', 'Mural', 'chat'],
           ['grupos', 'Grupos', 'users'],
           ['jogos', 'Jogos', 'gamepad'],
         ] as const
@@ -147,7 +159,7 @@ export default function ComunidadeHub() {
           aria-selected={secao === k}
           onClick={() => {
             setSecao(k);
-            window.history.replaceState(null, '', k === 'jogos' ? '/comunidade?aba=jogos' : '/comunidade');
+            window.history.replaceState(null, '', k === 'mural' ? '/comunidade' : `/comunidade?aba=${k}`);
           }}
           className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
             secao === k ? 'border-emerald-500 text-emerald-300' : 'border-transparent text-zinc-400 hover:text-zinc-100'
@@ -158,6 +170,27 @@ export default function ComunidadeHub() {
       ))}
     </div>
   );
+
+  if (secao === 'mural') {
+    return (
+      <div className="space-y-6">
+        {abas}
+        {convites.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setSecao('grupos')}
+            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-emerald-700/50 bg-emerald-500/10 px-4 py-3 text-left text-sm text-emerald-200"
+          >
+            <span>
+              Você tem {convites.length === 1 ? 'um convite' : `${convites.length} convites`} para grupo{convites.length === 1 ? '' : 's'}.
+            </span>
+            <span className="text-xs font-semibold">Ver →</span>
+          </button>
+        )}
+        <MuralSocial rascunho={rascunho} />
+      </div>
+    );
+  }
 
   if (secao === 'jogos') {
     return (
