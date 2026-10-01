@@ -8,9 +8,9 @@
 
 import { THEMES, TEX_FILES, isDark, type TexKey, type ThemeId } from './invite-themes';
 
-import type { Aparencia } from './aparencia-tipos';
+import { formaDoMuro, type Aparencia } from './aparencia-tipos';
 
-export { APARENCIA_PADRAO, CACHE_DA_APARENCIA, type Aparencia } from './aparencia-tipos';
+export { APARENCIA_PADRAO, CACHE_DA_APARENCIA, CACHE_DO_MURO, type Aparencia, type Muro } from './aparencia-tipos';
 
 export interface OpcaoDeFundo {
   id: string;
@@ -182,6 +182,7 @@ export function normalizarAparencia(v: unknown): Aparencia {
   return {
     fundo: typeof o.fundo === 'string' && opcaoDeFundo(o.fundo) ? o.fundo : null,
     botoes: typeof o.botoes === 'string' && opcaoDeBotao(o.botoes) ? o.botoes : null,
+    muro: formaDoMuro(o.muro),
   };
 }
 

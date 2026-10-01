@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Icon from '../icons';
 import { usePreferences } from '@/lib/preferences';
-import { APARENCIA_PADRAO, OPCOES_DE_BOTAO, OPCOES_DE_FUNDO, muralDoFundo, type OpcaoDeFundo } from '@/lib/aparencia';
+import { APARENCIA_PADRAO, OPCOES_DE_BOTAO, OPCOES_DE_FUNDO, muralDoFundo, type Muro, type OpcaoDeFundo } from '@/lib/aparencia';
 
 /**
  * O fundo de uma opção: a cor (ou o degradê) do tema, a textura e o mural de
@@ -32,6 +32,17 @@ export function AmostraDeFundo({ opcao, tela = false, className = '' }: { opcao:
   );
 }
 
+/** Amostra de uma versão dos murais: o muro, o miolo escuro ou claro e dois cartazes de papel. */
+export function AmostraDeMuro({ muro, className = '' }: { muro: Muro; className?: string }) {
+  return (
+    <span data-muro={muro} className={`amostra-muro relative isolate block overflow-hidden ${className}`}>
+      <span aria-hidden className="amostra-muro__titulo" />
+      <span aria-hidden className="amostra-muro__cartaz" style={{ top: '38%' }} />
+      <span aria-hidden className="amostra-muro__cartaz" style={{ top: '64%' }} />
+    </span>
+  );
+}
+
 /**
  * Personalizar a aparência: a cor e a textura do fundo da home e a cor dos
  * botões e destaques da plataforma — cada uma independente da outra, com as
@@ -40,7 +51,7 @@ export function AmostraDeFundo({ opcao, tela = false, className = '' }: { opcao:
 export default function PersonalizarAparencia({ onFechar }: { onFechar: () => void }) {
   const { prefs, save } = usePreferences();
   const aparencia = prefs.aparencia ?? APARENCIA_PADRAO;
-  const [aba, setAba] = useState<'fundo' | 'botoes'>('fundo');
+  const [aba, setAba] = useState<'fundo' | 'botoes' | 'murais'>('fundo');
   const painel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -52,7 +63,7 @@ export default function PersonalizarAparencia({ onFechar }: { onFechar: () => vo
 
   const escolher = (mudanca: Partial<typeof aparencia>) => void save({ aparencia: { ...aparencia, ...mudanca } });
 
-  const abaBtn = (id: typeof aba, rotulo: string, icone: 'image' | 'palette') => (
+  const abaBtn = (id: typeof aba, rotulo: string, icone: 'image' | 'palette' | 'sun') => (
     <button
       type="button"
       role="tab"
@@ -79,7 +90,7 @@ export default function PersonalizarAparencia({ onFechar }: { onFechar: () => vo
           <div className="min-w-0 flex-1">
             <p className="rotulo-hud">Sua estética</p>
             <h2 id="personalizar-titulo" className="font-display text-xl font-bold text-zinc-50">Personalizar cores</h2>
-            <p className="mt-1 text-xs text-zinc-400">As cores e texturas dos adesivos dos convites. O fundo da home e os botões mudam separados — escolha um, o outro ou os dois.</p>
+            <p className="mt-1 text-xs text-zinc-400">As cores e texturas dos adesivos dos convites e a versão dos murais. O fundo da home, os botões e os murais mudam separados.</p>
           </div>
           <button type="button" onClick={onFechar} aria-label="Fechar" className="rounded-full p-2 text-zinc-500 hover:text-zinc-100">
             <Icon name="close" size={18} />
@@ -87,12 +98,46 @@ export default function PersonalizarAparencia({ onFechar }: { onFechar: () => vo
         </header>
 
         <div role="tablist" aria-label="O que personalizar" className="mx-5 mt-4 flex gap-1 rounded-xl border border-zinc-800 bg-zinc-950/60 p-1">
-          {abaBtn('fundo', 'Fundo da home', 'image')}
-          {abaBtn('botoes', 'Botões e destaques', 'palette')}
+          {abaBtn('fundo', 'Fundo', 'image')}
+          {abaBtn('botoes', 'Botões', 'palette')}
+          {abaBtn('murais', 'Murais', 'sun')}
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
-          {aba === 'fundo' ? (
+          {aba === 'murais' ? (
+            <>
+              <p className="mb-3 text-xs text-zinc-500">
+                O muro de fundo da Comunidade e das outras áreas (Descobrir, Revista, Agenda, Esporte…), com os mesmos murais: escuro, com
+                a tinta clara, ou claro, como o papel. Os cartões e botões de cada área continuam.
+              </p>
+              <ul className="grid grid-cols-2 gap-3">
+                {([
+                  ['escuro', 'Escuro', 'O muro à noite'],
+                  ['claro', 'Claro', 'O muro de dia'],
+                ] as const).map(([id, nome, apoio]) => {
+                  const ativo = (aparencia.muro ?? 'escuro') === id;
+                  return (
+                    <li key={id}>
+                      <button type="button" onClick={() => escolher({ muro: id })} aria-pressed={ativo} className="group block w-full text-left">
+                        <span className={`relative block rounded-xl border-2 p-0.5 transition ${ativo ? 'border-emerald-400' : 'border-transparent group-hover:border-zinc-700'}`}>
+                          <AmostraDeMuro muro={id} className="aspect-[3/4] rounded-[0.6rem]" />
+                          {ativo && (
+                            <span className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400 text-zinc-950">
+                              <Icon name="check" size={12} />
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-zinc-200">
+                          <Icon name={id === 'claro' ? 'sun' : 'moon'} size={13} /> {nome}
+                        </span>
+                        <span className="block text-[11px] text-zinc-500">{apoio}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : aba === 'fundo' ? (
             <>
               <p className="mb-3 text-xs text-zinc-500">A cor, a textura e o mural de colagens atrás dos cartões da home. Os cartões continuam claros; em fundos escuros, os títulos ficam claros sozinhos.</p>
               <ul className="grid grid-cols-3 gap-2.5">
@@ -156,8 +201,8 @@ export default function PersonalizarAparencia({ onFechar }: { onFechar: () => vo
         <footer className="flex items-center justify-between gap-2 border-t border-zinc-800 p-4">
           <button
             type="button"
-            onClick={() => escolher({ fundo: null, botoes: null })}
-            disabled={!aparencia.fundo && !aparencia.botoes}
+            onClick={() => escolher({ fundo: null, botoes: null, muro: 'escuro' })}
+            disabled={!aparencia.fundo && !aparencia.botoes && aparencia.muro !== 'claro'}
             className="text-xs font-semibold text-zinc-400 hover:text-clay-300 disabled:opacity-40"
           >
             Voltar ao padrão

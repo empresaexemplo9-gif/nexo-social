@@ -120,7 +120,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html:
               "try{if(localStorage.getItem('nexo:lateral')==='recolhida')document.documentElement.dataset.lateral='recolhida'}catch(e){}" +
               // Cor dos botões escolhida pela pessoa (ver components/AplicarAparencia.tsx).
-              "try{var a=JSON.parse(localStorage.getItem('nexo:aparencia:vars')||'null');if(a)for(var k in a)if(/^--[a-z0-9-]+$/.test(k)&&/^[0-9 ]+$/.test(a[k]))document.documentElement.style.setProperty(k,a[k])}catch(e){}",
+              "try{var a=JSON.parse(localStorage.getItem('nexo:aparencia:vars')||'null');if(a)for(var k in a)if(/^--[a-z0-9-]+$/.test(k)&&/^[0-9 ]+$/.test(a[k]))document.documentElement.style.setProperty(k,a[k])}catch(e){}" +
+              // Versão clara dos murais das áreas (ver components/AplicarAparencia.tsx).
+              "try{if(localStorage.getItem('nexo:muro')==='claro')document.documentElement.dataset.muro='claro'}catch(e){}",
           }}
         />
       </head>

@@ -2073,3 +2073,268 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   --acento-900: 219 230 255;
   --acento-950: 235 240 255;
 }
+
+/* ===========================================================================
+   Murais claros (Personalizar cores → Murais, ou o atalho do menu): os mesmos
+   murais de cada área, esmaecidos no creme do papel. A tinta volta à do papel,
+   os painéis translúcidos viram vidro claro e cada área usa a cor de destaque
+   dos cartões. O <html> recebe data-muro="claro" (components/AplicarAparencia.tsx).
+   ========================================================================= */
+html[data-muro='claro'] .tema-mural {
+  --tinta-50: 22 24 29;
+  --tinta-100: 35 38 45;
+  --tinta-200: 52 56 66;
+  --tinta-300: 74 79 91;
+  --tinta-400: 93 98 112;
+  --tinta-500: 100 105 118;
+  --tinta-600: 163 158 149;
+  --tinta-700: 212 204 191;
+  --tinta-800: 233 227 215;
+  --tinta-900: 255 253 248;
+  --tinta-950: 246 242 234;
+  --acento-50: 15 33 61;
+  --acento-100: 22 41 74;
+  --acento-200: 28 58 99;
+  --acento-300: 35 70 118;
+  --acento-400: 31 79 216;
+  --acento-500: 31 91 255;
+  --acento-600: 106 140 192;
+  --acento-700: 159 182 217;
+  --acento-800: 201 215 236;
+  --acento-900: 227 235 246;
+  --acento-950: 240 244 250;
+  color: rgb(var(--tinta-100));
+}
+html[data-muro='claro'] .tema-mural[data-area='inicio'] {
+  --acento-50: 0 18 61;
+  --acento-100: 0 25 87;
+  --acento-200: 0 35 122;
+  --acento-300: 0 44 153;
+  --acento-400: 0 53 184;
+  --acento-500: 0 62 214;
+  --acento-600: 51 110 255;
+  --acento-700: 128 164 255;
+  --acento-800: 184 204 255;
+  --acento-900: 219 230 255;
+  --acento-950: 235 240 255;
+}
+html[data-muro='claro'] .tema-mural[data-area='descobrir'] {
+  --acento-50: 47 9 52;
+  --acento-100: 67 13 73;
+  --acento-200: 94 19 104;
+  --acento-300: 118 23 130;
+  --acento-400: 142 28 156;
+  --acento-500: 165 33 182;
+  --acento-600: 208 82 224;
+  --acento-700: 226 147 236;
+  --acento-800: 239 194 244;
+  --acento-900: 247 225 250;
+  --acento-950: 250 238 252;
+}
+html[data-muro='claro'] .tema-mural[data-area='shorts'] {
+  --acento-50: 52 9 28;
+  --acento-100: 74 12 40;
+  --acento-200: 105 17 56;
+  --acento-300: 131 22 70;
+  --acento-400: 157 26 85;
+  --acento-500: 184 31 99;
+  --acento-600: 226 80 145;
+  --acento-700: 237 146 186;
+  --acento-800: 245 194 216;
+  --acento-900: 250 224 236;
+  --acento-950: 252 238 244;
+}
+html[data-muro='claro'] .tema-mural[data-area='revista'] {
+  --acento-50: 54 11 7;
+  --acento-100: 76 15 10;
+  --acento-200: 108 21 15;
+  --acento-300: 135 27 18;
+  --acento-400: 162 32 22;
+  --acento-500: 188 37 26;
+  --acento-600: 230 87 76;
+  --acento-700: 240 150 143;
+  --acento-800: 246 196 192;
+  --acento-900: 251 226 224;
+  --acento-950: 253 238 237;
+}
+html[data-muro='claro'] .tema-mural[data-area='historicas'] {
+  --acento-50: 59 36 3;
+  --acento-100: 83 51 4;
+  --acento-200: 117 71 5;
+  --acento-300: 147 89 6;
+  --acento-400: 147 89 6;
+  --acento-500: 147 89 6;
+  --acento-600: 246 170 59;
+  --acento-700: 250 202 133;
+  --acento-800: 252 225 187;
+  --acento-900: 254 240 221;
+  --acento-950: 254 246 235;
+}
+html[data-muro='claro'] .tema-mural[data-area='agenda'] {
+  --acento-50: 24 5 56;
+  --acento-100: 34 7 79;
+  --acento-200: 48 10 112;
+  --acento-300: 60 13 140;
+  --acento-400: 72 15 168;
+  --acento-500: 84 18 196;
+  --acento-600: 131 68 238;
+  --acento-700: 177 138 244;
+  --acento-800: 211 190 249;
+  --acento-900: 233 222 252;
+  --acento-950: 243 236 253;
+}
+html[data-muro='claro'] .tema-mural[data-area='esporte'] {
+  --acento-50: 9 53 25;
+  --acento-100: 12 74 35;
+  --acento-200: 17 105 50;
+  --acento-300: 22 131 63;
+  --acento-400: 20 123 58;
+  --acento-500: 20 123 58;
+  --acento-600: 80 226 135;
+  --acento-700: 145 237 180;
+  --acento-800: 194 245 213;
+  --acento-900: 224 250 234;
+  --acento-950: 237 252 243;
+}
+html[data-muro='claro'] .tema-mural[data-area='livros'] {
+  --acento-50: 58 27 3;
+  --acento-100: 83 38 4;
+  --acento-200: 117 54 6;
+  --acento-300: 146 67 7;
+  --acento-400: 165 76 8;
+  --acento-500: 165 76 8;
+  --acento-600: 245 141 61;
+  --acento-700: 249 183 134;
+  --acento-800: 252 215 187;
+  --acento-900: 253 235 221;
+  --acento-950: 254 244 236;
+}
+html[data-muro='claro'] .tema-mural[data-area='bomdia'] {
+  --acento-50: 58 22 3;
+  --acento-100: 82 31 4;
+  --acento-200: 116 44 6;
+  --acento-300: 146 55 7;
+  --acento-400: 175 66 9;
+  --acento-500: 184 69 9;
+  --acento-600: 245 124 61;
+  --acento-700: 249 173 134;
+  --acento-800: 252 209 187;
+  --acento-900: 253 232 221;
+  --acento-950: 254 242 236;
+}
+html[data-muro='claro'] .tema-mural[data-area='questionario'] {
+  --acento-50: 0 16 61;
+  --acento-100: 0 23 87;
+  --acento-200: 0 33 122;
+  --acento-300: 0 41 153;
+  --acento-400: 0 49 184;
+  --acento-500: 0 57 214;
+  --acento-600: 51 106 255;
+  --acento-700: 128 162 255;
+  --acento-800: 184 203 255;
+  --acento-900: 219 229 255;
+  --acento-950: 235 240 255;
+}
+html[data-muro='claro'] .tema-mural[data-area='busca'] {
+  --acento-50: 3 48 59;
+  --acento-100: 4 68 83;
+  --acento-200: 5 95 117;
+  --acento-300: 7 119 146;
+  --acento-400: 6 111 137;
+  --acento-500: 6 111 137;
+  --acento-600: 60 210 246;
+  --acento-700: 133 227 250;
+  --acento-800: 187 239 252;
+  --acento-900: 221 247 253;
+  --acento-950: 235 251 254;
+}
+html[data-muro='claro'] .tema-mural[data-area='pessoal'] {
+  --acento-50: 0 18 61;
+  --acento-100: 0 25 87;
+  --acento-200: 0 35 122;
+  --acento-300: 0 44 153;
+  --acento-400: 0 53 184;
+  --acento-500: 0 62 214;
+  --acento-600: 51 110 255;
+  --acento-700: 128 164 255;
+  --acento-800: 184 204 255;
+  --acento-900: 219 230 255;
+  --acento-950: 235 240 255;
+}
+html[data-muro='claro'] .parede-mural {
+  background: #f4efe4;
+}
+/* De dia: o mural clareado e um pouco desbotado, sem o grão (no claro ele
+   vira chuvisco); o miolo fica no creme do papel. */
+html[data-muro='claro'] .parede-mural::before {
+  opacity: 0.7;
+  filter: grayscale(0.15) sepia(0.12) brightness(1.25) contrast(0.8) saturate(1.2);
+}
+html[data-muro='claro'] .parede-mural::after {
+  background:
+    radial-gradient(ellipse 62% 70% at 50% 42%, rgb(246 242 234 / 0.9) 0%, rgb(246 242 234 / 0.76) 52%, rgb(246 242 234 / 0.34) 100%),
+    linear-gradient(to bottom, rgb(246 242 234 / 0.55), transparent 22%, transparent 78%, rgb(246 242 234 / 0.62));
+}
+@media (max-width: 767px) {
+  html[data-muro='claro'] .parede-mural::before {
+    opacity: 0.55;
+  }
+}
+/* Painéis translúcidos: vidro claro (a tinta já é a do papel). */
+html[data-muro='claro'] .tema-mural :is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.tema-mural :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [role='dialog'], .q-papel) *):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper) {
+  background-color: rgb(255 253 248 / 0.8);
+}
+/* A barra lateral e a de cima voltam ao papel translúcido de sempre. */
+html[data-muro='claro'] .tema-mural :is(.barra-lateral, .barra-topo) {
+  --tinta-50: inherit;
+  --tinta-100: inherit;
+  --tinta-200: inherit;
+  --tinta-300: inherit;
+  --tinta-400: inherit;
+  --tinta-500: inherit;
+  --tinta-600: inherit;
+  --tinta-700: inherit;
+  --tinta-800: inherit;
+  --tinta-900: inherit;
+  --tinta-950: inherit;
+  background-color: rgb(var(--tinta-950) / 0.85);
+  border-color: rgb(var(--acento-400) / 0.1);
+}
+
+/* Amostras do seletor de murais (Personalizar cores → Murais). */
+.amostra-muro {
+  background: #0c0d10 url('/bg/comunidade/quadros/lambe.webp') center / cover no-repeat;
+}
+.amostra-muro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 70% 70% at 50% 45%, rgb(12 13 16 / 0.9), rgb(12 13 16 / 0.62));
+}
+.amostra-muro[data-muro='claro'] {
+  background-color: #f4efe4;
+}
+.amostra-muro[data-muro='claro']::before {
+  background: radial-gradient(ellipse 70% 70% at 50% 45%, rgb(246 242 234 / 0.88), rgb(246 242 234 / 0.5));
+}
+.amostra-muro__titulo,
+.amostra-muro__cartaz {
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  border-radius: 6px;
+}
+.amostra-muro__titulo {
+  top: 16%;
+  right: 40%;
+  height: 9%;
+  background: #f6f1e6;
+}
+.amostra-muro[data-muro='claro'] .amostra-muro__titulo {
+  background: #23262d;
+}
+.amostra-muro__cartaz {
+  height: 20%;
+  background: #fffdf8;
+  box-shadow: 0 2px 0 rgb(0 0 0 / 0.25);
+}

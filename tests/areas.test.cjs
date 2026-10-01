@@ -78,3 +78,25 @@ test('o middleware libera só os muros das áreas', () => {
     assert.ok(!regex.test(ruim), ruim);
   }
 });
+
+test('murais claros: a escolha fica na conta e vale em todas as áreas', () => {
+  const tipos = load('lib/aparencia-tipos.ts');
+  assert.equal(tipos.APARENCIA_PADRAO.muro, 'escuro');
+  assert.equal(tipos.formaDaAparencia({ muro: 'claro' }).muro, 'claro');
+  for (const ruim of [undefined, null, 'CLARO', 'azul', 1]) assert.equal(tipos.formaDaAparencia({ muro: ruim }).muro, 'escuro');
+  // A conta guarda a versão (normalizarAparencia) e o layout a aplica antes de pintar.
+  assert.match(fs.readFileSync('lib/aparencia.ts', 'utf8'), /muro: formaDoMuro\(o\.muro\)/);
+  assert.ok(fs.readFileSync('app/layout.tsx', 'utf8').includes(`localStorage.getItem('${tipos.CACHE_DO_MURO}')==='claro'`));
+  assert.ok(fs.readFileSync('components/AplicarAparencia.tsx', 'utf8').includes('raiz.dataset.muro'));
+  // Dá para escolher no menu e em Personalizar cores.
+  assert.ok(fs.readFileSync('components/Navbar.tsx', 'utf8').includes('<AlternarMuro'));
+  assert.ok(fs.readFileSync('components/home/PersonalizarAparencia.tsx', 'utf8').includes("escolher({ muro: id })"));
+  // O CSS claro: o muro, o vidro, a barra e a cor de cada área.
+  for (const trecho of [
+    "html[data-muro='claro'] .tema-mural {",
+    "html[data-muro='claro'] .parede-mural::after",
+    "html[data-muro='claro'] .tema-mural :is(.barra-lateral, .barra-topo)",
+    "html[data-muro='claro'] .tema-mural :is([class^='bg-zinc-900/']",
+  ]) assert.ok(css.includes(trecho), trecho);
+  for (const area of Object.keys(AREAS)) assert.ok(css.includes(`html[data-muro='claro'] .tema-mural[data-area='${area}'] {`), area);
+});
