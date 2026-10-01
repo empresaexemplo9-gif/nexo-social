@@ -22,7 +22,7 @@ const INVITE_ASSET = /^\/convite-assets\/(adesivos\/[0-9]{3}\.png|fonts\/[a-z0-9
 // Murais das opções de fundo (decorativos): sem validar a sessão a cada imagem.
 const MURAL = /^\/bg\/murais\/colagem-[1-3]-(claro|escuro)(-mini)?\.webp$/;
 // Os murais da Comunidade (parede e quadros): decorativos, também sem sessão.
-const MURAL_DA_COMUNIDADE = /^\/bg\/comunidade\/(parede(-cel)?|quadros\/[a-z]+(-[a-z])?(-mini)?)\.webp$/;
+const MURAL_DA_COMUNIDADE = /^\/bg\/comunidade\/(parede(-(mural|listas|rodas|jogos))?(-cel)?|quadros\/[a-z0-9]+(-[a-z])?(-mini)?)\.webp$/;
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
