@@ -97,6 +97,12 @@ function EntryRow({ entry }: { entry: ReadingEntry }) {
           >
             <Icon name="chat" size={11} /> Comentar na comunidade
           </Link>
+          <Link
+            href={`/comunidade?${new URLSearchParams({ aba: 'rodas', tema: entry.title, assunto: 'livro' })}`}
+            className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300"
+          >
+            <Icon name="users" size={11} /> Abrir uma roda de conversa
+          </Link>
           <button
             onClick={() => remove(entry.id)}
             className="action-collage action-collage--paper ml-auto inline-flex items-center gap-1 text-[11px] text-zinc-500 transition hover:text-red-300"

@@ -2,8 +2,8 @@
 // servidor (que monta as indicações) e o reprodutor (components/midia).
 
 export type Midia =
-  /** Vídeo do YouTube (inclui Shorts: `vertical`). */
-  | { tipo: 'youtube'; id: string; vertical?: boolean }
+  /** Vídeo do YouTube (inclui Shorts: `vertical`); `fila`: os que tocam em seguida (lista da comunidade). */
+  | { tipo: 'youtube'; id: string; vertical?: boolean; fila?: string[] }
   /** Item do Internet Archive: filme, audiolivro (lista de capítulos) ou livro. */
   | { tipo: 'archive'; id: string; formato: 'video' | 'audio' | 'texto' }
   /** Livro do Projeto Gutenberg, aberto no leitor da plataforma. */

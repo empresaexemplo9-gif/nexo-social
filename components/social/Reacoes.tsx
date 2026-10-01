@@ -12,11 +12,14 @@ export default function Reacoes({
   reacoes,
   minha,
   compacta = false,
+  extra,
 }: {
   url: string;
   reacoes: Partial<Record<Reacao, number>>;
   minha: Reacao | null;
   compacta?: boolean;
+  /** Vai junto no corpo (ex.: o item da lista que recebe a reação). */
+  extra?: Record<string, unknown>;
 }) {
   const [estado, setEstado] = useState({ reacoes, minha });
   const [ocupado, setOcupado] = useState(false);
@@ -31,7 +34,7 @@ export default function Reacoes({
     setEstado({ reacoes: contas, minha: nova });
     setOcupado(true);
     try {
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reacao: nova }) });
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...extra, reacao: nova }) });
       const j = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(j.error);
       setEstado({ reacoes: j.reacoes ?? contas, minha: j.minhaReacao ?? null });

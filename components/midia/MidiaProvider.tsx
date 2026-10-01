@@ -134,7 +134,9 @@ function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => voi
           {m.tipo === 'youtube' && (
             <div className={m.vertical ? 'mx-auto aspect-[9/16] max-h-[80vh] bg-black' : 'aspect-video w-full bg-black'}>
               <iframe
-                src={`https://www.youtube-nocookie.com/embed/${m.id}?autoplay=1&rel=0&playsinline=1&modestbranding=1`}
+                src={`https://www.youtube-nocookie.com/embed/${m.id}?autoplay=1&rel=0&playsinline=1&modestbranding=1${
+                  m.fila?.length ? `&playlist=${m.fila.filter((v) => /^[\w-]{11}$/.test(v)).slice(0, 49).join(',')}` : ''
+                }`}
                 title={item.titulo}
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen

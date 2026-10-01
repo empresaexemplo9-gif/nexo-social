@@ -132,6 +132,17 @@ export default function PublicacaoView({ id }: { id: string }) {
     <div className="space-y-6">
       <PublicacaoCard p={pub} inteira aoApagar={() => (window.location.href = '/comunidade')} />
 
+      {pub.assunto && (
+        <Link
+          href={`/comunidade?${new URLSearchParams({ aba: 'rodas', tema: pub.assunto, ...(pub.assuntoTipo ? { assunto: pub.assuntoTipo } : {}) })}`}
+          className="flex items-center gap-3 rounded-2xl border border-emerald-800/50 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200 transition hover:border-emerald-600"
+        >
+          <Icon name="users" size={16} className="shrink-0" />
+          <span className="min-w-0 flex-1">Quer conversar ao vivo sobre <b className="font-semibold">{pub.assunto}</b>? Abra uma roda de conversa.</span>
+          <Icon name="arrowRight" size={15} className="shrink-0" />
+        </Link>
+      )}
+
       <section className="space-y-4" aria-labelledby="opinioes-titulo">
         <h2 id="opinioes-titulo" className="flex items-center gap-2 font-display text-2xl font-bold text-zinc-50">
           <Icon name="chat" size={20} className="text-emerald-400" /> Opiniões {opinioes.length > 0 && <span className="text-base text-zinc-500">({opinioes.length})</span>}
