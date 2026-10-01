@@ -10,6 +10,7 @@ import SportsHub from '@/components/SportsHub';
 import HeritageShelf from '@/components/HeritageShelf';
 import ClipsShelf from '@/components/ClipsShelf';
 import RevistaDoTema from '@/components/revista/RevistaDoTema';
+import HistoricasDoTema from '@/components/historicas/HistoricasDoTema';
 import NoticiasDoTema from '@/components/temas/NoticiasDoTema';
 import KitDoTema from '@/components/temas/KitDoTema';
 import { usePreferences } from '@/lib/preferences';
@@ -81,6 +82,7 @@ export default function TopicView({ slug, contents, events }: Props) {
               ['#noticias', 'Notícias'],
               ['#so-no-nexo', 'Só no nexo'],
               ['#revista', 'Revista'],
+              ['#historicas', 'Históricas'],
               ['#videos', 'Vídeos'],
               ['#marcos', 'Marcos'],
               ['#agenda', 'Agenda'],
@@ -115,19 +117,34 @@ export default function TopicView({ slug, contents, events }: Props) {
           <KitDoTema tema={slug} />
         </div>
 
-        {/* Revista do tema: matérias no formato da plataforma, de fontes abertas */}
+        {/* Revista do tema: o que é notícia agora, com contexto e curiosidades */}
         <section id="revista" className="scroll-mt-32 space-y-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <p className="rotulo-hud">Revista nexo</p>
-              <h2 className="mt-2 font-display text-3xl font-bold text-zinc-50 md:text-4xl">Matérias de {topic.label}</h2>
-              <p className="mt-1 text-sm text-zinc-400">Dossiês, perfis, linhas do tempo e curiosidades — a pauta muda todo dia.</p>
+              <h2 className="mt-2 font-display text-3xl font-bold text-zinc-50 md:text-4xl">Em pauta em {topic.label}</h2>
+              <p className="mt-1 text-sm text-zinc-400">O que os veículos estão publicando agora, com a foto em alta, o contexto e as curiosidades.</p>
             </div>
             <Link href="/revista" className="font-mono text-xs uppercase tracking-widest text-emerald-400 hover:text-clay-400">
               revista completa →
             </Link>
           </div>
           <RevistaDoTema tema={slug} />
+        </section>
+
+        {/* Matérias históricas: dossiês, perfis e curiosidades, com imagens da época */}
+        <section id="historicas" className="scroll-mt-32 space-y-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="rotulo-hud">Acervo nexo</p>
+              <h2 className="mt-2 font-display text-3xl font-bold text-zinc-50 md:text-4xl">Matérias históricas e curiosidades</h2>
+              <p className="mt-1 text-sm text-zinc-400">Dossiês, perfis, linhas do tempo e curiosidades de {topic.label}, com as imagens da época.</p>
+            </div>
+            <Link href={`/historicas#${slug}`} className="font-mono text-xs uppercase tracking-widest text-emerald-400 hover:text-clay-400">
+              todas as históricas →
+            </Link>
+          </div>
+          <HistoricasDoTema tema={slug} compacta />
         </section>
 
         {/* Clipes do tema — vídeos curtos que tocam aqui dentro */}

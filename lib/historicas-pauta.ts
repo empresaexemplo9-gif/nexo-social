@@ -1,4 +1,5 @@
-// Pauta da Revista nexo: os assuntos de cada tema e o formato da matéria.
+// Pauta das Matérias históricas e curiosidades: os assuntos de cada tema e o
+// formato da matéria.
 //
 // Cada assunto é um verbete da Wikipédia em português — fonte gratuita, de
 // licença aberta (CC BY-SA) e com referências. A plataforma não copia o

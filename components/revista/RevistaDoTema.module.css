@@ -11,9 +11,11 @@
 }
 @container revista (min-width: 600px) {
   .capaInterior { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .imagem { align-self: start; }
+  /* A foto ocupa a altura toda do cartão, por maior que seja o texto ao lado. */
+  .imagem { aspect-ratio: auto; min-height: 18rem; align-self: stretch; }
 }
 @container revista (min-width: 960px) {
   .destaques { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+  .destaques.so { grid-template-columns: minmax(0, 1fr); }
   .chamadas { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }

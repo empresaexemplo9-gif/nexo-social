@@ -2,9 +2,9 @@ import React from 'react';
 import Link from 'next/link';
 import Icon from '../icons';
 import { getTopic } from '@/lib/data';
-import { PAUTA, slugDaPauta, FORMATOS } from '@/lib/revista-pauta';
+import { PAUTA, slugDaPauta, FORMATOS } from '@/lib/historicas-pauta';
 import { eventoDeModaDaMateria, proximaValida } from '@/lib/ingressos-moda';
-import type { Imagem, Materia, Secao } from '@/lib/revista';
+import type { Imagem, Materia, Secao } from '@/lib/historicas';
 
 function Figura({ img, larga = false }: { img: Imagem; larga?: boolean }) {
   return (
@@ -89,7 +89,7 @@ function LinhaDoTempo({ itens }: { itens: Materia['linhaDoTempo'] }) {
 }
 
 /**
- * A matéria no formato da revista: capa, linha fina, abertura com capitular,
+ * A matéria histórica no formato da casa: capa, linha fina, abertura com capitular,
  * o miolo de acordo com o formato, citação em destaque, imagens creditadas,
  * vídeo e as fontes no fim.
  */
@@ -116,11 +116,11 @@ export default function MateriaView({ m }: { m: Materia }) {
           </div>
           <div className="flex flex-col justify-center p-7 md:p-10">
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-clay-400">
-              <Link href={`/revista`} className="hover:text-emerald-400">
-                Revista
+              <Link href="/historicas" className="hover:text-emerald-400">
+                Matérias históricas
               </Link>{' '}
               ·{' '}
-              <Link href={`/tema/${m.tema}#revista`} className="hover:text-emerald-400">
+              <Link href={`/tema/${m.tema}#historicas`} className="hover:text-emerald-400">
                 {t?.label}
               </Link>{' '}
               · {m.rotuloDoFormato}
@@ -256,12 +256,12 @@ export default function MateriaView({ m }: { m: Materia }) {
             </div>
           )}
           <div className="card-soft p-5">
-            <p className="rotulo-hud">Mais da revista de {t?.label}</p>
+            <p className="rotulo-hud">Mais histórias de {t?.label}</p>
             <ul className="mt-3 space-y-2">
               {mais.map((x) => (
                 <li key={x.verbete}>
                   <Link
-                    href={`/revista/${m.tema}/${slugDaPauta(x.verbete)}`}
+                    href={`/historicas/${m.tema}/${slugDaPauta(x.verbete)}`}
                     className="action-collage action-collage--paper group flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-sm text-zinc-200 transition hover:bg-zinc-800"
                   >
                     <span className="truncate group-hover:text-emerald-400">{x.verbete.replace(/ \(.+\)$/, '')}</span>

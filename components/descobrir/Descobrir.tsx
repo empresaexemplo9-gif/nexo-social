@@ -30,7 +30,8 @@ const ESTILOS: { value: EstiloIndicacao; label: string }[] = [
 /** Atalhos: tudo o que a plataforma tem, a um toque. */
 const ATALHOS: { href: string; rotulo: string; apoio: string; icone: IconName }[] = [
   { href: '/shorts', rotulo: 'Shorts', apoio: 'Vídeos curtos dos seus temas', icone: 'shorts' },
-  { href: '/revista', rotulo: 'Revista', apoio: 'Matérias dos seus temas', icone: 'jornal' },
+  { href: '/revista', rotulo: 'Revista', apoio: 'O que é notícia nos seus temas', icone: 'jornal' },
+  { href: '/historicas', rotulo: 'Matérias históricas', apoio: 'História e curiosidades dos temas', icone: 'clock' },
   { href: '/#trilha', rotulo: 'Sua trilha', apoio: 'Música no Spotify', icone: 'headphones' },
   { href: '/esporte', rotulo: 'Esporte ao vivo', apoio: 'Placar e transmissões', icone: 'trophy' },
   { href: '/livros', rotulo: 'Livros que li', apoio: 'Registro e estante liberada', icone: 'library' },

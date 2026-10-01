@@ -45,7 +45,7 @@ export const WIDGETS_FIXOS: Record<string, TipoDeWidget> = {
   },
   revista: {
     titulo: 'Revista do dia',
-    descricao: 'Matérias, perfis e curiosidades dos seus temas.',
+    descricao: 'O que é notícia nos seus temas, com contexto e curiosidades.',
     icone: 'jornal',
     tamanhoPadrao: 'inteira',
   },

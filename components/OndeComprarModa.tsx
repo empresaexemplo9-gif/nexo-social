@@ -70,8 +70,8 @@ export default function OndeComprarModa() {
                   </a>
                 )}
                 {e.materia && (
-                  <Link href={`/revista/moda/${e.materia}`} className="text-xs font-semibold text-emerald-400 hover:text-clay-400">
-                    Ler na Revista →
+                  <Link href={`/historicas/moda/${e.materia}`} className="text-xs font-semibold text-emerald-400 hover:text-clay-400">
+                    Ler a matéria →
                   </Link>
                 )}
               </div>
