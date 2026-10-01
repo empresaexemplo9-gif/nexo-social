@@ -400,7 +400,8 @@ BEGIN
   END IF;
 END $$;
 
--- Faxina a cada 15 minutos, se o pg_cron estiver ligado (senão, a API chama ao listar).
+-- Faxina a cada 15 minutos, se o pg_cron estiver ligado (sem ele, a API já
+-- não mostra como acontecendo as rodas paradas há 24 h).
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
