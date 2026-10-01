@@ -7,8 +7,9 @@ import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
 import { CITIES, TOPICS, cityCoords } from '@/lib/data';
 import AdminIntegrations from '@/components/AdminIntegrations';
 import AdminModeracao from '@/components/AdminModeracao';
+import AdminExclusivos from '@/components/AdminExclusivos';
 
-type Tab = 'content' | 'event' | 'bom-dia' | 'integrations' | 'moderacao';
+type Tab = 'content' | 'event' | 'bom-dia' | 'integrations' | 'moderacao' | 'exclusivos';
 
 export default function AdminPage() {
   const [authState, setAuthState] = useState<'loading' | 'allowed' | 'denied' | 'demo'>('loading');
@@ -165,7 +166,7 @@ export default function AdminPage() {
         )}
 
         <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
-          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', 'Editar Bom Dia'], ['integrations', 'Integrações'], ['moderacao', 'Moderação']] as [Tab, string][]).map(
+          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', 'Editar Bom Dia'], ['exclusivos', 'Exclusivos'], ['integrations', 'Integrações'], ['moderacao', 'Moderação']] as [Tab, string][]).map(
             ([tab, label]) => (
               <button
                 key={tab}
@@ -252,7 +253,7 @@ export default function AdminPage() {
               <div>
                 <label className="mb-1 block text-xs text-zinc-400">Cidade</label>
                 <select value={event.city} onChange={(e) => onCityChange(e.target.value)} className={inputClass}>
-                  {CITIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                  {CITIES.map((c) => <option key={c.name} value={c.name}>{c.name}</option>) }
                 </select>
               </div>
               <div>
@@ -282,6 +283,9 @@ export default function AdminPage() {
             <button type="submit" className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">Salvar Evento</button>
           </form>
         )}
+
+        {/* Itens exclusivos do superadministrador */}
+        {activeTab === 'exclusivos' && <AdminExclusivos demo={authState === 'demo'} />}
 
         {/* Integrações de APIs */}
         {activeTab === 'integrations' && <AdminIntegrations demo={authState === 'demo'} />}
