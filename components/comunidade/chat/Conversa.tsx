@@ -248,6 +248,7 @@ export default function Conversa({ endpoint, emGrupo = false, vazio = 'Nenhuma m
     setEnviando(e.tipo);
     try {
       if (e.tipo === 'adesivo') await postar({ kind: 'adesivo', meta: { n: e.n } });
+      else if (e.tipo === 'exclusivo') await postar({ kind: 'adesivo', meta: { exclusiveId: e.id } });
       else await postar({ kind: 'figurinha', mediaPath: e.mediaPath, meta: e.emoji ? { emoji: e.emoji } : undefined });
     } catch (err) {
       setErro((err as Error).message);
@@ -518,7 +519,13 @@ function Bolha({ m, emGrupo, mostrarAutor, destacada, onAmpliar, onApagar, onRes
       break;
     case 'adesivo':
       // eslint-disable-next-line @next/next/no-img-element
-      conteudo = m.mediaUrl ? <img src={m.mediaUrl} alt="Adesivo" loading="lazy" onLoad={onCarregou} className="max-h-40 w-auto max-w-[14rem] -rotate-2 object-contain" /> : null;
+      conteudo = m.mediaUrl ? (
+        m.meta?.botton ? (
+          <img src={m.mediaUrl} alt="Botton" loading="lazy" onLoad={onCarregou} className="h-28 w-28 rounded-full object-cover shadow-xl" />
+        ) : (
+          <img src={m.mediaUrl} alt="Adesivo" loading="lazy" onLoad={onCarregou} className="max-h-40 w-auto max-w-[14rem] -rotate-2 object-contain" />
+        )
+      ) : null;
       break;
     default:
       conteudo = null;

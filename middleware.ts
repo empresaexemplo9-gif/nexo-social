@@ -25,12 +25,15 @@ const MURAL = /^\/bg\/murais\/colagem-[1-3]-(claro|escuro)(-mini)?\.webp$/;
 const MURAL_DA_COMUNIDADE = /^\/bg\/comunidade\/(parede(-(mural|listas|rodas|jogos))?(-cel)?|quadros\/[a-z0-9]+(-[a-z])?(-mini)?)\.webp$/;
 // O muro de fundo de cada área do site (lib/areas.ts): decorativo, sem sessão.
 const MURO_DA_AREA = /^\/bg\/paredes\/[a-z]+(-cel)?\.webp$/;
+// A coleção embutida dos exclusivos (public/colecao/<tema>/<tipo>/…): como o
+// bucket `exclusivos`, a imagem é pública; quem pode usar, o banco decide.
+const COLECAO = /^\/colecao\/[a-z0-9-]+\/(fundos|adesivos|bottons)\/[a-z0-9-]+\.webp$/;
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
     || INVITE_ASSET.test(path) || MURAL.test(path) || MURAL_DA_COMUNIDADE.test(path)
-    || MURO_DA_AREA.test(path)) return NextResponse.next();
+    || MURO_DA_AREA.test(path) || COLECAO.test(path)) return NextResponse.next();
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });

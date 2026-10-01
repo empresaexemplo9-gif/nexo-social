@@ -8,9 +8,9 @@
 
 import { THEMES, TEX_FILES, isDark, type TexKey, type ThemeId } from './invite-themes';
 
-import { formaDoMuro, type Aparencia } from './aparencia-tipos';
+import { formaDoFundoExclusivo, formaDoMuro, type Aparencia } from './aparencia-tipos';
 
-export { APARENCIA_PADRAO, CACHE_DA_APARENCIA, CACHE_DO_MURO, type Aparencia, type Muro } from './aparencia-tipos';
+export { APARENCIA_PADRAO, CACHE_DA_APARENCIA, CACHE_DO_MURO, type Aparencia, type EscopoDoFundo, type FundoExclusivo, type Muro } from './aparencia-tipos';
 
 export interface OpcaoDeFundo {
   id: string;
@@ -183,6 +183,9 @@ export function normalizarAparencia(v: unknown): Aparencia {
     fundo: typeof o.fundo === 'string' && opcaoDeFundo(o.fundo) ? o.fundo : null,
     botoes: typeof o.botoes === 'string' && opcaoDeBotao(o.botoes) ? o.botoes : null,
     muro: formaDoMuro(o.muro),
+    // Que o item foi mesmo dado à pessoa, quem confere é o aplicador
+    // (components/AplicarAparencia.tsx), contra /api/exclusivos.
+    exclusivo: formaDoFundoExclusivo(o.exclusivo),
   };
 }
 
