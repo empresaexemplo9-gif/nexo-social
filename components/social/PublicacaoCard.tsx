@@ -11,6 +11,8 @@ import { dataCompleta, haQuanto } from './util';
 import { useMidia } from '../midia/MidiaProvider';
 import { ASSUNTO_TIPOS, TIPOS_PUBLICACAO, type Publicacao } from '@/lib/mural-tipos';
 import { getTopic } from '@/lib/data';
+import { QUADRO_DA_PUBLICACAO } from '@/lib/comunidade-quadros';
+import { MiniDoQuadro } from './Quadro';
 
 /**
  * Uma publicação do mural. No mural o texto vem resumido (com "continuar
@@ -32,6 +34,8 @@ export default function PublicacaoCard({
   const tema = p.tema ? getTopic(p.tema) : null;
   const link = `/comunidade/publicacao/${p.id}`;
   const longo = (p.corpo?.length ?? 0) > 420;
+  // Cada tipo de publicação veste um quadro dos murais (faixa, selinho e botão).
+  const quadro = QUADRO_DA_PUBLICACAO[p.tipo] ?? 'selo';
 
   const apagar = async () => {
     if (!window.confirm('Apagar esta publicação? As opiniões dela também somem.')) return;
@@ -43,13 +47,11 @@ export default function PublicacaoCard({
   };
 
   return (
-    <article className="card-soft p-5" aria-labelledby={`pub-${p.id}`}>
+    <article className="card-soft q-moldura p-5 pt-6" data-quadro={quadro} aria-labelledby={`pub-${p.id}`}>
       <header className="flex items-start gap-3">
         <Link href={`/pessoa/${p.autor.id}`} className="relative shrink-0" aria-label={`Página de ${p.autor.nome}`}>
           <Avatar nome={p.autor.nome} path={p.autor.avatarPath} tamanho={42} />
-          <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-zinc-900 bg-emerald-500 text-zinc-950">
-            <Icon name={tipo.icone} size={10} />
-          </span>
+          <MiniDoQuadro quadro={quadro} className="absolute -bottom-1 -right-1 !h-5 !w-5" />
         </Link>
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-zinc-500">
@@ -110,7 +112,7 @@ export default function PublicacaoCard({
       <footer className="mt-4 flex flex-wrap items-center gap-2 border-t border-zinc-800/70 pt-3">
         <Reacoes url={`/api/mural/${p.id}/reacao`} reacoes={p.reacoes} minha={p.minhaReacao} compacta={!inteira} />
         {!inteira && (
-          <Link href={link} className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 px-3 py-1.5 text-xs text-zinc-300 transition hover:border-emerald-700 hover:text-emerald-300">
+          <Link href={link} className="q-botao inline-flex items-center gap-1.5 px-3 py-1.5 text-xs">
             <Icon name="chat" size={13} />
             {p.opinioes ? `${p.opinioes} ${p.opinioes === 1 ? 'opinião' : 'opiniões'}` : p.tipo === 'pergunta' || p.tipo === 'experiencia' ? 'Dar minha opinião' : 'Opinar'}
           </Link>

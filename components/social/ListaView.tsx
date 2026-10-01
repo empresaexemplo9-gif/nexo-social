@@ -13,6 +13,7 @@ import { decodificarEntidades } from '@/lib/midia';
 import { tipoDaLista, type ComentarioDeLista, type ItemDeLista, type ListaCompleta } from '@/lib/listas-tipos';
 import type { Visibilidade } from '@/lib/mural-tipos';
 import { LEMBRETE_DAS_REGRAS } from '@/lib/regras';
+import { QUADRO_DA_LISTA } from '@/lib/comunidade-quadros';
 
 const banidoVai = (res: Response, j: { banido?: boolean }) => {
   if (res.status === 403 && j.banido) {
@@ -104,7 +105,7 @@ function Comentarios({
           type="submit"
           disabled={enviando || !texto.trim()}
           aria-label="Enviar comentário"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+          className="q-botao flex h-11 w-11 shrink-0 items-center justify-center"
         >
           <Icon name="send" size={16} />
         </button>
@@ -218,7 +219,7 @@ function NovoItem({ lista, aoPor }: { lista: ListaCompleta; aoPor: (i: ItemDeLis
                       }
                     }}
                     aria-label={`Pôr "${decodificarEntidades(v.title)}" na lista`}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+                    className="q-botao flex h-9 w-9 shrink-0 items-center justify-center"
                   >
                     <Icon name="plus" size={16} />
                   </button>
@@ -239,7 +240,7 @@ function NovoItem({ lista, aoPor }: { lista: ListaCompleta; aoPor: (i: ItemDeLis
         <input value={nota} onChange={(e) => setNota(e.target.value)} maxLength={500} placeholder="Por que entrou na lista? (opcional)" aria-label="Por que entrou na lista" className={CAMPO} />
         {erro && <p role="alert" className="rounded-2xl border border-clay-800/60 bg-clay-950/25 p-3 text-xs text-clay-200">{erro}</p>}
         <div className="flex flex-wrap items-center gap-3">
-          <button type="submit" disabled={enviando || !titulo.trim()} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50">
+          <button type="submit" disabled={enviando || !titulo.trim()} className="q-botao inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Icon name="plus" size={14} /> {enviando ? 'Pondo…' : 'Pôr na lista'}
           </button>
           <span className="ml-auto text-[11px] text-zinc-500">{LEMBRETE_DAS_REGRAS}</span>
@@ -361,7 +362,7 @@ function EditarLista({ lista, aoSalvar, aoFechar }: { lista: ListaCompleta; aoSa
       <SeletorDeVisibilidade valor={visibilidade} grupoId={grupoId} aoMudar={(v, g) => { setVisibilidade(v); setGrupoId(g); }} />
       {erro && <p role="alert" className="text-xs text-clay-300">{erro}</p>}
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={salvando || !titulo.trim() || (visibilidade === 'grupo' && !grupoId)} className="rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 disabled:opacity-50">
+        <button type="submit" disabled={salvando || !titulo.trim() || (visibilidade === 'grupo' && !grupoId)} className="q-botao px-4 py-2 text-sm">
           {salvando ? 'Salvando…' : 'Salvar'}
         </button>
         <button type="button" onClick={aoFechar} className="text-xs text-zinc-500 hover:text-zinc-200">Cancelar</button>
@@ -454,8 +455,8 @@ export default function ListaView({ id }: { id: string }) {
     });
 
   return (
-    <div className="space-y-6">
-      <header className="card-soft overflow-hidden">
+    <div className="space-y-6" data-quadro={QUADRO_DA_LISTA[lista.tipo]}>
+      <header className="card-soft q-moldura overflow-hidden">
         <div className="flex flex-col sm:flex-row">
           <CapaDaLista lista={lista} className="aspect-video w-full sm:aspect-square sm:w-56 sm:shrink-0" />
           <div className="flex min-w-0 flex-1 flex-col gap-2 p-5 sm:p-6">
@@ -473,7 +474,7 @@ export default function ListaView({ id }: { id: string }) {
             </p>
             <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
               {videos.length > 0 && (
-                <button type="button" onClick={tocarTudo} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400">
+                <button type="button" onClick={tocarTudo} className="q-botao inline-flex items-center gap-2 px-4 py-2 text-sm">
                   <Icon name="play" size={15} /> Tocar {videos.length > 1 ? `tudo (${videos.length})` : ''}
                 </button>
               )}

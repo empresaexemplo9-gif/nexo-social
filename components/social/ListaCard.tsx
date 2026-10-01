@@ -8,14 +8,19 @@ import { SeloDeVisibilidade } from './SeletorDeVisibilidade';
 import { haQuanto } from './util';
 import { tipoDaLista, type ListaResumo } from '@/lib/listas-tipos';
 import { REACOES } from '@/lib/mural-tipos';
+import { capaDoQuadro, QUADRO_DA_LISTA } from '@/lib/comunidade-quadros';
 
-/** Capa da lista: os vídeos dela em mosaico (ou o ícone do tipo). */
+/** Capa da lista: os vídeos dela em mosaico (ou o quadro do mural do tipo de lista). */
 export function CapaDaLista({ lista, className = '' }: { lista: Pick<ListaResumo, 'tipo' | 'capas'>; className?: string }) {
   const tipo = tipoDaLista(lista.tipo);
   if (!lista.capas.length) {
     return (
-      <span className={`flex items-center justify-center bg-gradient-to-br from-emerald-500/25 via-zinc-900 to-clay-500/20 text-emerald-300 ${className}`}>
-        <Icon name={tipo.icone} size={30} />
+      <span className={`relative flex items-end overflow-hidden bg-zinc-950 ${className}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={capaDoQuadro(QUADRO_DA_LISTA[lista.tipo] ?? 'grafite')} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+        <span className="relative m-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-white">
+          <Icon name={tipo.icone} size={15} />
+        </span>
       </span>
     );
   }
@@ -38,7 +43,8 @@ export default function ListaCard({ lista, compacta = false }: { lista: ListaRes
   return (
     <Link
       href={`/comunidade/lista/${lista.id}`}
-      className={`card-soft levanta group flex overflow-hidden ${compacta ? 'w-60 shrink-0 flex-col' : 'flex-row'}`}
+      data-quadro={QUADRO_DA_LISTA[lista.tipo] ?? 'grafite'}
+      className={`card-soft q-moldura levanta group flex overflow-hidden ${compacta ? 'w-60 shrink-0 flex-col' : 'flex-row'}`}
     >
       <CapaDaLista lista={lista} className={compacta ? 'aspect-video w-full' : 'aspect-square w-24 shrink-0 self-start sm:w-36'} />
       <span className="flex min-w-0 flex-1 flex-col gap-1.5 p-4">

@@ -318,7 +318,7 @@ export default function Navbar() {
 
       {/* Celular e tablet: barra de cima com o menu de três barras */}
       <header
-        className="sticky top-0 z-40 border-b border-emerald-400/10 bg-zinc-950/80 backdrop-blur-xl lg:hidden"
+        className="barra-topo sticky top-0 z-40 border-b border-emerald-400/10 bg-zinc-950/80 backdrop-blur-xl lg:hidden"
         // Instalado no iOS, a barra de status fica SOBRE o conteúdo (viewport-fit
         // cover + status bar translúcida). Sem este respiro, o logo e o menu
         // ficam embaixo do relógio e da bateria.

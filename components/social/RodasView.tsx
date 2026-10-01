@@ -10,6 +10,8 @@ import { CAMPO, haQuanto } from './util';
 import { RODA_ENCERRA_PARADA_HORAS, RODA_FICA_DIAS, type RodaResumo } from '@/lib/listas-tipos';
 import { ASSUNTO_TIPOS, type AssuntoTipo, type Visibilidade } from '@/lib/mural-tipos';
 import { LEMBRETE_DAS_REGRAS } from '@/lib/regras';
+import { quadroDoAssunto } from '@/lib/comunidade-quadros';
+import { MiniDoQuadro } from './Quadro';
 
 /** Abrir uma roda: sobre o quê, para quem. */
 function NovaRoda({ inicial }: { inicial?: { tema?: string; assuntoTipo?: AssuntoTipo } | null }) {
@@ -49,7 +51,7 @@ function NovaRoda({ inicial }: { inicial?: { tema?: string; assuntoTipo?: Assunt
   if (!aberto) {
     return (
       <button type="button" onClick={() => setAberto(true)} className="card-soft flex w-full items-center gap-4 p-5 text-left transition hover:border-emerald-700/60">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-zinc-950"><Icon name="chat" size={22} /></span>
+        <span className="q-botao flex h-12 w-12 shrink-0 items-center justify-center"><Icon name="chat" size={22} /></span>
         <span>
           <span className="block font-semibold text-zinc-50">Abrir uma roda de conversa</span>
           <span className="block text-xs text-zinc-400">
@@ -76,7 +78,8 @@ function NovaRoda({ inicial }: { inicial?: { tema?: string; assuntoTipo?: Assunt
         <button
           type="submit"
           disabled={enviando || !tema.trim() || (visibilidade === 'grupo' && !grupoId)}
-          className="inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-50"
+          data-quadro={quadroDoAssunto(assuntoTipo || null)}
+          className="q-botao inline-flex items-center gap-2 px-5 py-2.5 text-sm"
         >
           <Icon name="chat" size={15} /> {enviando ? 'Abrindo…' : 'Abrir a roda'}
         </button>
@@ -91,7 +94,7 @@ function NovaRoda({ inicial }: { inicial?: { tema?: string; assuntoTipo?: Assunt
 export function RodaCard({ roda }: { roda: RodaResumo }) {
   const assunto = ASSUNTO_TIPOS.find((a) => a.id === roda.assuntoTipo);
   return (
-    <Link href={`/comunidade/roda/${roda.id}`} className="card-soft levanta group flex h-full flex-col gap-2 p-4">
+    <Link href={`/comunidade/roda/${roda.id}`} data-quadro={quadroDoAssunto(roda.assuntoTipo)} className="card-soft q-moldura levanta group flex h-full flex-col gap-2 p-4 pt-5">
       <span className="flex items-center gap-2 text-[11px] text-zinc-500">
         {roda.aberta ? (
           <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
@@ -102,6 +105,7 @@ export function RodaCard({ roda }: { roda: RodaResumo }) {
         )}
         {assunto && <span>· {assunto.rotulo}</span>}
         <SeloDeVisibilidade valor={roda.visibilidade} grupo={roda.grupo} />
+        <MiniDoQuadro quadro={quadroDoAssunto(roda.assuntoTipo)} className="ml-auto" />
       </span>
       <span className="line-clamp-2 font-display text-lg font-bold leading-tight text-zinc-50 group-hover:text-emerald-300">{roda.tema}</span>
       {roda.descricao && <span className="line-clamp-2 text-xs text-zinc-400">{roda.descricao}</span>}
@@ -143,7 +147,7 @@ export default function RodasView({ inicial }: { inicial?: { tema?: string; assu
   }, [carregar]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" data-quadro="grafite">
       <NovaRoda key={inicial?.tema ?? 'nova'} inicial={inicial} />
       {erro && <p role="alert" className="rounded-2xl border border-clay-800/60 bg-clay-950/25 p-3 text-xs text-clay-200">{erro}</p>}
       <section className="space-y-3">

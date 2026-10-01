@@ -877,3 +877,576 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 .home-fundo-escuro :is([class*='bg-emerald-950/'], [class*='bg-zinc-900/'], [class*='bg-zinc-950/']):not(.home-fundo-escuro :is(.card-soft, [class*='bg-zinc-9'], [class*='bg-emerald-9'], [role='dialog']) *) {
   background-color: rgb(var(--tinta-900) / 0.97);
 }
+
+/* ===========================================================================
+   Comunidade: o muro da marca (os murais de public/bg/comunidade).
+   A página vira uma parede escura com os murais ao fundo; os cartões são
+   cartazes de papel colados nela. Cada aba e cada opção tem um "quadro" dos
+   murais (lib/comunidade-quadros.ts) que dá o tom do botão, da etiqueta
+   ativa, da faixa no topo do cartão e da moldura.
+   ========================================================================= */
+.parede-comunidade {
+  position: fixed;
+  inset: 0;
+  z-index: -9;
+  pointer-events: none;
+  background: #0c0d10;
+  overflow: hidden;
+}
+.parede-comunidade::before {
+  content: '';
+  position: absolute;
+  inset: -2%;
+  background: url('/bg/comunidade/parede.webp') center / cover no-repeat;
+  opacity: 0.5;
+  filter: saturate(1.1) contrast(1.05);
+}
+/* O miolo escurece (o conteúdo fica legível); as bordas mostram o muro. */
+.parede-comunidade::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    var(--grao),
+    radial-gradient(ellipse 62% 70% at 50% 42%, rgb(12 13 16 / 0.9) 0%, rgb(12 13 16 / 0.78) 52%, rgb(12 13 16 / 0.42) 100%),
+    linear-gradient(to bottom, rgb(12 13 16 / 0.55), transparent 22%, transparent 78%, rgb(12 13 16 / 0.7));
+  background-size: 180px 180px, auto, auto;
+}
+@media (max-width: 767px) {
+  .parede-comunidade::before {
+    background-image: url('/bg/comunidade/parede-cel.webp');
+    background-size: 100% auto;
+    background-repeat: repeat-y;
+    opacity: 0.32;
+  }
+}
+
+/* Tinta clara sobre o muro; cartões, campos e diálogos voltam à tinta do
+   papel. Os links e destaques soltos no muro ficam no azul elétrico dos
+   murais; dentro dos cartões, voltam ao azul da marca. */
+.tema-comunidade {
+  --tinta-50: 250 247 241;
+  --tinta-100: 244 240 232;
+  --tinta-200: 230 225 215;
+  --tinta-300: 214 208 197;
+  --tinta-400: 196 190 180;
+  --tinta-500: 170 166 158;
+  --tinta-600: 128 124 118;
+  --tinta-700: 82 81 78;
+  --tinta-800: 56 56 56;
+  --tinta-900: 30 31 34;
+  --tinta-950: 18 19 22;
+  --acento-50: 236 242 255;
+  --acento-100: 214 227 255;
+  --acento-200: 184 206 255;
+  --acento-300: 150 184 255;
+  --acento-400: 120 164 255;
+  --acento-500: 74 132 255;
+  --acento-600: 47 107 255;
+  --acento-700: 37 84 205;
+  --acento-800: 28 58 140;
+  --acento-900: 20 36 82;
+  --acento-950: 14 22 48;
+  color: rgb(var(--tinta-100));
+}
+.tema-comunidade :is(.card-soft, [class*='bg-zinc-9'], [class*='bg-zinc-8'], [class*='bg-white'], [class*='bg-emerald-9'], [class*='bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel) {
+  --tinta-50: 22 24 29;
+  --tinta-100: 35 38 45;
+  --tinta-200: 52 56 66;
+  --tinta-300: 74 79 91;
+  --tinta-400: 93 98 112;
+  --tinta-500: 100 105 118;
+  --tinta-600: 163 158 149;
+  --tinta-700: 212 204 191;
+  --tinta-800: 233 227 215;
+  --tinta-900: 255 253 248;
+  --tinta-950: 246 242 234;
+  --acento-50: 15 33 61;
+  --acento-100: 22 41 74;
+  --acento-200: 28 58 99;
+  --acento-300: 35 70 118;
+  --acento-400: 31 79 216;
+  --acento-500: 31 91 255;
+  --acento-600: 106 140 192;
+  --acento-700: 159 182 217;
+  --acento-800: 201 215 236;
+  --acento-900: 227 235 246;
+  --acento-950: 240 244 250;
+}
+/* Painéis translúcidos soltos no muro viram vidro escuro. */
+.tema-comunidade :is([class*='bg-zinc-900/'], [class*='bg-zinc-950/']):not(.tema-comunidade :is(.card-soft, [class*='bg-zinc-9'], [role='dialog'], .q-papel) *) {
+  background-color: rgb(18 19 22 / 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.tema-comunidade .rotulo-hud:not(.tema-comunidade :is(.card-soft, [class*='bg-zinc-9'], [role='dialog']) *) {
+  color: rgb(var(--acento-300));
+}
+
+/* --- Quadros: botão, etiqueta ativa, faixa e cor de destaque ------------------- */
+[data-quadro] {
+  --qb-cor: #121316;
+  --qb-img: none;
+  --qb-tam: auto;
+  --qb-tinta: #f6f1e6;
+  --qb-borda: #000;
+  --qb-borda-l: 1px;
+  --qb-sombra: none;
+  --qb-raio: 10px;
+  --qb-caixa: none;
+  --qb-espaco: 0.01em;
+  --qb-fonte: inherit;
+  --qb-texto-sombra: none;
+  --q-faixa: #121316;
+  --q-destaque: #121316;
+}
+/* Lambe-lambe: tinta preta no papel, sombra laranja de cartaz colado. */
+[data-quadro='lambe'] {
+  --qb-cor: #121316;
+  --qb-tinta: #f3ecdd;
+  --qb-sombra: 3px 3px 0 #ff5a1f;
+  --qb-raio: 3px;
+  --q-faixa: linear-gradient(100deg, #121316 0 82%, #ff5a1f 82% 86%, #121316 86%);
+}
+/* Recorte de revista: papel, letra serifada, cantos desiguais. */
+[data-quadro='recorte'] {
+  --qb-cor: #f1ebdd;
+  --qb-img: var(--grao);
+  --qb-tam: 120px;
+  --qb-tinta: #121316;
+  --qb-borda: #121316;
+  --qb-sombra: 2px 2px 0 #121316;
+  --qb-raio: 2px 10px 3px 8px;
+  --qb-fonte: Georgia, 'Times New Roman', serif;
+  --q-faixa: repeating-linear-gradient(90deg, #121316 0 16px, #f1ebdd 16px 26px, #c9c0ae 26px 38px, #121316 38px 44px, #f1ebdd 44px 60px);
+}
+/* Selo NEXO: adesivo redondo de papel com o anel tracejado. */
+[data-quadro='selo'] {
+  --qb-cor: #efe9dc;
+  --qb-tinta: #121316;
+  --qb-borda: #121316;
+  --qb-borda-l: 1.5px;
+  --qb-sombra: inset 0 0 0 3px #efe9dc, inset 0 0 0 4px rgb(18 19 22 / 0.55);
+  --qb-raio: 999px;
+  --q-faixa: radial-gradient(circle, #121316 1.5px, transparent 2px) 0 50% / 10px 10px repeat-x, #efe9dc;
+}
+/* Retícula azul (o olho do outdoor). */
+[data-quadro='halftone'] {
+  --qb-cor: #1f5bff;
+  --qb-img: radial-gradient(circle, rgb(5 12 40 / 0.42) 1.3px, transparent 1.7px);
+  --qb-tam: 5px 5px;
+  --qb-tinta: #fff;
+  --qb-borda: #0b1b5c;
+  --qb-sombra: 0 2px 0 #0b1b5c;
+  --qb-raio: 6px;
+  --qb-texto-sombra: 0 1px 1px rgb(0 0 0 / 0.35);
+  --q-faixa: radial-gradient(circle, rgb(5 12 40 / 0.5) 1.3px, transparent 1.7px) 0 0 / 5px 5px, #1f5bff;
+  --q-destaque: #1f4fd8;
+}
+/* Pôr do sol sobre a cidade. */
+[data-quadro='skyline'] {
+  --qb-cor: #be185d;
+  --qb-img: linear-gradient(120deg, #c2410c, #be185d 52%, #5b21b6);
+  --qb-tinta: #fff;
+  --qb-borda: #4c1d95;
+  --qb-raio: 12px;
+  --qb-texto-sombra: 0 1px 2px rgb(0 0 0 / 0.3);
+  --q-faixa: linear-gradient(90deg, #f59e0b, #ea580c 30%, #db2777 62%, #6d28d9);
+  --q-destaque: #be185d;
+}
+/* Palco: luz azul sobre a plateia. */
+[data-quadro='palco'] {
+  --qb-cor: #0a1640;
+  --qb-img: radial-gradient(130% 150% at 18% 0%, #5b95ff 0%, #1d3fb8 36%, #070b1c 82%);
+  --qb-tinta: #fff;
+  --qb-borda: #2f5cff;
+  --qb-sombra: 0 8px 22px -10px #2f6bff;
+  --qb-raio: 10px;
+  --q-faixa: linear-gradient(90deg, #05070f, #1f5bff 38%, #b9d0ff 50%, #1f5bff 62%, #05070f);
+  --q-destaque: #1d4ed8;
+}
+/* Estátua clássica com a tarja preta. */
+[data-quadro='estatua'] {
+  --qb-cor: #e9e6e0;
+  --qb-img: linear-gradient(135deg, #f7f5f1, #d4d0c8 55%, #efece6);
+  --qb-tinta: #121316;
+  --qb-borda: #121316;
+  --qb-borda-l: 2px;
+  --qb-raio: 4px;
+  --q-faixa: linear-gradient(90deg, transparent 0 38%, #121316 38% 62%, transparent 62%), linear-gradient(90deg, #efece6, #c9c5bd 50%, #efece6);
+}
+/* Holográfico: o adesivo iridescente. */
+[data-quadro='holo'],
+[data-quadro='holo-d'] {
+  --q-holo: linear-gradient(115deg, #8ff0ff, #c4a8ff 24%, #ffb3dc 48%, #ffe8a3 72%, #9cf5d2 90%, #8ff0ff);
+  --qb-cor: #c9b6ff;
+  --qb-img: var(--q-holo);
+  --qb-tam: 220% 100%;
+  --qb-tinta: #0b0b0c;
+  --qb-borda: rgb(11 11 12 / 0.55);
+  --qb-sombra: 0 6px 18px -8px rgb(160 120 255 / 0.85);
+  --qb-raio: 999px;
+  --q-faixa: var(--q-holo);
+  --q-destaque: #6d28d9;
+}
+/* Círculo listrado (a fachada noturna). */
+[data-quadro='listras'] {
+  --qb-cor: #121316;
+  --qb-img: repeating-linear-gradient(0deg, rgb(255 255 255 / 0.15) 0 2px, transparent 2px 5px);
+  --qb-tinta: #fff;
+  --qb-raio: 999px;
+  --q-faixa: repeating-linear-gradient(0deg, #121316 0 2px, #f4f1ea 2px 4px);
+}
+/* Placa preta de fachada. */
+[data-quadro='placa'] {
+  --qb-cor: #0b0b0c;
+  --qb-tinta: #fff;
+  --qb-borda: #fff;
+  --qb-borda-l: 2px;
+  --qb-sombra: 0 0 0 2px #0b0b0c;
+  --qb-raio: 10px;
+  --q-faixa: linear-gradient(#0b0b0c 0 2px, #fff 2px 4px, #0b0b0c 4px);
+}
+/* Sinalização amarela com a faixa zebrada. */
+[data-quadro='sinal'] {
+  --qb-cor: #ffd60a;
+  --qb-tinta: #121316;
+  --qb-borda: #121316;
+  --qb-borda-l: 2px;
+  --qb-sombra: 0 3px 0 #121316;
+  --qb-raio: 8px;
+  --qb-caixa: uppercase;
+  --qb-espaco: 0.05em;
+  --q-faixa: repeating-linear-gradient(-45deg, #ffd60a 0 10px, #121316 10px 20px);
+}
+/* Grafite: azul com contorno branco e a sombra laranja do spray. */
+[data-quadro='grafite'] {
+  --qb-cor: #1f6bff;
+  --qb-tinta: #fff;
+  --qb-borda: #fff;
+  --qb-borda-l: 2px;
+  --qb-sombra: 0 0 0 2px #0b0b0c, 3px 4px 0 2px #ff6a13;
+  --qb-raio: 14px;
+  --qb-texto-sombra: 0 1px 0 #0b2a8a;
+  --q-faixa: linear-gradient(90deg, #1f6bff 0 64%, #fff 64% 66%, #ff6a13 66%);
+  --q-destaque: #1f5bff;
+}
+/* Placa laranja redonda. */
+[data-quadro='laranja'] {
+  --qb-cor: #c2410c;
+  --qb-tinta: #fff;
+  --qb-borda: #7c2d12;
+  --qb-sombra: 0 3px 0 #7c2d12;
+  --qb-raio: 999px;
+  --q-faixa: #ea580c;
+  --q-destaque: #c2410c;
+}
+/* Metrô: painel preto com o fio branco por dentro, letra espaçada. */
+[data-quadro='metro'] {
+  --qb-cor: #0b0b0c;
+  --qb-tinta: #fff;
+  --qb-borda: #0b0b0c;
+  --qb-sombra: inset 0 0 0 3px #0b0b0c, inset 0 0 0 4px rgb(255 255 255 / 0.85);
+  --qb-raio: 4px;
+  --qb-caixa: uppercase;
+  --qb-espaco: 0.1em;
+  --q-faixa: repeating-linear-gradient(90deg, #f4f4f2 0 1px, #0b0b0c 1px 3px, #f4f4f2 3px 6px, #0b0b0c 6px 7px, #f4f4f2 7px 8px, #0b0b0c 8px 12px) right / 120px 100% no-repeat, #0b0b0c;
+}
+/* Pincelada vermelha (apagar, encerrar). */
+[data-quadro='pincel'] {
+  --qb-cor: #d42a1d;
+  --qb-tinta: #fff;
+  --qb-borda: #8f160e;
+  --qb-sombra: 0 3px 0 #8f160e;
+  --qb-raio: 14px 4px 16px 6px;
+  --q-faixa: #d42a1d;
+  --q-destaque: #b91c1c;
+}
+
+/* Botão do quadro. Os botões de etiqueta (action-patch) da Comunidade também
+   ganham o quadro da aba em que estão. */
+.q-botao,
+.tema-comunidade [data-quadro] .action-patch.action-patch {
+  background-color: var(--qb-cor);
+  background-image: var(--qb-img);
+  background-size: var(--qb-tam);
+  color: var(--qb-tinta);
+  border: var(--qb-borda-l) solid var(--qb-borda);
+  border-radius: var(--qb-raio);
+  box-shadow: var(--qb-sombra);
+  text-transform: var(--qb-caixa);
+  letter-spacing: var(--qb-espaco);
+  font-family: var(--qb-fonte);
+  text-shadow: var(--qb-texto-sombra);
+  font-weight: 750;
+  transition:
+    transform 160ms ease,
+    filter 160ms ease,
+    background-position 1.2s ease;
+}
+.tema-comunidade [data-quadro] .action-patch::after {
+  display: none;
+}
+@media (hover: hover) {
+  .q-botao:hover:not(:disabled):not([aria-disabled='true']),
+  .tema-comunidade [data-quadro] .action-patch.action-patch:hover:not(:disabled):not([aria-disabled='true']) {
+    color: var(--qb-tinta);
+    background-color: var(--qb-cor);
+    border-color: var(--qb-borda);
+    box-shadow: var(--qb-sombra);
+    transform: translateY(-1px);
+    filter: brightness(1.08) saturate(1.05);
+    background-position: 100% 0;
+  }
+}
+.q-botao:active:not(:disabled):not([aria-disabled='true']) {
+  transform: translateY(1px);
+}
+.q-botao:focus-visible {
+  outline: 3px solid #4a84ff;
+  outline-offset: 3px;
+}
+.q-botao:disabled,
+.q-botao[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: saturate(0.6);
+}
+
+/* Etiqueta (filtro, escolha de tipo, aba): discreta, com o selinho do quadro;
+   escolhida, veste o quadro inteiro. */
+.q-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  border: 1px solid rgb(var(--tinta-500) / 0.35);
+  background: rgb(var(--tinta-900) / 0.55);
+  color: rgb(var(--tinta-200));
+  padding: 0.3rem 0.8rem 0.3rem 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+.q-chip:hover {
+  color: rgb(var(--tinta-50));
+  border-color: rgb(var(--tinta-400) / 0.6);
+}
+.q-chip:focus-visible {
+  outline: 3px solid #4a84ff;
+  outline-offset: 2px;
+}
+.q-chip[aria-pressed='true'],
+.q-chip[aria-checked='true'],
+.q-chip[aria-selected='true'] {
+  background-color: var(--qb-cor);
+  background-image: var(--qb-img);
+  background-size: var(--qb-tam);
+  color: var(--qb-tinta);
+  border: var(--qb-borda-l) solid var(--qb-borda);
+  border-radius: var(--qb-raio);
+  box-shadow: var(--qb-sombra);
+  text-transform: var(--qb-caixa);
+  letter-spacing: var(--qb-espaco);
+  font-family: var(--qb-fonte);
+  text-shadow: var(--qb-texto-sombra);
+  font-weight: 750;
+}
+/* Etiqueta sem selinho (só texto). */
+.q-chip--simples {
+  padding-left: 0.8rem;
+}
+.q-mini {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex: none;
+  border-radius: 999px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1.5px rgb(var(--tinta-500) / 0.5);
+}
+.q-chip[aria-pressed='true'] .q-mini,
+.q-chip[aria-checked='true'] .q-mini,
+.q-chip[aria-selected='true'] .q-mini {
+  box-shadow: 0 0 0 2px var(--qb-tinta);
+}
+
+/* Faixa do quadro no topo do cartão (segue o canto arredondado). */
+.q-moldura {
+  position: relative;
+}
+.q-moldura::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--q-faixa);
+  -webkit-mask: linear-gradient(#000 0 7px, transparent 7px);
+  mask: linear-gradient(#000 0 7px, transparent 7px);
+  pointer-events: none;
+  z-index: 1;
+}
+.q-destaque {
+  color: var(--q-destaque);
+}
+
+/* Capa da aba: o recorte do mural à direita, o título no escuro à esquerda. */
+.q-capa {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 9.5rem;
+  border-radius: 16px;
+  background: #0c0d10;
+  color: #fff;
+  box-shadow: 0 24px 50px -30px rgb(0 0 0 / 0.9);
+}
+.q-capa__img {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 62%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+.q-capa::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(90deg, #0c0d10 0%, #0c0d10 36%, rgb(12 13 16 / 0.72) 54%, rgb(12 13 16 / 0.05) 80%);
+}
+.q-capa::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 6px;
+  background: var(--q-faixa);
+}
+@media (max-width: 639px) {
+  .q-capa__img {
+    width: 100%;
+    opacity: 0.55;
+  }
+  .q-capa::before {
+    background: linear-gradient(90deg, rgb(12 13 16 / 0.95) 0%, rgb(12 13 16 / 0.7) 60%, rgb(12 13 16 / 0.35));
+  }
+}
+
+/* --- Molduras de cada aba: os cartões da aba vestem o quadro dela ------------- */
+/* Mural: cartaz de lambe-lambe — papel amassado, canto vivo, sombra dura. */
+.tema-comunidade [data-aba='mural'] .card-soft,
+.tema-comunidade [data-aba='mural'] .card-soft:hover {
+  --amassado: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeDiffuseLighting lighting-color='%23fff' surfaceScale='1.6'%3E%3CfeDistantLight azimuth='225' elevation='58'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
+  background: var(--amassado) center / 360px 360px, #f4efe4;
+  background-blend-mode: multiply;
+  border: 1px solid rgb(18 19 22 / 0.28);
+  border-radius: 6px;
+  box-shadow: 6px 7px 0 rgb(0 0 0 / 0.55);
+  backdrop-filter: none;
+}
+/* Listas: borda holográfica. */
+.tema-comunidade [data-aba='listas'] .card-soft,
+.tema-comunidade [data-aba='listas'] .card-soft:hover {
+  background:
+    linear-gradient(#fbf9f4, #fbf9f4) padding-box,
+    linear-gradient(115deg, #8ff0ff, #c4a8ff 24%, #ffb3dc 48%, #ffe8a3 72%, #9cf5d2 90%, #8ff0ff) border-box;
+  border: 2px solid transparent;
+  border-radius: 1.375rem;
+  box-shadow: 0 22px 46px -28px rgb(150 110 255 / 0.7);
+}
+/* Rodas: contorno preto e a sombra azul do spray. */
+.tema-comunidade [data-aba='rodas'] .card-soft,
+.tema-comunidade [data-aba='rodas'] .card-soft:hover {
+  background: #fbf9f4;
+  border: 2px solid #0b0b0c;
+  border-radius: 16px;
+  box-shadow: 5px 6px 0 #1f6bff;
+}
+/* Grupos: placa de metrô — papel branco com o fio duplo. */
+.tema-comunidade [data-aba='grupos'] .card-soft,
+.tema-comunidade [data-aba='grupos'] .card-soft:hover {
+  background: #fbfbf9;
+  border: 2px solid #0b0b0c;
+  border-radius: 5px;
+  box-shadow:
+    inset 0 0 0 4px #fbfbf9,
+    inset 0 0 0 5px rgb(11 11 12 / 0.8),
+    0 22px 46px -30px #000;
+}
+/* Jogos: placa de sinalização. */
+.tema-comunidade [data-aba='jogos'] .card-soft,
+.tema-comunidade [data-aba='jogos'] .card-soft:hover {
+  background: #fbf9f4;
+  border: 2px solid #121316;
+  border-radius: 10px;
+  box-shadow: 0 4px 0 #121316, 0 22px 46px -30px #000;
+}
+.tema-comunidade [data-aba] a.card-soft:hover,
+.tema-comunidade [data-aba] .card-soft.levanta:hover {
+  transform: translateY(-3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .q-botao,
+  .q-chip {
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .q-botao,
+  .q-chip[aria-pressed='true'],
+  .q-chip[aria-checked='true'],
+  .q-chip[aria-selected='true'] {
+    background-image: none;
+    border: 2px solid ButtonText;
+  }
+  .q-moldura::before,
+  .q-capa::after {
+    display: none;
+  }
+}
+/* Capas de cartaz e de placa têm canto mais vivo. */
+.q-capa:is([data-quadro='lambe'], [data-quadro='metro']) {
+  border-radius: 4px;
+}
+.q-capa[data-quadro='sinal'] {
+  border-radius: 10px;
+}
+/* A etiqueta da aba é maior, com o selinho maior. */
+.q-chip.q-aba {
+  font-size: 0.875rem;
+  padding: 0.3rem 1rem 0.3rem 0.3rem;
+}
+.q-aba .q-mini {
+  width: 1.875rem;
+  height: 1.875rem;
+}
+/* Balão da própria mensagem (rodas): a cor do quadro. */
+.q-bolha {
+  background-color: var(--qb-cor);
+  background-image: var(--qb-img);
+  background-size: var(--qb-tam);
+  color: var(--qb-tinta);
+  text-shadow: var(--qb-texto-sombra);
+}
+/* Na Comunidade, a barra lateral e a de cima viram vidro escuro sobre o muro,
+   com a tinta clara (o logo e os rótulos continuam legíveis). */
+.tema-comunidade :is(.barra-lateral, .barra-topo) {
+  --tinta-50: 250 247 241;
+  --tinta-100: 244 240 232;
+  --tinta-200: 230 225 215;
+  --tinta-300: 214 208 197;
+  --tinta-400: 196 190 180;
+  --tinta-500: 170 166 158;
+  --tinta-600: 128 124 118;
+  --tinta-700: 82 81 78;
+  --tinta-800: 56 56 56;
+  --tinta-900: 30 31 34;
+  --tinta-950: 18 19 22;
+  background-color: rgb(12 13 16 / 0.82);
+  border-color: rgb(255 255 255 / 0.08);
+}
