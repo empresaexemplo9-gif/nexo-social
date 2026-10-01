@@ -23,11 +23,14 @@ const INVITE_ASSET = /^\/convite-assets\/(adesivos\/[0-9]{3}\.png|fonts\/[a-z0-9
 const MURAL = /^\/bg\/murais\/colagem-[1-3]-(claro|escuro)(-mini)?\.webp$/;
 // Os murais da Comunidade (parede e quadros): decorativos, também sem sessão.
 const MURAL_DA_COMUNIDADE = /^\/bg\/comunidade\/(parede(-(mural|listas|rodas|jogos))?(-cel)?|quadros\/[a-z0-9]+(-[a-z])?(-mini)?)\.webp$/;
+// O muro de fundo de cada área do site (lib/areas.ts): decorativo, sem sessão.
+const MURO_DA_AREA = /^\/bg\/paredes\/[a-z]+(-cel)?\.webp$/;
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
-    || INVITE_ASSET.test(path) || MURAL.test(path) || MURAL_DA_COMUNIDADE.test(path)) return NextResponse.next();
+    || INVITE_ASSET.test(path) || MURAL.test(path) || MURAL_DA_COMUNIDADE.test(path)
+    || MURO_DA_AREA.test(path)) return NextResponse.next();
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });

@@ -49,7 +49,7 @@ test('cada aba tem o seu muro de fundo (no computador e no celular)', () => {
       assert.ok(fs.existsSync(`public/bg/comunidade/${arquivo}`), arquivo);
       assert.ok(regex.test(`/bg/comunidade/${arquivo}`), `middleware libera ${arquivo}`);
     }
-    if (parede !== 'parede') assert.ok(css.includes(`[data-aba='${aba}']) .parede-comunidade::before`), `CSS do muro de ${aba}`);
+    if (parede !== 'parede') assert.ok(css.includes(`[data-aba='${aba}']) .parede-mural::before`), `CSS do muro de ${aba}`);
   }
 });
 

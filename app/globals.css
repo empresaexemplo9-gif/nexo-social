@@ -885,7 +885,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
    murais (lib/comunidade-quadros.ts) que dá o tom do botão, da etiqueta
    ativa, da faixa no topo do cartão e da moldura.
    ========================================================================= */
-.parede-comunidade {
+.parede-mural {
   position: fixed;
   inset: 0;
   z-index: -9;
@@ -893,7 +893,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   background: #0c0d10;
   overflow: hidden;
 }
-.parede-comunidade::before {
+.parede-mural::before {
   content: '';
   position: absolute;
   inset: -2%;
@@ -902,7 +902,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   filter: saturate(1.1) contrast(1.05);
 }
 /* O miolo escurece (o conteúdo fica legível); as bordas mostram o muro. */
-.parede-comunidade::after {
+.parede-mural::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -913,7 +913,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   background-size: 180px 180px, auto, auto;
 }
 @media (max-width: 767px) {
-  .parede-comunidade::before {
+  .parede-mural::before {
     background-image: url('/bg/comunidade/parede-cel.webp');
     background-size: 100% auto;
     background-repeat: repeat-y;
@@ -924,7 +924,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 /* Tinta clara sobre o muro; cartões, campos e diálogos voltam à tinta do
    papel. Os links e destaques soltos no muro ficam no azul elétrico dos
    murais; dentro dos cartões, voltam ao azul da marca. */
-.tema-comunidade {
+.tema-mural {
   --tinta-50: 250 247 241;
   --tinta-100: 244 240 232;
   --tinta-200: 230 225 215;
@@ -949,7 +949,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   --acento-950: 14 22 48;
   color: rgb(var(--tinta-100));
 }
-.tema-comunidade :is(.card-soft, [class*='bg-zinc-9'], [class*='bg-zinc-8'], [class*='bg-white'], [class*='bg-emerald-9'], [class*='bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel) {
+.tema-mural :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
   --tinta-50: 22 24 29;
   --tinta-100: 35 38 45;
   --tinta-200: 52 56 66;
@@ -973,13 +973,25 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   --acento-900: 227 235 246;
   --acento-950: 240 244 250;
 }
-/* Painéis translúcidos soltos no muro viram vidro escuro. */
-.tema-comunidade :is([class*='bg-zinc-900/'], [class*='bg-zinc-950/']):not(.tema-comunidade :is(.card-soft, [class*='bg-zinc-9'], [role='dialog'], .q-papel) *) {
+/* Painéis translúcidos soltos no muro viram vidro escuro e ficam com a tinta
+   clara do muro (o papel acima não vale para eles). */
+.tema-mural :is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.tema-mural :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [role='dialog'], .q-papel) *):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper) {
   background-color: rgb(18 19 22 / 0.72);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-.tema-comunidade .rotulo-hud:not(.tema-comunidade :is(.card-soft, [class*='bg-zinc-9'], [role='dialog']) *) {
+/* No papel, o texto sem cor própria volta à tinta do papel (sem peso: as
+   classes de cor de cada elemento continuam valendo). */
+:where(.tema-mural) :where(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))),
+:where(.tema-mural) :is(input, textarea, select) {
+  color: rgb(var(--tinta-100));
+}
+/* Etiquetas e avisos tingidos (cor de cada tema, erro, alerta) soltos no
+   muro viram adesivos de papel: a cor do texto e da borda continua a deles. */
+.tema-mural :is([class^='bg-red-950/'], [class*=' bg-red-950/'], [class^='bg-amber-950/'], [class*=' bg-amber-950/'], [class^='bg-sky-950/'], [class*=' bg-sky-950/'], [class^='bg-lime-950/'], [class*=' bg-lime-950/'], [class^='bg-fuchsia-950/'], [class*=' bg-fuchsia-950/'], [class^='bg-violet-950/'], [class*=' bg-violet-950/'], [class^='bg-orange-950/'], [class*=' bg-orange-950/'], [class^='bg-teal-950/'], [class*=' bg-teal-950/'], [class^='bg-rose-950/'], [class*=' bg-rose-950/'], [class^='bg-pink-950/'], [class*=' bg-pink-950/'], [class^='bg-cyan-950/'], [class*=' bg-cyan-950/'], [class^='bg-clay-950/'], [class*=' bg-clay-950/']):not(.tema-mural :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [role='dialog'], .q-papel):not(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper)) *) {
+  background-color: rgb(255 253 248 / 0.94);
+}
+.tema-mural .rotulo-hud:not(.tema-mural :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [role='dialog']) *) {
   color: rgb(var(--acento-300));
 }
 
@@ -1166,7 +1178,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 /* Botão do quadro. Os botões de etiqueta (action-patch) da Comunidade também
    ganham o quadro da aba em que estão. */
 .q-botao,
-.tema-comunidade [data-quadro] .action-patch.action-patch {
+:is(.tema-mural[data-quadro], .tema-mural [data-quadro]) .action-patch.action-patch {
   background-color: var(--qb-cor);
   background-image: var(--qb-img);
   background-size: var(--qb-tam);
@@ -1184,12 +1196,12 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
     filter 160ms ease,
     background-position 1.2s ease;
 }
-.tema-comunidade [data-quadro] .action-patch::after {
+:is(.tema-mural[data-quadro], .tema-mural [data-quadro]) .action-patch::after {
   display: none;
 }
 @media (hover: hover) {
   .q-botao:hover:not(:disabled):not([aria-disabled='true']),
-  .tema-comunidade [data-quadro] .action-patch.action-patch:hover:not(:disabled):not([aria-disabled='true']) {
+  :is(.tema-mural[data-quadro], .tema-mural [data-quadro]) .action-patch.action-patch:hover:not(:disabled):not([aria-disabled='true']) {
     color: var(--qb-tinta);
     background-color: var(--qb-cor);
     border-color: var(--qb-borda);
@@ -1339,8 +1351,8 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 
 /* --- Molduras de cada aba: os cartões da aba vestem o quadro dela ------------- */
 /* Mural: cartaz de lambe-lambe — papel amassado, canto vivo, sombra dura. */
-.tema-comunidade [data-aba='mural'] .card-soft,
-.tema-comunidade [data-aba='mural'] .card-soft:hover {
+:is(.tema-mural [data-aba='mural'], .tema-mural[data-moldura='lambe'], .tema-mural [data-moldura='lambe']) .card-soft,
+:is(.tema-mural [data-aba='mural'], .tema-mural[data-moldura='lambe'], .tema-mural [data-moldura='lambe']) .card-soft:hover {
   --amassado: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.012' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeDiffuseLighting lighting-color='%23fff' surfaceScale='1.6'%3E%3CfeDistantLight azimuth='225' elevation='58'/%3E%3C/feDiffuseLighting%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E");
   background: var(--amassado) center / 360px 360px, #f4efe4;
   background-blend-mode: multiply;
@@ -1350,8 +1362,8 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   backdrop-filter: none;
 }
 /* Listas: borda holográfica. */
-.tema-comunidade [data-aba='listas'] .card-soft,
-.tema-comunidade [data-aba='listas'] .card-soft:hover {
+:is(.tema-mural [data-aba='listas'], .tema-mural[data-moldura='holo'], .tema-mural [data-moldura='holo']) .card-soft,
+:is(.tema-mural [data-aba='listas'], .tema-mural[data-moldura='holo'], .tema-mural [data-moldura='holo']) .card-soft:hover {
   background:
     linear-gradient(#fbf9f4, #fbf9f4) padding-box,
     linear-gradient(115deg, #8ff0ff, #c4a8ff 24%, #ffb3dc 48%, #ffe8a3 72%, #9cf5d2 90%, #8ff0ff) border-box;
@@ -1360,16 +1372,16 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   box-shadow: 0 22px 46px -28px rgb(150 110 255 / 0.7);
 }
 /* Rodas: contorno preto e a sombra azul do spray. */
-.tema-comunidade [data-aba='rodas'] .card-soft,
-.tema-comunidade [data-aba='rodas'] .card-soft:hover {
+:is(.tema-mural [data-aba='rodas'], .tema-mural[data-moldura='grafite'], .tema-mural [data-moldura='grafite']) .card-soft,
+:is(.tema-mural [data-aba='rodas'], .tema-mural[data-moldura='grafite'], .tema-mural [data-moldura='grafite']) .card-soft:hover {
   background: #fbf9f4;
   border: 2px solid #0b0b0c;
   border-radius: 16px;
   box-shadow: 5px 6px 0 #1f6bff;
 }
 /* Grupos: placa de metrô — papel branco com o fio duplo. */
-.tema-comunidade [data-aba='grupos'] .card-soft,
-.tema-comunidade [data-aba='grupos'] .card-soft:hover {
+:is(.tema-mural [data-aba='grupos'], .tema-mural[data-moldura='metro'], .tema-mural [data-moldura='metro']) .card-soft,
+:is(.tema-mural [data-aba='grupos'], .tema-mural[data-moldura='metro'], .tema-mural [data-moldura='metro']) .card-soft:hover {
   background: #fbfbf9;
   border: 2px solid #0b0b0c;
   border-radius: 5px;
@@ -1379,15 +1391,15 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
     0 22px 46px -30px #000;
 }
 /* Jogos: placa de sinalização. */
-.tema-comunidade [data-aba='jogos'] .card-soft,
-.tema-comunidade [data-aba='jogos'] .card-soft:hover {
+:is(.tema-mural [data-aba='jogos'], .tema-mural[data-moldura='sinal'], .tema-mural [data-moldura='sinal']) .card-soft,
+:is(.tema-mural [data-aba='jogos'], .tema-mural[data-moldura='sinal'], .tema-mural [data-moldura='sinal']) .card-soft:hover {
   background: #fbf9f4;
   border: 2px solid #121316;
   border-radius: 10px;
   box-shadow: 0 4px 0 #121316, 0 22px 46px -30px #000;
 }
-.tema-comunidade [data-aba] a.card-soft:hover,
-.tema-comunidade [data-aba] .card-soft.levanta:hover {
+:is(.tema-mural [data-aba], .tema-mural[data-moldura]) a.card-soft:hover,
+:is(.tema-mural [data-aba], .tema-mural[data-moldura]) .card-soft.levanta:hover {
   transform: translateY(-3px);
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1435,7 +1447,7 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 }
 /* Na Comunidade, a barra lateral e a de cima viram vidro escuro sobre o muro,
    com a tinta clara (o logo e os rótulos continuam legíveis). */
-.tema-comunidade :is(.barra-lateral, .barra-topo) {
+.tema-mural :is(.barra-lateral, .barra-topo) {
   --tinta-50: 250 247 241;
   --tinta-100: 244 240 232;
   --tinta-200: 230 225 215;
@@ -1452,29 +1464,29 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
 }
 
 /* --- Um muro para cada aba (lib/comunidade-quadros.ts, PAREDE_DA_ABA) -------- */
-.tema-comunidade:has([data-aba='mural']) .parede-comunidade::before {
+.tema-mural:has([data-aba='mural']) .parede-mural::before {
   background-image: url('/bg/comunidade/parede-mural.webp');
 }
-.tema-comunidade:has([data-aba='listas']) .parede-comunidade::before {
+.tema-mural:has([data-aba='listas']) .parede-mural::before {
   background-image: url('/bg/comunidade/parede-listas.webp');
 }
-.tema-comunidade:has([data-aba='rodas']) .parede-comunidade::before {
+.tema-mural:has([data-aba='rodas']) .parede-mural::before {
   background-image: url('/bg/comunidade/parede-rodas.webp');
 }
-.tema-comunidade:has([data-aba='jogos']) .parede-comunidade::before {
+.tema-mural:has([data-aba='jogos']) .parede-mural::before {
   background-image: url('/bg/comunidade/parede-jogos.webp');
 }
 @media (max-width: 767px) {
-  .tema-comunidade:has([data-aba='mural']) .parede-comunidade::before {
+  .tema-mural:has([data-aba='mural']) .parede-mural::before {
     background-image: url('/bg/comunidade/parede-mural-cel.webp');
   }
-  .tema-comunidade:has([data-aba='listas']) .parede-comunidade::before {
+  .tema-mural:has([data-aba='listas']) .parede-mural::before {
     background-image: url('/bg/comunidade/parede-listas-cel.webp');
   }
-  .tema-comunidade:has([data-aba='rodas']) .parede-comunidade::before {
+  .tema-mural:has([data-aba='rodas']) .parede-mural::before {
     background-image: url('/bg/comunidade/parede-rodas-cel.webp');
   }
-  .tema-comunidade:has([data-aba='jogos']) .parede-comunidade::before {
+  .tema-mural:has([data-aba='jogos']) .parede-mural::before {
     background-image: url('/bg/comunidade/parede-jogos-cel.webp');
   }
 }
@@ -1635,4 +1647,429 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   --qb-texto-sombra: 0 1px 2px rgb(0 0 0 / 0.3);
   --q-faixa: radial-gradient(circle, #fff 1px, transparent 1.6px) 0 0 / 11px 7px, linear-gradient(90deg, #db2777, #7c3aed 50%, #2563eb);
   --q-destaque: #9d174d;
+}
+
+/* ===========================================================================
+   As demais áreas do site (lib/areas.ts, components/TemaDaArea.tsx): o muro
+   de cada uma, as molduras novas e a cor de destaque da área.
+   ========================================================================= */
+/* Molduras novas. */
+:is(.tema-mural[data-moldura='oxford'], .tema-mural [data-moldura='oxford']) .card-soft,
+:is(.tema-mural[data-moldura='oxford'], .tema-mural [data-moldura='oxford']) .card-soft:hover {
+  background: #fbf7ee;
+  border: 2px solid #3b2412;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 3px #fbf7ee,
+    inset 0 0 0 4px rgb(184 134 43 / 0.7),
+    0 22px 46px -30px #000;
+}
+:is(.tema-mural[data-moldura='cyber'], .tema-mural [data-moldura='cyber']) .card-soft,
+:is(.tema-mural[data-moldura='cyber'], .tema-mural [data-moldura='cyber']) .card-soft:hover {
+  background: #fbfaff;
+  border: 1.5px solid #22d3ee;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px #ff2bd6,
+    0 0 26px -8px rgb(34 211 238 / 0.8),
+    0 22px 46px -30px #000;
+}
+:is(.tema-mural[data-moldura='recorte'], .tema-mural [data-moldura='recorte']) .card-soft,
+:is(.tema-mural[data-moldura='recorte'], .tema-mural [data-moldura='recorte']) .card-soft:hover {
+  background: var(--grao) center / 180px 180px, #f6f1e6;
+  border: 1px solid rgb(18 19 22 / 0.25);
+  border-radius: 3px 14px 4px 10px;
+  box-shadow: 4px 5px 0 #121316;
+}
+:is(.tema-mural[data-moldura='skyline'], .tema-mural [data-moldura='skyline']) .card-soft,
+:is(.tema-mural[data-moldura='skyline'], .tema-mural [data-moldura='skyline']) .card-soft:hover {
+  background:
+    linear-gradient(#fbf9f4, #fbf9f4) padding-box,
+    linear-gradient(120deg, #f59e0b, #ea580c 30%, #db2777 62%, #6d28d9) border-box;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  box-shadow: 0 22px 46px -28px rgb(219 39 119 / 0.55);
+}
+/* O muro de cada área (public/bg/paredes). */
+.tema-mural[data-parede='inicio'] > .parede-mural::before {
+  background-image: url('/bg/paredes/inicio.webp');
+}
+.tema-mural[data-parede='descobrir'] > .parede-mural::before {
+  background-image: url('/bg/paredes/descobrir.webp');
+}
+.tema-mural[data-parede='shorts'] > .parede-mural::before {
+  background-image: url('/bg/paredes/shorts.webp');
+}
+.tema-mural[data-parede='revista'] > .parede-mural::before {
+  background-image: url('/bg/paredes/revista.webp');
+}
+.tema-mural[data-parede='historicas'] > .parede-mural::before {
+  background-image: url('/bg/paredes/historicas.webp');
+}
+.tema-mural[data-parede='agenda'] > .parede-mural::before {
+  background-image: url('/bg/paredes/agenda.webp');
+}
+.tema-mural[data-parede='esporte'] > .parede-mural::before {
+  background-image: url('/bg/paredes/esporte.webp');
+}
+.tema-mural[data-parede='livros'] > .parede-mural::before {
+  background-image: url('/bg/paredes/livros.webp');
+}
+.tema-mural[data-parede='bomdia'] > .parede-mural::before {
+  background-image: url('/bg/paredes/bomdia.webp');
+}
+.tema-mural[data-parede='questionario'] > .parede-mural::before {
+  background-image: url('/bg/paredes/questionario.webp');
+}
+.tema-mural[data-parede='busca'] > .parede-mural::before {
+  background-image: url('/bg/paredes/busca.webp');
+}
+@media (max-width: 767px) {
+  .tema-mural[data-parede='inicio'] > .parede-mural::before {
+    background-image: url('/bg/paredes/inicio-cel.webp');
+  }
+  .tema-mural[data-parede='descobrir'] > .parede-mural::before {
+    background-image: url('/bg/paredes/descobrir-cel.webp');
+  }
+  .tema-mural[data-parede='shorts'] > .parede-mural::before {
+    background-image: url('/bg/paredes/shorts-cel.webp');
+  }
+  .tema-mural[data-parede='revista'] > .parede-mural::before {
+    background-image: url('/bg/paredes/revista-cel.webp');
+  }
+  .tema-mural[data-parede='historicas'] > .parede-mural::before {
+    background-image: url('/bg/paredes/historicas-cel.webp');
+  }
+  .tema-mural[data-parede='agenda'] > .parede-mural::before {
+    background-image: url('/bg/paredes/agenda-cel.webp');
+  }
+  .tema-mural[data-parede='esporte'] > .parede-mural::before {
+    background-image: url('/bg/paredes/esporte-cel.webp');
+  }
+  .tema-mural[data-parede='livros'] > .parede-mural::before {
+    background-image: url('/bg/paredes/livros-cel.webp');
+  }
+  .tema-mural[data-parede='bomdia'] > .parede-mural::before {
+    background-image: url('/bg/paredes/bomdia-cel.webp');
+  }
+  .tema-mural[data-parede='questionario'] > .parede-mural::before {
+    background-image: url('/bg/paredes/questionario-cel.webp');
+  }
+  .tema-mural[data-parede='busca'] > .parede-mural::before {
+    background-image: url('/bg/paredes/busca-cel.webp');
+  }
+}
+/* A cor de destaque de cada área: clara no muro (texto escuro nos botões),
+   funda nos cartões (texto claro nos botões). */
+.tema-mural[data-area='inicio'] {
+  --acento-50: 235 240 255;
+  --acento-100: 214 226 255;
+  --acento-200: 178 201 255;
+  --acento-300: 143 175 255;
+  --acento-400: 112 153 255;
+  --acento-500: 71 124 255;
+  --acento-600: 31 95 255;
+  --acento-700: 0 65 224;
+  --acento-800: 0 47 163;
+  --acento-900: 0 29 102;
+  --acento-950: 0 18 61;
+}
+.tema-mural[data-area='inicio'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 0 18 61;
+  --acento-100: 0 25 87;
+  --acento-200: 0 35 122;
+  --acento-300: 0 44 153;
+  --acento-400: 0 53 184;
+  --acento-500: 0 62 214;
+  --acento-600: 51 110 255;
+  --acento-700: 128 164 255;
+  --acento-800: 184 204 255;
+  --acento-900: 219 230 255;
+  --acento-950: 235 240 255;
+}
+.tema-mural[data-area='descobrir'] {
+  --acento-50: 250 238 252;
+  --acento-100: 246 220 249;
+  --acento-200: 237 190 243;
+  --acento-300: 229 160 238;
+  --acento-400: 222 134 233;
+  --acento-500: 213 99 227;
+  --acento-600: 204 65 221;
+  --acento-700: 173 34 190;
+  --acento-800: 126 25 138;
+  --acento-900: 79 16 86;
+  --acento-950: 47 9 52;
+}
+.tema-mural[data-area='descobrir'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 47 9 52;
+  --acento-100: 67 13 73;
+  --acento-200: 94 19 104;
+  --acento-300: 118 23 130;
+  --acento-400: 142 28 156;
+  --acento-500: 165 33 182;
+  --acento-600: 208 82 224;
+  --acento-700: 226 147 236;
+  --acento-800: 239 194 244;
+  --acento-900: 247 225 250;
+  --acento-950: 250 238 252;
+}
+.tema-mural[data-area='shorts'] {
+  --acento-50: 252 238 244;
+  --acento-100: 249 220 233;
+  --acento-200: 244 189 214;
+  --acento-300: 239 159 194;
+  --acento-400: 235 133 178;
+  --acento-500: 229 98 156;
+  --acento-600: 223 63 134;
+  --acento-700: 192 32 103;
+  --acento-800: 140 23 75;
+  --acento-900: 87 15 47;
+  --acento-950: 52 9 28;
+}
+.tema-mural[data-area='shorts'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 52 9 28;
+  --acento-100: 74 12 40;
+  --acento-200: 105 17 56;
+  --acento-300: 131 22 70;
+  --acento-400: 157 26 85;
+  --acento-500: 184 31 99;
+  --acento-600: 226 80 145;
+  --acento-700: 237 146 186;
+  --acento-800: 245 194 216;
+  --acento-900: 250 224 236;
+  --acento-950: 252 238 244;
+}
+.tema-mural[data-area='revista'] {
+  --acento-50: 253 238 237;
+  --acento-100: 250 221 219;
+  --acento-200: 246 192 188;
+  --acento-300: 241 162 156;
+  --acento-400: 238 137 129;
+  --acento-500: 233 103 93;
+  --acento-600: 228 70 58;
+  --acento-700: 197 39 27;
+  --acento-800: 144 28 20;
+  --acento-900: 90 18 12;
+  --acento-950: 54 11 7;
+}
+.tema-mural[data-area='revista'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 54 11 7;
+  --acento-100: 76 15 10;
+  --acento-200: 108 21 15;
+  --acento-300: 135 27 18;
+  --acento-400: 162 32 22;
+  --acento-500: 188 37 26;
+  --acento-600: 230 87 76;
+  --acento-700: 240 150 143;
+  --acento-800: 246 196 192;
+  --acento-900: 251 226 224;
+  --acento-950: 253 238 237;
+}
+.tema-mural[data-area='historicas'] {
+  --acento-50: 254 246 235;
+  --acento-100: 253 238 216;
+  --acento-200: 252 223 182;
+  --acento-300: 250 208 147;
+  --acento-400: 249 196 118;
+  --acento-500: 247 179 79;
+  --acento-600: 246 162 40;
+  --acento-700: 215 131 9;
+  --acento-800: 156 95 7;
+  --acento-900: 98 60 4;
+  --acento-950: 59 36 3;
+}
+.tema-mural[data-area='historicas'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 59 36 3;
+  --acento-100: 83 51 4;
+  --acento-200: 117 71 5;
+  --acento-300: 147 89 6;
+  --acento-400: 147 89 6;
+  --acento-500: 147 89 6;
+  --acento-600: 246 170 59;
+  --acento-700: 250 202 133;
+  --acento-800: 252 225 187;
+  --acento-900: 254 240 221;
+  --acento-950: 254 246 235;
+}
+.tema-mural[data-area='agenda'] {
+  --acento-50: 243 236 253;
+  --acento-100: 230 218 252;
+  --acento-200: 208 185 249;
+  --acento-300: 187 152 246;
+  --acento-400: 174 134 244;
+  --acento-500: 156 105 241;
+  --acento-600: 118 49 236;
+  --acento-700: 88 19 206;
+  --acento-800: 64 14 150;
+  --acento-900: 40 9 93;
+  --acento-950: 24 5 56;
+}
+.tema-mural[data-area='agenda'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 24 5 56;
+  --acento-100: 34 7 79;
+  --acento-200: 48 10 112;
+  --acento-300: 60 13 140;
+  --acento-400: 72 15 168;
+  --acento-500: 84 18 196;
+  --acento-600: 131 68 238;
+  --acento-700: 177 138 244;
+  --acento-800: 211 190 249;
+  --acento-900: 233 222 252;
+  --acento-950: 243 236 253;
+}
+.tema-mural[data-area='esporte'] {
+  --acento-50: 237 252 243;
+  --acento-100: 220 249 231;
+  --acento-200: 189 244 210;
+  --acento-300: 159 239 189;
+  --acento-400: 132 235 171;
+  --acento-500: 97 229 147;
+  --acento-600: 62 223 122;
+  --acento-700: 32 193 92;
+  --acento-800: 23 140 67;
+  --acento-900: 14 88 42;
+  --acento-950: 9 53 25;
+}
+.tema-mural[data-area='esporte'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 9 53 25;
+  --acento-100: 12 74 35;
+  --acento-200: 17 105 50;
+  --acento-300: 22 131 63;
+  --acento-400: 20 123 58;
+  --acento-500: 20 123 58;
+  --acento-600: 80 226 135;
+  --acento-700: 145 237 180;
+  --acento-800: 194 245 213;
+  --acento-900: 224 250 234;
+  --acento-950: 237 252 243;
+}
+.tema-mural[data-area='livros'] {
+  --acento-50: 254 244 236;
+  --acento-100: 253 232 216;
+  --acento-200: 251 212 182;
+  --acento-300: 250 192 148;
+  --acento-400: 248 175 119;
+  --acento-500: 246 152 80;
+  --acento-600: 244 129 41;
+  --acento-700: 214 99 11;
+  --acento-800: 155 72 8;
+  --acento-900: 97 45 5;
+  --acento-950: 58 27 3;
+}
+.tema-mural[data-area='livros'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 58 27 3;
+  --acento-100: 83 38 4;
+  --acento-200: 117 54 6;
+  --acento-300: 146 67 7;
+  --acento-400: 165 76 8;
+  --acento-500: 165 76 8;
+  --acento-600: 245 141 61;
+  --acento-700: 249 183 134;
+  --acento-800: 252 215 187;
+  --acento-900: 253 235 221;
+  --acento-950: 254 244 236;
+}
+.tema-mural[data-area='bomdia'] {
+  --acento-50: 254 242 236;
+  --acento-100: 253 229 216;
+  --acento-200: 251 206 182;
+  --acento-300: 250 183 148;
+  --acento-400: 248 163 119;
+  --acento-500: 246 137 80;
+  --acento-600: 244 111 42;
+  --acento-700: 213 80 11;
+  --acento-800: 155 58 8;
+  --acento-900: 97 36 5;
+  --acento-950: 58 22 3;
+}
+.tema-mural[data-area='bomdia'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 58 22 3;
+  --acento-100: 82 31 4;
+  --acento-200: 116 44 6;
+  --acento-300: 146 55 7;
+  --acento-400: 175 66 9;
+  --acento-500: 184 69 9;
+  --acento-600: 245 124 61;
+  --acento-700: 249 173 134;
+  --acento-800: 252 209 187;
+  --acento-900: 253 232 221;
+  --acento-950: 254 242 236;
+}
+.tema-mural[data-area='questionario'] {
+  --acento-50: 235 240 255;
+  --acento-100: 214 225 255;
+  --acento-200: 178 199 255;
+  --acento-300: 143 173 255;
+  --acento-400: 112 150 255;
+  --acento-500: 71 121 255;
+  --acento-600: 31 91 255;
+  --acento-700: 0 60 224;
+  --acento-800: 0 44 163;
+  --acento-900: 0 27 102;
+  --acento-950: 0 16 61;
+}
+.tema-mural[data-area='questionario'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 0 16 61;
+  --acento-100: 0 23 87;
+  --acento-200: 0 33 122;
+  --acento-300: 0 41 153;
+  --acento-400: 0 49 184;
+  --acento-500: 0 57 214;
+  --acento-600: 51 106 255;
+  --acento-700: 128 162 255;
+  --acento-800: 184 203 255;
+  --acento-900: 219 229 255;
+  --acento-950: 235 240 255;
+}
+.tema-mural[data-area='busca'] {
+  --acento-50: 235 251 254;
+  --acento-100: 216 246 253;
+  --acento-200: 182 238 252;
+  --acento-300: 148 230 250;
+  --acento-400: 118 224 249;
+  --acento-500: 79 215 247;
+  --acento-600: 40 206 245;
+  --acento-700: 10 175 215;
+  --acento-800: 7 127 156;
+  --acento-900: 4 80 98;
+  --acento-950: 3 48 59;
+}
+.tema-mural[data-area='busca'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 3 48 59;
+  --acento-100: 4 68 83;
+  --acento-200: 5 95 117;
+  --acento-300: 7 119 146;
+  --acento-400: 6 111 137;
+  --acento-500: 6 111 137;
+  --acento-600: 60 210 246;
+  --acento-700: 133 227 250;
+  --acento-800: 187 239 252;
+  --acento-900: 221 247 253;
+  --acento-950: 235 251 254;
+}
+.tema-mural[data-area='pessoal'] {
+  --acento-50: 235 240 255;
+  --acento-100: 214 226 255;
+  --acento-200: 178 201 255;
+  --acento-300: 143 175 255;
+  --acento-400: 112 153 255;
+  --acento-500: 71 124 255;
+  --acento-600: 31 95 255;
+  --acento-700: 0 65 224;
+  --acento-800: 0 47 163;
+  --acento-900: 0 29 102;
+  --acento-950: 0 18 61;
+}
+.tema-mural[data-area='pessoal'] :is(.card-soft, [class^='bg-zinc-9'], [class*=' bg-zinc-9'], [class^='bg-zinc-8'], [class*=' bg-zinc-8'], [class^='bg-white'], [class*=' bg-white'], [class^='bg-emerald-9'], [class*=' bg-emerald-9'], [class^='bg-clay-9'], [class*=' bg-clay-9'], .action-patch--paper, .action-collage--paper, input, textarea, select, [role='dialog'], .q-papel):not(:where(:is([class^='bg-zinc-900/'], [class*=' bg-zinc-900/'], [class^='bg-zinc-950/'], [class*=' bg-zinc-950/'], [class^='bg-emerald-950/'], [class*=' bg-emerald-950/']):not(.card-soft, [role='dialog'], input, textarea, select, .q-papel, .action-patch--paper, .action-collage--paper))) {
+  --acento-50: 0 18 61;
+  --acento-100: 0 25 87;
+  --acento-200: 0 35 122;
+  --acento-300: 0 44 153;
+  --acento-400: 0 53 184;
+  --acento-500: 0 62 214;
+  --acento-600: 51 110 255;
+  --acento-700: 128 164 255;
+  --acento-800: 184 204 255;
+  --acento-900: 219 230 255;
+  --acento-950: 235 240 255;
 }
