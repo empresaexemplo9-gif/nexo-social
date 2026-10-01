@@ -120,6 +120,8 @@ export async function videosDoCanal(channelId: string, tipo: 'longos' | 'shorts'
 // ---------------------------------------------------------------------------
 
 export type FiltroDeBusca = 'qualquer' | 'longo' | 'medio' | 'curto' | 'shorts';
+/** Resolução mínima pedida à página de resultados (o filtro "4K" ou "HD" do YouTube). */
+export type QualidadeDeBusca = 'qualquer' | 'hd' | '4k';
 
 /**
  * Filtros da página de resultados (parâmetro `sp`): tipo vídeo + duração
@@ -133,6 +135,35 @@ const SP: Record<FiltroDeBusca, string> = {
   shorts: 'EgIQCQ%3D%3D',
 };
 
+/**
+ * O `sp` com a resolução junto: é o mesmo protobuf da página de busca
+ * (campo 2 = filtros; dentro: tipo vídeo, duração e o selo 4K ou HD).
+ */
+export function filtroDaBusca(filtro: FiltroDeBusca, qualidade: QualidadeDeBusca = 'qualquer'): string {
+  if (qualidade === 'qualquer' || filtro === 'shorts') return SP[filtro];
+  const filtros = [0x10, 0x01];
+  const duracao = { curto: 1, longo: 2, medio: 3 }[filtro as 'curto' | 'longo' | 'medio'];
+  if (duracao) filtros.push(0x18, duracao);
+  filtros.push(qualidade === '4k' ? 0x70 : 0x20, 0x01);
+  const bytes = [0x12, filtros.length, ...filtros];
+  const b64 = typeof btoa === 'function' ? btoa(String.fromCharCode(...bytes)) : Buffer.from(bytes).toString('base64');
+  return encodeURIComponent(b64);
+}
+
+/**
+ * Há quanto tempo o vídeo saiu, em anos, pelo texto da página ("há 2 anos",
+ * "Transmitido há 3 meses", "1 year ago"). `null` quando não dá para saber.
+ */
+export function idadeEmAnos(texto: string | null | undefined): number | null {
+  const t = String(texto ?? '').toLowerCase();
+  if (!t) return null;
+  const n = Number(t.match(/(\d+)/)?.[1] ?? '1');
+  if (/\b(ano|anos|year|years)\b/.test(t)) return n;
+  if (/\b(m[eê]s|meses|month|months)\b/.test(t)) return n / 12;
+  if (/\b(semana|semanas|week|weeks|dia|dias|day|days|hora|horas|hour|hours|minuto|minutos|minute|minutes|segundo|segundos|second|seconds)\b/.test(t)) return 0;
+  return null;
+}
+
 export interface VideoDaBusca {
   id: string;
   titulo: string;
@@ -141,6 +172,8 @@ export interface VideoDaBusca {
   segundos: number | null;
   short: boolean;
   capa: string;
+  /** Há quantos anos saiu (`null` quando a página não diz). */
+  anos?: number | null;
 }
 
 // Cabeçalhos de navegador: sem eles a página vem sem os resultados. O cookie
@@ -211,6 +244,7 @@ export function videosDosDados(dados: any): VideoDaBusca[] {
           segundos: paraSegundos(duracao),
           short: url.startsWith('/shorts/'),
           capa: `https://i.ytimg.com/vi/${valor.videoId}/hqdefault.jpg`,
+          anos: idadeEmAnos(textoDe(valor.publishedTimeText)),
         });
         continue;
       }
@@ -235,6 +269,7 @@ export function videosDosDados(dados: any): VideoDaBusca[] {
           segundos: paraSegundos(selos),
           short: false,
           capa: `https://i.ytimg.com/vi/${valor?.contentId}/hqdefault.jpg`,
+          anos: idadeEmAnos(JSON.stringify(linhas).match(/"content":"([^"]*(?:há|ago)[^"]*)"/i)?.[1]),
         });
         continue;
       }
@@ -256,8 +291,8 @@ function cabeNoFiltro(v: VideoDaBusca, filtro: FiltroDeBusca): boolean {
   return true;
 }
 
-async function paginaDeResultados(termo: string, filtro: FiltroDeBusca): Promise<VideoDaBusca[]> {
-  const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(termo)}&sp=${SP[filtro]}&hl=pt-BR&gl=BR`;
+async function paginaDeResultados(termo: string, filtro: FiltroDeBusca, qualidade: QualidadeDeBusca = 'qualquer'): Promise<VideoDaBusca[]> {
+  const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(termo)}&sp=${filtroDaBusca(filtro, qualidade)}&hl=pt-BR&gl=BR`;
   // `revalidate` e não `no-store`: a busca também roda na geração estática
   // (ISR) das matérias da revista, onde um fetch sem cache derruba a página.
   const res = await fetch(url, { next: { revalidate: 600 }, signal: AbortSignal.timeout(10000), headers: CABECALHOS_DE_NAVEGADOR });
@@ -272,8 +307,8 @@ async function paginaDeResultados(termo: string, filtro: FiltroDeBusca): Promise
  * (lista vazia não é guardada, para tentar de novo na próxima visita).
  */
 const buscaGuardada = unstable_cache(
-  async (termo: string, filtro: FiltroDeBusca): Promise<VideoDaBusca[]> => {
-    let r = await paginaDeResultados(termo, filtro);
+  async (termo: string, filtro: FiltroDeBusca, qualidade: QualidadeDeBusca = 'qualquer'): Promise<VideoDaBusca[]> => {
+    let r = await paginaDeResultados(termo, filtro, qualidade);
     // Shorts: se o filtro de tipo vier fraco, completa com vídeos curtos marcados #shorts.
     if (filtro === 'shorts' && r.length < 8) {
       const extra = await paginaDeResultados(/#shorts/i.test(termo) ? termo : `${termo} #shorts`, 'curto').catch(() => []);
@@ -283,17 +318,22 @@ const buscaGuardada = unstable_cache(
     if (!r.length) throw new Error('Nenhum vídeo na página de resultados');
     return r;
   },
-  ['youtube-busca-aberta-v2'],
+  ['youtube-busca-aberta-v3'],
   { revalidate: 600 },
 );
 
-export async function buscarNoYoutubeAberto(termo: string, filtro: FiltroDeBusca = 'qualquer', max = 12): Promise<VideoDaBusca[]> {
+export async function buscarNoYoutubeAberto(
+  termo: string,
+  filtro: FiltroDeBusca = 'qualquer',
+  max = 12,
+  qualidade: QualidadeDeBusca = 'qualquer',
+): Promise<VideoDaBusca[]> {
   const t = termo.trim().slice(0, 150);
   if (!t) return [];
   const lists = await Promise.allSettled([
-    buscaGuardada(t + ' português Brasil', filtro),
-    buscaGuardada(t + ' legendado português', filtro),
-    buscaGuardada(t, filtro),
+    buscaGuardada(t + ' português Brasil', filtro, qualidade),
+    buscaGuardada(t + ' legendado português', filtro, qualidade),
+    buscaGuardada(t, filtro, qualidade),
   ]);
   const all = lists.flatMap(r => r.status === 'fulfilled' ? r.value : []);
   if (!all.length) {

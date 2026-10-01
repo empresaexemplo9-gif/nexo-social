@@ -6,6 +6,7 @@ import Icon, { type IconName } from '../icons';
 import GradeGratis, { type AreaGratis } from './GradeGratis';
 import { usePreferences, type EstiloIndicacao, type IdiomaIndicacao } from '@/lib/preferences';
 import { BOOK_GENRES, FILM_GENRES, HOBBIES } from '@/lib/taxonomy';
+import { temaDocumental } from '@/lib/documentarios';
 
 interface Aba {
   id: AreaGratis;
@@ -15,7 +16,12 @@ interface Aba {
 }
 
 const ABAS: Aba[] = [
-  { id: 'filmes', rotulo: 'Filmes & séries', icone: 'film', apoio: 'Domínio público do Internet Archive e, quando falta, filmes completos do YouTube.' },
+  {
+    id: 'filmes',
+    rotulo: 'Documentários',
+    icone: 'film',
+    apoio: 'Documentários completos e atuais, em 4K quando há — um tema para cada gênero que você gosta: ação vira aventura e expedições, ficção vira espaço e ciência.',
+  },
   { id: 'livros', rotulo: 'Livros', icone: 'book', apoio: 'Livros gratuitos da Open Library, Internet Archive e Projeto Gutenberg. Abra para ler aqui.' },
   { id: 'audiolivros', rotulo: 'Audiolivros', icone: 'headphones', apoio: 'LibriVox pelo Internet Archive e audiolivros completos do YouTube.' },
   { id: 'hobbies', rotulo: 'Hobbies', icone: 'palette', apoio: 'Tutoriais para praticar o que você gosta de fazer.' },
@@ -75,6 +81,9 @@ export default function Descobrir() {
   const idioma = prefs.idiomaIndicacao ?? 'pt';
   const abaAtual = ABAS.find((a) => a.id === aba)!;
 
+  // Na aba de documentários, cada gênero aparece como o tema que ele vira.
+  const nomeDoGenero = (id: string, label: string) => (aba === 'filmes' ? temaDocumental(id).rotulo : label);
+
   const chip = (id: string, label: string, meu: boolean) => (
     <button
       key={id}
@@ -108,7 +117,7 @@ export default function Descobrir() {
             <span className="texto-degrade">Descobrir</span>
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed text-zinc-300">
-            Filmes, livros, audiolivros e tutoriais que estão liberados — tocando e abrindo aqui dentro, filtrados pelos seus gostos.
+            Documentários atuais em 4K, livros, audiolivros e tutoriais liberados — tocando e abrindo aqui dentro, filtrados pelos seus gostos.
           </p>
           <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
             {ATALHOS.map((a) => (
@@ -179,7 +188,7 @@ export default function Descobrir() {
 
         {/* Só os gêneros da pessoa; os outros ficam a um toque, tracejados */}
         <div className="flex flex-wrap items-center gap-2">
-          {meus.map((id) => chip(id, lista.find((g) => g.id === id)!.label, true))}
+          {meus.map((id) => chip(id, nomeDoGenero(id, lista.find((g) => g.id === id)!.label), true))}
           {meus.length === 0 && (
             <span className="text-xs text-zinc-400">
               Você ainda não escolheu {aba === 'hobbies' ? 'hobbies' : 'gêneros'} aqui —{' '}
@@ -189,7 +198,7 @@ export default function Descobrir() {
               . Enquanto isso:
             </span>
           )}
-          {(todos || meus.length === 0) && outros.map((g) => chip(g.id, g.label, false))}
+          {(todos || meus.length === 0) && outros.map((g) => chip(g.id, nomeDoGenero(g.id, g.label), false))}
           {meus.length > 0 && outros.length > 0 && (
             <button
               type="button"

@@ -15,6 +15,7 @@ export interface ItemGratisCliente {
   fonte: string;
   idioma: string | null;
   link: string;
+  qualidade?: '4K' | 'HD';
 }
 
 const ACAO: Record<Midia['tipo'], { rotulo: string; icone: 'play' | 'book' | 'headphones' }> = {
@@ -54,7 +55,12 @@ export default function CartaoGratis({ item, formato = 'video' }: { item: ItemGr
             alt=""
             loading="lazy"
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-            onError={(e) => ((e.target as HTMLImageElement).style.visibility = 'hidden')}
+            onError={(e) => {
+              // A capa grande do YouTube nem sempre existe: cai na menor antes de sumir.
+              const img = e.target as HTMLImageElement;
+              if (img.src.includes('/maxresdefault.')) img.src = img.src.replace('/maxresdefault.', '/hqdefault.');
+              else img.style.visibility = 'hidden';
+            }}
           />
         ) : null}
         <span className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-80 transition group-hover:opacity-100">
@@ -65,6 +71,11 @@ export default function CartaoGratis({ item, formato = 'video' }: { item: ItemGr
         <span className="absolute left-2 top-2 rounded-md bg-zinc-900/95 px-1.5 py-0.5 font-mono text-[9.5px] font-semibold uppercase tracking-wider text-zinc-300">
           {item.fonte}
         </span>
+        {item.qualidade && (
+          <span className="absolute bottom-2 right-2 rounded-md bg-black/80 px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-white ring-1 ring-white/30">
+            {item.qualidade}
+          </span>
+        )}
         {item.idioma && item.idioma !== 'pt' && (
           <span
             title={item.midia.tipo === 'livro' ? 'Em outra língua: abre traduzido para o português no leitor' : undefined}
