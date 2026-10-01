@@ -7,12 +7,15 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { AVISO_DA_SENHA } from './senha';
+
 const TRANSLATIONS: { match: RegExp; text: string }[] = [
   { match: /provider is not enabled|unsupported provider/i, text: 'A entrada com Google ainda está sendo configurada. Use e-mail e senha por enquanto.' },
   { match: /invalid login credentials/i, text: 'E-mail ou senha incorretos.' },
   { match: /email not confirmed/i, text: 'E-mail ainda não confirmado. Verifique sua caixa de entrada (e o spam).' },
   { match: /user already registered|already been registered/i, text: 'Este e-mail já possui conta. Use "Fazer login".' },
-  { match: /password should be at least/i, text: 'A senha deve ter pelo menos 6 caracteres.' },
+  // Senha fora da política do projeto (tamanho ou tipos de caractere).
+  { match: /password should (be at least|contain)|weak.?password/i, text: AVISO_DA_SENHA },
   { match: /signups not allowed|signup is disabled/i, text: 'Cadastro desabilitado no projeto. Ative em Supabase → Authentication → Providers → Email.' },
   { match: /database error saving new user/i, text: 'Erro no banco ao criar o usuário: o gatilho handle_new_user() falhou. Rode novamente o db/schema.sql atualizado no SQL Editor.' },
   { match: /email rate limit|over_email_send_rate_limit|rate limit/i, text: 'Limite de envio de e-mails atingido. Aguarde alguns minutos e tente de novo.' },
@@ -30,6 +33,7 @@ export function describeAuthError(err: any): string {
   // Corpo vazio ("{}" ou similar) — mensagem inútil vinda da API.
   const isEmpty = !raw || raw === '{}' || raw === '[object Object]' || raw === 'null';
 
+  if (code === 'weak_password') return AVISO_DA_SENHA;
   if (!isEmpty) {
     const hit = TRANSLATIONS.find((t) => t.match.test(raw));
     if (hit) return hit.text;

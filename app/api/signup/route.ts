@@ -3,6 +3,7 @@ import { createAdminClient, createAnonServerClient, createServerSupabase } from 
 import { tenantSlug } from '@/lib/auth';
 import { safeAuthDestination } from '@/lib/auth-redirect';
 import { describeAuthError } from '@/lib/auth-errors';
+import { AVISO_DA_SENHA, senhaValida } from '@/lib/senha';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
   const tenantName = accountType === 'organizacao' && typeof body?.tenantName === 'string' ? body.tenantName.trim().slice(0, 150) : fullName;
   const inviteToken = typeof body?.inviteToken === 'string' ? body.inviteToken.trim() : '';
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) return reply({ error: 'E-mail inválido.' }, 400);
-  if (password.length < 6 || password.length > 128) return reply({ error: 'Use uma senha com 6 a 128 caracteres.' }, 400);
+  if (!senhaValida(password)) return reply({ error: AVISO_DA_SENHA }, 400);
   if (!fullName || !tenantName) return reply({ error: 'Preencha seu nome e o nome da organização, quando aplicável.' }, 400);
   if (!/^[0-9a-f]{64}$/i.test(inviteToken)) return reply({ error: 'Você precisa de um convite válido para criar uma conta.' }, 403);
 

@@ -12,6 +12,7 @@ function load(file, dependencies = {}) {
   return exports;
 }
 const redirect = load('lib/auth-redirect.ts');
+const senha = load('lib/senha.ts');
 
 test('redirect validation rejects external URLs', () => {
   for (const value of ['https://evil.test', '//evil.test', '/\\evil.test', '/login', '/auth/callback', null]) assert.equal(redirect.safeAuthDestination(value), null);
@@ -73,12 +74,13 @@ function signup(session, validInvite = true) {
       '@/lib/auth': { tenantSlug: () => 'empresa' },
       '@/lib/auth-redirect': redirect,
       '@/lib/auth-errors': { describeAuthError: e => e?.message || 'error' },
+      '@/lib/senha': senha,
     }).POST,
   };
 }
 
 const token = 'b'.repeat(64);
-const payload = { email: ' PERSON@example.com ', password: 'test-password', fullName: 'Pessoa', accountType: 'organizacao', tenantName: 'Empresa', next: '//evil.test', inviteToken: token };
+const payload = { email: ' PERSON@example.com ', password: 'Teste-senha9', fullName: 'Pessoa', accountType: 'organizacao', tenantName: 'Empresa', next: '//evil.test', inviteToken: token };
 const request = (body = payload, origin = 'https://nexo.test') => new Request('https://nexo.test/api/signup', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
 test('signup validates and consumes an invite', async () => {
@@ -94,4 +96,24 @@ test('signup rejects missing, invalid, used or cross-origin invitations', async 
   assert.equal((await signup(null).POST(request({ ...payload, inviteToken: '' }))).status, 403);
   assert.equal((await signup(null, false).POST(request())).status, 403);
   assert.equal((await signup(null).POST(request(payload, 'https://evil.test'))).status, 403);
+});
+
+test('signup exige a senha da política do Supabase (8+, minúscula, maiúscula, número e símbolo)', async () => {
+  for (const fraca of ['Ab1!', 'teste-senha9', 'TESTE-SENHA9', 'Teste-senha', 'Testesenha9', 'Testé-senha9'.replace('-', '')]) {
+    const app = signup(null, true);
+    const res = await app.POST(request({ ...payload, password: fraca }));
+    assert.equal(res.status, 400, fraca);
+    assert.equal((await res.json()).error, senha.AVISO_DA_SENHA);
+    assert.equal(app.calls.length, 0, 'nem chega ao Supabase');
+  }
+  assert.equal(senha.senhaValida('Teste-senha9'), true);
+  assert.equal(senha.senhaValida('A1!' + 'a'.repeat(126)), false, 'acima de 128');
+});
+
+test('o erro de senha fraca do Supabase vira a orientação em português', () => {
+  const erros = load('lib/auth-errors.ts', { './senha': senha });
+  assert.equal(erros.describeAuthError({ message: 'Password should be at least 8 characters.' }), senha.AVISO_DA_SENHA);
+  assert.equal(erros.describeAuthError({ message: 'Password should contain at least one character of each: abc, ABC, 012, !@#.' }), senha.AVISO_DA_SENHA);
+  assert.equal(erros.describeAuthError({ message: 'qualquer coisa', code: 'weak_password' }), senha.AVISO_DA_SENHA);
+  assert.equal(erros.describeAuthError({ message: 'Invalid login credentials' }), 'E-mail ou senha incorretos.');
 });
