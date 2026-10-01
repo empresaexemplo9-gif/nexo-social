@@ -20,9 +20,14 @@ RETURNS TEXT LANGUAGE sql IMMUTABLE SET search_path = public AS $$
     'aaaaaaaaaaaaeeeeeeeeiiiiiiiioooooooooouuuuuuuuccnn')), '[^a-z0-9]+', ' ', 'g'));
 $$;
 
+-- No Supabase, extensões ficam no esquema "extensions" (fora do public).
 DO $$
 BEGIN
-  CREATE EXTENSION IF NOT EXISTS pg_trgm;
+  IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'extensions') THEN
+    CREATE EXTENSION IF NOT EXISTS pg_trgm WITH SCHEMA extensions;
+  ELSE
+    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+  END IF;
 EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'pg_trgm indisponível: a busca funciona, só sem o índice.';
 END $$;
@@ -67,9 +72,14 @@ CREATE INDEX IF NOT EXISTS publicacoes_recentes_idx ON publicacoes (created_at D
 CREATE INDEX IF NOT EXISTS publicacoes_autor_idx ON publicacoes (autor_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS publicacoes_grupo_idx ON publicacoes (grupo_id, created_at DESC) WHERE grupo_id IS NOT NULL;
 DO $$
+DECLARE
+  v_esquema TEXT := (SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid = e.extnamespace WHERE e.extname = 'pg_trgm');
 BEGIN
-  CREATE INDEX IF NOT EXISTS publicacoes_busca_trgm ON publicacoes USING gin (busca gin_trgm_ops);
-EXCEPTION WHEN OTHERS THEN NULL;
+  IF v_esquema IS NOT NULL THEN
+    EXECUTE format('CREATE INDEX IF NOT EXISTS publicacoes_busca_trgm ON publicacoes USING gin (busca %I.gin_trgm_ops)', v_esquema);
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Índice da busca não criado: %', SQLERRM;
 END $$;
 
 -- Opiniões: comentários, com resposta a outra opinião da mesma publicação.
