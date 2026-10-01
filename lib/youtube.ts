@@ -105,7 +105,7 @@ async function searchVideoPelaApi(query: string): Promise<ResolvedVideo | null> 
  * chamada, não por resultado. Por isso vale sempre pedir vários de uma vez em
  * vez de repetir a consulta.
  */
-async function searchVideosPelaApi(
+export async function searchVideosPelaApi(
   query: string,
   max = 8,
   extras: Record<string, string> = {},

@@ -94,7 +94,7 @@ export function ShortsWidget() {
 }
 
 const MINI_ABAS: { id: AreaGratis; rotulo: string; icone: 'film' | 'book' | 'headphones' }[] = [
-  { id: 'filmes', rotulo: 'Filmes', icone: 'film' },
+  { id: 'filmes', rotulo: 'Documentários', icone: 'film' },
   { id: 'livros', rotulo: 'Livros', icone: 'book' },
   { id: 'audiolivros', rotulo: 'Audiolivros', icone: 'headphones' },
 ];
@@ -114,7 +114,7 @@ export function GratisWidget() {
         label="De graça"
         title="Assistir, ler e ouvir aqui"
         icon="play"
-        subtitle="Filmes, livros e audiolivros liberados, dos seus gêneros."
+        subtitle="Documentários atuais em 4K, livros e audiolivros liberados, dos seus gêneros."
         action={
           <Link href={`/descobrir?aba=${aba}`} className="shrink-0 font-mono text-xs uppercase tracking-widest text-emerald-400 hover:text-clay-400">
             ver tudo →

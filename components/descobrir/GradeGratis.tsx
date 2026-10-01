@@ -108,6 +108,8 @@ export default function GradeGratis({
             ? 'As fontes de livros estão indisponíveis agora. Tente novamente em instantes.'
             : area === 'hobbies'
             ? 'Os tutoriais tocam aqui dentro quando o YouTube está ligado à plataforma.'
+            : area === 'filmes'
+            ? 'Os documentários deste tema não carregaram agora. Tente de novo em instantes.'
             : 'Nada gratuito deste gênero nos acervos abertos agora.'}
         </p>
       )}
@@ -124,7 +126,8 @@ export default function GradeGratis({
             <Icon name="refresh" size={13} /> Outras descobertas
           </button>
         )}
-        {r.usouYoutube && <span>Completado com o YouTube, que toca aqui mesmo.</span>}
+        {r.usouYoutube && area !== 'filmes' && <span>Completado com o YouTube, que toca aqui mesmo.</span>}
+        {r.usouYoutube && area === 'filmes' && <span>Completos, recentes e em 4K quando há — tocam aqui mesmo.</span>}
         {r.buscaExterna && (
           <a
             href={r.buscaExterna}

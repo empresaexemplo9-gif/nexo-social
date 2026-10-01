@@ -5,9 +5,11 @@ import { livrosOpenLibrary, livrosInternetArchive } from './livros-abertos';
 // partir dos gêneros e hobbies que a pessoa escolheu.
 //
 // Fontes, na ordem em que são tentadas:
-//   - Internet Archive (sem chave): filmes em domínio público das coleções
-//     curadas e os audiolivros do LibriVox (coleção librivoxaudio). Tocam no
-//     player do próprio Archive, embutido.
+//   - Documentários (aba de filmes): só o que é atual e completo, em 4K (HD
+//     quando falta), da página de resultados do YouTube — um tema didático para
+//     cada gênero (lib/documentarios.ts). O acervo antigo de filmes saiu.
+//   - Internet Archive (sem chave): os audiolivros do LibriVox (coleção
+//     librivoxaudio). Tocam no player do próprio Archive, embutido.
 //   - Gutendex/Projeto Gutenberg (sem chave): livros em domínio público, lidos
 //     no leitor da plataforma (lib/leitor.ts).
 //   - YouTube (YOUTUBE_API_KEY): o que os acervos abertos não têm — filme
@@ -20,8 +22,10 @@ import { livrosOpenLibrary, livrosInternetArchive } from './livros-abertos';
 // "Outras descobertas" (rodada) troca na hora.
 
 import { diaDeHoje, embaralhar, sorteador } from './descoberta-musical';
-import { searchVideos } from './youtube';
-import { BOOK_GENRES, FILM_GENRES, HOBBIES, genreLabel } from './taxonomy';
+import { isYoutubeConfigured, searchVideos, searchVideosPelaApi } from './youtube';
+import { buscarNoYoutubeAberto, type QualidadeDeBusca, type VideoDaBusca } from './youtube-aberto';
+import { IDADE_MAXIMA, PARECE_ANTIGO, temaDocumental } from './documentarios';
+import { BOOK_GENRES, HOBBIES, genreLabel } from './taxonomy';
 import { decodificarEntidades, type Midia } from './midia';
 
 export type AreaGratis = 'filmes' | 'livros' | 'audiolivros' | 'hobbies';
@@ -40,6 +44,8 @@ export interface ItemGratis {
   /** Idioma, quando a fonte informa ("pt", "en"…). */
   idioma: string | null;
   link: string;
+  /** Resolução garantida pela busca (documentários). */
+  qualidade?: '4K' | 'HD';
 }
 
 export interface ResultadoGratis {
@@ -60,26 +66,6 @@ const TEMPO = { next: { revalidate: 43200 } } as const;
 // ---------------------------------------------------------------------------
 // Mapas de gênero → consulta de cada fonte
 // ---------------------------------------------------------------------------
-
-/** Filmes: filtro de assunto no Internet Archive. */
-const FILMES_IA: Record<string, { filtro: string; colecoes?: string }> = {
-  acao: { filtro: 'subject:(action OR adventure OR western OR aventura OR ação)' },
-  comedia: { filtro: 'subject:(comedy OR comédia OR comedia)' },
-  drama: { filtro: 'subject:(drama)' },
-  ficcao: { filtro: 'subject:("science fiction" OR "sci-fi" OR scifi OR "ficção científica")' },
-  terror: { filtro: 'subject:(horror OR terror OR monster OR zombie)' },
-  suspense: { filtro: 'subject:(thriller OR suspense OR mystery OR noir)' },
-  documentario: {
-    filtro: 'subject:(documentary OR documentário OR documentario)',
-    colecoes: 'feature_films OR prelinger OR documentaries',
-  },
-  animacao: { filtro: 'subject:(animation OR cartoon OR animação OR desenho)', colecoes: 'animationandcartoons OR feature_films' },
-  'romance-cine': { filtro: 'subject:(romance OR romantic)' },
-  'fantasia-cine': { filtro: 'subject:(fantasy OR fantasia OR fairy)' },
-  nacional: { filtro: '(language:(Portuguese OR por) OR subject:(brasil OR brazil OR brasileiro OR brazilian))' },
-  classicos: { filtro: '' },
-};
-const COLECOES_DE_FILME = 'feature_films OR silent_films OR film_noir OR animationandcartoons';
 
 /** Livros: "topic" do Gutendex (casa com assunto e estante do Gutenberg). */
 const LIVROS_GUTENDEX: Record<string, string> = {
@@ -284,6 +270,84 @@ async function doYoutube(termo: string, duracao: 'long' | 'medium' | 'any'): Pro
 const buscaNoYoutube = (termo: string) => `https://www.youtube.com/results?search_query=${encodeURIComponent(termo)}`;
 
 // ---------------------------------------------------------------------------
+// Documentários atuais em 4K
+// ---------------------------------------------------------------------------
+
+/** Um vídeo da busca vira documentário da grade (com o ano aproximado). */
+function doDocumentario(v: VideoDaBusca & { preferenciaPt?: number }, qualidade: '4K' | 'HD'): ItemGratis {
+  const ano = v.anos != null ? String(new Date().getFullYear() - Math.floor(v.anos)) : null;
+  return {
+    id: `yt:${v.id}`,
+    midia: { tipo: 'youtube', id: v.id },
+    titulo: decodificarEntidades(v.titulo),
+    autor: decodificarEntidades(v.canal) || null,
+    ano,
+    // A capa grande (o vídeo é HD ou 4K, então ela existe); o cartão cai na menor se faltar.
+    capa: `https://i.ytimg.com/vi/${v.id}/maxresdefault.jpg`,
+    fonte: 'YouTube',
+    idioma: v.preferenciaPt ? 'pt' : null,
+    link: `https://www.youtube.com/watch?v=${v.id}`,
+    qualidade,
+  };
+}
+
+/** Atual, completo e sem cara de acervo antigo? */
+export function documentarioServe(v: Pick<VideoDaBusca, 'titulo' | 'segundos' | 'short' | 'anos'>): boolean {
+  if (v.short) return false;
+  if (v.segundos != null && v.segundos < 20 * 60) return false;
+  if (v.anos != null && v.anos > IDADE_MAXIMA) return false;
+  return !PARECE_ANTIGO.test(v.titulo);
+}
+
+/** Intercala as listas (uma de cada termo), para a grade não ficar num assunto só. */
+function intercalar<T>(listas: T[][]): T[] {
+  const saida: T[] = [];
+  for (let i = 0; listas.some((l) => i < l.length); i++) for (const l of listas) if (i < l.length) saida.push(l[i]);
+  return saida;
+}
+
+/**
+ * Documentários completos e recentes dos termos do tema: primeiro os em 4K;
+ * se vierem poucos, completa com HD. Sem a página do YouTube, usa a API (HD,
+ * publicados nos últimos anos).
+ */
+async function documentariosAtuais(termos: string[], soPortugues: boolean, avisos: string[]): Promise<ItemGratis[]> {
+  const vistos = new Set<string>();
+  const itens: ItemGratis[] = [];
+  const juntar = (videos: (VideoDaBusca & { preferenciaPt?: number })[], qualidade: '4K' | 'HD') => {
+    for (const v of videos) {
+      if (vistos.has(v.id) || !documentarioServe(v)) continue;
+      vistos.add(v.id);
+      itens.push(doDocumentario(v, qualidade));
+    }
+  };
+  const buscar = async (qualidade: QualidadeDeBusca) => {
+    const listas = await Promise.allSettled(termos.map((t) => buscarNoYoutubeAberto(t, 'longo', 24, qualidade)));
+    listas.forEach((l) => l.status === 'rejected' && avisos.push(`YouTube: ${(l.reason as Error)?.message ?? 'falhou'}`));
+    return intercalar(listas.map((l) => (l.status === 'fulfilled' ? l.value : [])));
+  };
+
+  juntar(await buscar('4k'), '4K');
+  if (itens.length < QUANTOS * 2) juntar(await buscar('hd'), 'HD');
+
+  if (!itens.length && isYoutubeConfigured()) {
+    const desde = new Date(Date.now() - IDADE_MAXIMA * 365 * 864e5).toISOString();
+    const listas = await Promise.allSettled(
+      termos.map((t) => searchVideosPelaApi(t, 20, { videoDuration: 'long', videoDefinition: 'high', publishedAfter: desde, regionCode: 'BR' })),
+    );
+    const videos = intercalar(listas.map((l) => (l.status === 'fulfilled' ? l.value : [])));
+    juntar(videos.map((v) => ({ id: v.id, titulo: v.title, canal: v.channel, segundos: null, short: false, capa: v.thumb ?? '', anos: null })), 'HD');
+  }
+
+  // Quem pediu só em português vê primeiro os que têm áudio ou legenda em português.
+  if (soPortugues) {
+    const pt = itens.filter((i) => i.idioma === 'pt');
+    if (pt.length >= QUANTOS / 2) return [...pt, ...itens.filter((i) => i.idioma !== 'pt')];
+  }
+  return itens;
+}
+
+// ---------------------------------------------------------------------------
 // Montagem por área
 // ---------------------------------------------------------------------------
 
@@ -321,19 +385,20 @@ export async function indicacoesGratis(p: Pedido): Promise<ResultadoGratis> {
   let base: ItemGratis[] = [];
 
   if (p.area === 'filmes') {
-    const cfg = FILMES_IA[p.chave] ?? FILMES_IA.classicos;
-    const rotulo = genreLabel(FILM_GENRES, p.chave);
-    const consulta = [`mediatype:(movies)`, `collection:(${cfg.colecoes ?? COLECOES_DE_FILME})`, cfg.filtro].filter(Boolean).join(' AND ');
-    try {
-      const docs = await buscarNoArchive(consulta);
-      base = aplicarEstilo(docs.map((d) => doArchive(d, 'video', 'Internet Archive')), p.estilo, semente, p.rodada);
-    } catch (e) {
-      avisos.push((e as Error).message);
-    }
-    const termo = p.chave === 'documentario' ? `documentário completo ${rotulo}` : `filme completo ${rotulo} dublado`;
-    // Cinema nacional quase não está nos acervos abertos: o YouTube entra sempre.
-    const r = await comReserva(base, termo, 'long', avisos, p.chave === 'nacional');
-    return { area: p.area, chave: p.chave, rotulo, ...r, avisos };
+    // Documentários atuais, completos e em 4K: o tema didático do gênero.
+    const tema = temaDocumental(p.chave);
+    const itens = await documentariosAtuais(tema.termos, p.idioma === 'pt', avisos);
+    const escolhidos = itens.length ? aplicarEstilo(itens, p.estilo, semente, p.rodada) : [];
+    return {
+      area: p.area,
+      chave: p.chave,
+      rotulo: tema.rotulo,
+      itens: escolhidos,
+      usouYoutube: escolhidos.length > 0,
+      buscaExterna: escolhidos.length ? null : buscaNoYoutube(tema.termos[0]),
+      // Falha de um termo não é aviso para quem vê se a grade veio cheia.
+      avisos: escolhidos.length ? [] : avisos,
+    };
   }
 
   if (p.area === 'livros') {
