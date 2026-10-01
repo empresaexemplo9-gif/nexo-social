@@ -15,6 +15,8 @@ import TechBackdrop from '@/components/TechBackdrop';
 import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
 import { MidiaProvider } from '@/components/midia/MidiaProvider';
 import AplicarAparencia from '@/components/AplicarAparencia';
+import FundoExclusivo from '@/components/FundoExclusivo';
+import ExclusivosAtalho from '@/components/ExclusivosAtalho';
 
 // Barlow Condensed: títulos firmes e condensados, como nos cartazes.
 const display = Barlow_Condensed({
@@ -128,6 +130,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-zinc-950 font-sans text-zinc-100 antialiased">
         <TechBackdrop />
+        <FundoExclusivo />
         <PreferencesProvider>
           <AplicarAparencia />
           <AgendaProvider>
@@ -135,6 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SpotifyProvider>
                 <MidiaProvider>
                   {children}
+                  <ExclusivosAtalho />
                   <MobileTabBar />
                   <AvisoDeChamada />
                 </MidiaProvider>

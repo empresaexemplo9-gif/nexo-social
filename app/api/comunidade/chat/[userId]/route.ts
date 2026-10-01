@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao, seBanido } from '@/lib/comunidade';
 import { isUuid, notify, profilesByIds } from '@/lib/social';
-import { avataresPorId, citacoesDasRespostas, conteudoParaCliente, inserirMensagem, lerMensagens, linksDaMidia, pastaDaConversa, previa, respostaPedida, validarMensagem } from '@/lib/chat-mensagens';
+import { avataresPorId, citacoesDasRespostas, inserirMensagem, lerMensagens, linksDaMidia, pastaDaConversa, previa, respostaPedida } from '@/lib/chat-mensagens';
+import { conteudoParaClienteComExclusivos, validarMensagemComExclusivos } from '@/lib/chat-exclusivos';
 import { semColuna } from '@/lib/erros-banco';
 
 export const dynamic = 'force-dynamic';
@@ -72,7 +73,7 @@ export async function GET(request: Request, { params }: Ctx) {
       fromMe: m.from_user === s.user.id,
       createdAt: m.created_at,
       readAt: m.read_at,
-      ...conteudoParaCliente(m, links),
+      ...conteudoParaClienteComExclusivos(m, links),
       replyTo: citar(m.id),
     })),
   }, { headers: { 'Cache-Control': 'private, no-store' } });
@@ -100,7 +101,7 @@ export async function POST(request: Request, { params }: Ctx) {
     return NextResponse.json({ ok: true });
   }
 
-  const nova = validarMensagem(b, pastaDaConversa(s.user.id, params.userId), s.user.id);
+  const nova = await validarMensagemComExclusivos(s.sb, b, pastaDaConversa(s.user.id, params.userId), s.user.id);
   if ('erro' in nova) return NextResponse.json({ error: nova.erro }, { status: 400 });
 
   // Resposta: só a uma mensagem desta mesma conversa (se sumiu, vai sem citação).
