@@ -41,7 +41,8 @@ Abra http://localhost:3000.
 4. Em Auth → Providers, habilite **Email**.
 5. Cadastre-se em `/login` com `thiagohccarvalho00@gmail.com` para virar admin, entre em `/admin` e clique em **🌱 Popular banco** para semear todo o dataset.
 6. Regras da comunidade: rode **`db/moderacao.sql`** depois das migrações da Comunidade e de `platform-invites.sql`. Ele cria a lista de palavras proibidas (editável no painel, aba Moderação), o gatilho que confere todo texto escrito na plataforma — o texto com palavra proibida não é gravado e quem o escreveu é banido na hora, perde o acesso e não entra mais — e o registro do aceite das regras (no cadastro ou no aviso que aparece uma vez para quem já tinha conta).
-7. Depois do `schema.sql` e das outras migrações de `db/`, rode **`db/desempenho-e-seguranca.sql`** (de novo sempre que rodar o `schema.sql` outra vez): fixa o `search_path` das funções, faz as políticas de RLS calcularem o usuário uma vez por consulta e cria os índices das chaves estrangeiras.
+7. Mural e páginas pessoais: rode **`db/social.sql`** depois do `moderacao.sql`. Ele cria as publicações (conversa, pedir opinião, resenha, experiência, vídeo e livro lido), as opiniões e reações, a página de cada pessoa (bio e quem a vê) e a busca por conteúdo. Quem vê cada publicação é escolha de quem publica — todos, só os contatos ou um grupo — e o banco aplica isso em toda consulta; todo texto novo passa pela moderação.
+8. Depois do `schema.sql` e das outras migrações de `db/`, rode **`db/desempenho-e-seguranca.sql`** (de novo sempre que rodar o `schema.sql` outra vez): fixa o `search_path` das funções, faz as políticas de RLS calcularem o usuário uma vez por consulta e cria os índices das chaves estrangeiras.
 
 > **Ingressos:** a plataforma não vende ingresso — cada evento leva à bilheteria oficial. Em bancos que tiveram a antiga bilheteria própria, rodar o `db/schema.sql` já desliga a compra; para apagar também as tabelas de pedidos, exporte o que precisar e rode **`db/remover-bilheteria.sql`**.
 
@@ -71,6 +72,13 @@ Abra http://localhost:3000.
 | `POST` | `/api/comunidade/entrar` | Entra no grupo pelo link de convite | Autenticado |
 | `POST` | `/api/comunidade/grupos/[id]/chamada` | Avisa a chamada (grupo, ou `para` numa chamada a dois) | Membro |
 | `GET` | `/api/chamada/ice` | Servidores STUN/TURN das chamadas | Autenticado |
+| `GET` / `POST` | `/api/mural` | Publicações que você pode ver (filtros e busca); publica com quem vê | Autenticado |
+| `GET` / `PATCH` / `DELETE` | `/api/mural/[id]` | Publicação e opiniões; editar (autor), apagar (autor ou dono do grupo) | Quem pode ver |
+| `POST` / `DELETE` | `/api/mural/[id]/opinioes` | Opina ou responde; apaga opinião | Quem pode ver |
+| `POST` | `/api/mural/[id]/reacao` | Reage (uma por pessoa) ou tira a reação | Quem pode ver |
+| `GET` / `PATCH` | `/api/perfil` | Minha página: bio e quem vê | Autenticado |
+| `GET` | `/api/pessoa/[id]` | Página de uma pessoa, conforme ela escolheu | Autenticado |
+| `GET` | `/api/busca/conteudo` | Busca no que a comunidade publicou, pessoas e matérias históricas | Autenticado |
 | `POST` | `/api/admin/contents` | Cadastra conteúdo | Admin |
 | `POST` | `/api/admin/events` | Cadastra evento | Admin |
 | `POST` | `/api/admin/bom-dia` | Publica curadoria Bom Dia | Admin |
@@ -95,7 +103,7 @@ foi descontinuada e a do Sympla é restrita ao organizador).
 - `lib/repo.ts` — leitura de dados (Supabase → tipos do app, com _fallback_).
 - `lib/supabase*.ts` — clientes de navegador, servidor (cookies) e service role.
 - `middleware.ts` — renovação de sessão + proteção de `/admin` e `/conta`.
-- `db/` — `schema.sql` e `seed.sql`; `test-multitenant.sql`, `test-comunidade.sql` e `test-moderacao.sql` testam as regras num Postgres local (nunca no Supabase).
+- `db/` — `schema.sql` e `seed.sql`; `test-multitenant.sql`, `test-comunidade.sql`, `test-moderacao.sql` e `test-social.sql` testam as regras num Postgres local (nunca no Supabase).
 
 > **Comunidade e convites:** depois de atualizar o código, rode de novo o **`db/schema.sql`** no SQL Editor. Ele cria as tabelas `community_*`, os gatilhos que geram as notificações de convite e resposta (sem depender da service role) e liga o Realtime em `notifications`, `community_sessions` e `community_posts`. Também cria no Storage os buckets **`perfis`** (público: fotos de perfil e imagens dos grupos) e **`comunidade`** (privado: fotos do mural e dos álbuns, abertas só para membros por link assinado), com as políticas de quem envia e quem apaga. As imagens são reduzidas no navegador antes do envio (e perdem os dados de GPS da câmera). E libera os canais privados do Realtime das chamadas (`realtime.messages`: `grupo:<id>:chamada` para membros, `grupo:<id>:dupla:<a>:<b>` só para as duas pessoas).
 

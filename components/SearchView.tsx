@@ -4,9 +4,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from './icons';
+import Avatar from './Avatar';
 import InlinePlayer, { type PlayRequest } from './InlinePlayer';
 import { rotuloDoTipo, sugestoes, type SearchResult } from '@/lib/search';
 import { getTopic } from '@/lib/data';
+import { TIPOS_PUBLICACAO, type Publicacao } from '@/lib/mural-tipos';
 
 interface Video {
   id: string;
@@ -14,6 +16,19 @@ interface Video {
   channel: string;
   thumb: string | null;
   embedUrl: string;
+}
+
+/** O que a comunidade publicou, quem está nela e as matérias históricas. */
+interface Conteudo {
+  publicacoes: Publicacao[];
+  pessoas: { id: string; name: string; avatarPath: string | null; proximo: boolean }[];
+  historicas: { tema: string; temaRotulo: string; slug: string; titulo: string; formato: string }[];
+}
+
+const SEM_CONTEUDO: Conteudo = { publicacoes: [], pessoas: [], historicas: [] };
+
+function tituloDaPublicacao(p: Publicacao): string {
+  return p.titulo || p.assunto || (p.corpo ?? '').slice(0, 90) || 'Publicação';
 }
 
 export default function SearchView() {
@@ -28,18 +43,32 @@ export default function SearchView() {
   const [videoAviso, setVideoAviso] = useState('');
   const [buscandoVideo, setBuscandoVideo] = useState(false);
   const [tocando, setTocando] = useState<PlayRequest | null>(null);
+  const [conteudo, setConteudo] = useState<Conteudo>(SEM_CONTEUDO);
   const campo = useRef<HTMLInputElement>(null);
+  const ultima = useRef('');
 
-  // Busca no catálogo enquanto digita — é local, não custa requisição externa.
+  // Busca no catálogo e no que a comunidade publicou enquanto digita — nada
+  // disso custa requisição externa.
   const buscarCatalogo = useCallback(async (q: string) => {
+    ultima.current = q;
     if (q.trim().length < 2) {
       setResultados([]);
+      setConteudo(SEM_CONTEUDO);
       return;
     }
-    const res = await fetch(`/api/busca?q=${encodeURIComponent(q)}`);
-    const json = await res.json().catch(() => ({}));
-    setResultados(json.resultados ?? []);
-    setVideoDisponivel(Boolean(json.videoDisponivel));
+    const [catalogo, comunidade] = await Promise.all([
+      fetch(`/api/busca?q=${encodeURIComponent(q)}`).then((r) => r.json()).catch(() => ({})),
+      fetch(`/api/busca/conteudo?q=${encodeURIComponent(q)}`).then((r) => (r.ok ? r.json() : SEM_CONTEUDO)).catch(() => SEM_CONTEUDO),
+    ]);
+    // Uma resposta lenta de um termo antigo não sobrescreve a do termo atual.
+    if (ultima.current !== q) return;
+    setResultados(catalogo.resultados ?? []);
+    setVideoDisponivel(Boolean(catalogo.videoDisponivel));
+    setConteudo({
+      publicacoes: comunidade.publicacoes ?? [],
+      pessoas: comunidade.pessoas ?? [],
+      historicas: comunidade.historicas ?? [],
+    });
   }, []);
 
   useEffect(() => {
@@ -153,6 +182,84 @@ export default function SearchView() {
               })}
             </ul>
           )}
+        </section>
+      )}
+
+      {/* O que as pessoas publicaram (só o que quem busca pode ver) e quem está na plataforma */}
+      {termo.trim().length >= 2 && (conteudo.publicacoes.length > 0 || conteudo.pessoas.length > 0) && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-zinc-100">Na comunidade</h2>
+          {conteudo.publicacoes.length > 0 && (
+            <ul className="space-y-2">
+              {conteudo.publicacoes.map((p) => {
+                const tipo = TIPOS_PUBLICACAO.find((t) => t.id === p.tipo);
+                return (
+                  <li key={p.id}>
+                    <Link
+                      href={`/comunidade/publicacao/${p.id}`}
+                      className="flex items-center gap-3 rounded-2xl border border-zinc-800/70 bg-zinc-900/50 p-3 transition hover:border-zinc-700"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300">
+                        <Icon name={tipo?.icone ?? 'chat'} size={16} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-zinc-50">{tituloDaPublicacao(p)}</span>
+                        <span className="block truncate text-[11px] text-zinc-500">
+                          {tipo?.rotulo ?? 'Publicação'} · {p.autor.nome}
+                          {p.opinioes > 0 && ` · ${p.opinioes} ${p.opinioes === 1 ? 'opinião' : 'opiniões'}`}
+                        </span>
+                      </span>
+                      <Icon name="chevronRight" size={15} className="shrink-0 text-zinc-600" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {conteudo.pessoas.length > 0 && (
+            <ul className="flex flex-wrap gap-2" aria-label="Pessoas">
+              {conteudo.pessoas.map((pessoa) => (
+                <li key={pessoa.id}>
+                  <Link
+                    href={`/pessoa/${pessoa.id}`}
+                    className="inline-flex items-center gap-2 rounded-full border border-zinc-800/70 bg-zinc-900/50 py-1 pl-1 pr-3 text-xs text-zinc-200 transition hover:border-zinc-700 hover:text-zinc-50"
+                  >
+                    <Avatar nome={pessoa.name} path={pessoa.avatarPath} tamanho={26} />
+                    {pessoa.name}
+                    {pessoa.proximo && <span className="text-[10px] text-emerald-400">contato</span>}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )}
+
+      {termo.trim().length >= 2 && conteudo.historicas.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-zinc-100">Matérias históricas e curiosidades</h2>
+          <ul className="space-y-2">
+            {conteudo.historicas.map((h) => {
+              const t = getTopic(h.tema);
+              return (
+                <li key={`${h.tema}/${h.slug}`}>
+                  <Link
+                    href={`/historicas/${h.tema}/${h.slug}`}
+                    className="flex items-center gap-3 rounded-2xl border border-zinc-800/70 bg-zinc-900/50 p-3 transition hover:border-zinc-700"
+                  >
+                    <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${t ? `${t.accent.bg} ${t.accent.text}` : 'bg-zinc-800 text-zinc-400'}`}>
+                      <Icon name={t?.icon ?? 'book'} size={16} />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-zinc-50">{h.titulo}</span>
+                      <span className="block truncate text-[11px] text-zinc-500">{h.formato} · {h.temaRotulo}</span>
+                    </span>
+                    <Icon name="chevronRight" size={15} className="shrink-0 text-zinc-600" />
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       )}
 
