@@ -31,6 +31,10 @@ export default function YoutubeAccount() {
   const [busy, setBusy] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [next, setNext] = useState('/conta#youtube');
+  // A autorização abre em outra aba. Se a pessoa volta e a conta não conectou,
+  // o Google parou no meio (app em teste, aviso de app não verificado…) e esta
+  // aba não recebe nenhum retorno: dizemos o que aconteceu e o que fazer.
+  const [tentativa, setTentativa] = useState<'nenhuma' | 'no-google' | 'voltou'>('nenhuma');
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -67,6 +71,18 @@ export default function YoutubeAccount() {
     return () => window.removeEventListener('nexo:youtube-session', update);
   }, []);
 
+  useEffect(() => {
+    if (tentativa !== 'no-google') return;
+    const voltou = () => {
+      if (document.visibilityState !== 'visible') return;
+      setTentativa('voltou');
+      setAttempt(a => a + 1);
+    };
+    window.addEventListener('focus', voltou);
+    document.addEventListener('visibilitychange', voltou);
+    return () => { window.removeEventListener('focus', voltou); document.removeEventListener('visibilitychange', voltou); };
+  }, [tentativa]);
+
   async function disconnect() {
     setBusy(true); setError('');
     try {
@@ -83,18 +99,27 @@ export default function YoutubeAccount() {
     <p className="text-xs text-zinc-400">Use suas curtidas e inscrições para personalizar músicas e Shorts no Nexo Social. A autorização abre na tela segura do Google em outra aba. Depois de autorizar, volte para esta aba. Sua senha não é compartilhada com o aplicativo.</p>
     {!account && !error && <p role="status">Verificando conexão…</p>}
     {account?.conectado ? <button disabled={busy} type="button" onClick={() => void disconnect()} className="action-collage rounded-lg border px-3 py-2 disabled:opacity-50">{busy ? 'Desconectando…' : 'Desconectar YouTube'}</button>
-      : account?.configurado ? <a target="_blank" rel="noopener noreferrer" href={`/api/youtube/entrar?next=${encodeURIComponent(next)}`} className="action-collage inline-flex items-center gap-2 rounded-lg border px-4 py-3 font-semibold">Continuar com Google</a>
+      : account?.configurado ? <a target="_blank" rel="noopener noreferrer" href={`/api/youtube/entrar?next=${encodeURIComponent(next)}`} onClick={() => setTentativa('no-google')} className="action-collage inline-flex items-center gap-2 rounded-lg border px-4 py-3 font-semibold">Continuar com Google</a>
       : account && <p role="status" className="text-xs text-zinc-400">A conexão está aguardando configuração da administração. Você pode continuar usando as sugestões pelos interesses do seu perfil.</p>}
     {error && <div role="alert" className="space-y-2"><p>{error}</p><button type="button" onClick={() => setAttempt(a => a + 1)} className="underline">Tentar novamente</button> <Link href="/login?next=%2Fconta%23youtube" className="underline">Entrar na plataforma</Link></div>}
     {message && <p role="status">{message}</p>}
+    {tentativa === 'voltou' && account?.configurado && !account.conectado && <div role="status" className="rounded-lg border border-clay-500/40 bg-clay-500/10 p-3 text-xs leading-relaxed">
+      <p className="font-semibold">A conexão ainda não foi concluída.</p>
+      <ul className="mt-1 list-disc space-y-1 pl-4">
+        <li>Se o Google mostrou “Acesso bloqueado” ou “Erro 403: access_denied”, o aplicativo ainda está em fase de teste no Google e a sua conta precisa ser liberada pela administração da plataforma.</li>
+        <li>Se apareceu “O Google não verificou este app”, toque em “Avançado” e depois em “Acessar” para continuar.</li>
+        <li>Se a outra aba pediu para entrar na plataforma, entre por lá e toque de novo em “Continuar com Google”.</li>
+      </ul>
+    </div>}
     {account?.temporariamenteIndisponivel && <p role="status">Sua conexão está salva. O YouTube está temporariamente indisponível; tentaremos novamente automaticamente.</p>}
-    {account?.setup && !account.configurado && <details className="rounded-lg border border-zinc-700 p-3 text-xs">
+    {account?.setup && <details className="rounded-lg border border-zinc-700 p-3 text-xs">
       <summary className="cursor-pointer font-semibold">Configuração do administrador</summary>
       <ul className="mt-2 list-disc space-y-2 pl-4">
         <li>Credenciais OAuth Google: {account.setup.credenciais ? 'presentes' : 'ausentes no servidor. Configure YOUTUBE_OAUTH_CLIENT_ID e YOUTUBE_OAUTH_CLIENT_SECRET na Vercel.'}</li>
         <li>Proteção da sessão: {account.setup.chaveSessao ? 'configurada' : 'configure YOUTUBE_SESSION_SECRET no servidor.'}</li>
         <li className="break-all">Retorno OAuth: {account.setup.retorno || 'inválido; verifique YOUTUBE_OAUTH_REDIRECT_URI.'}</li>
         {!account.setup.dominioCorreto && <li>O domínio acessado deve ser o mesmo do retorno OAuth cadastrado.</li>}
+        <li>Status de publicação no Google (Google Cloud → Google Auth Platform → Público-alvo): enquanto estiver “Em teste”, só os e-mails da lista de usuários de teste conseguem conectar; os outros veem “Acesso bloqueado”. Adicione o e-mail da pessoa nessa lista ou publique o app.</li>
       </ul>
     </details>}
     <p className="text-xs text-zinc-500">A seleção é feita pelo Nexo Social. A conexão não substitui o login do player do YouTube nem libera vídeos restritos.</p>
