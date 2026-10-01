@@ -236,12 +236,17 @@ test('apagar opinião: se o banco não apagou nada, é porque não era sua nem d
   assert.equal((await del('44444444-4444-4444-4444-444444444444')).status, 403);
 });
 
-test('busca por conteúdo: publicações visíveis, pessoas e matérias históricas', async () => {
+test('busca por conteúdo: publicações, listas e rodas visíveis, pessoas e matérias históricas', async () => {
   const db = banco({ publicacoes: () => ({ data: [{ id: PUB, tipo: 'experiencia' }], error: null }) });
   const pauta = load('lib/historicas-pauta.ts', {});
-  const mod = load('app/api/busca/conteudo/route.ts', { ...deps(db), '@/lib/historicas-pauta': pauta });
+  const mod = load('app/api/busca/conteudo/route.ts', {
+    ...deps(db),
+    '@/lib/historicas-pauta': pauta,
+    '@/lib/listas': { montarListas: async (_sb, l) => l, montarRodas: async (_sb, r) => r },
+    '@/lib/listas-tipos': load('lib/listas-tipos.ts', {}),
+  });
   const vazio = await (await mod.GET(new Request('https://nexo.test/api/busca/conteudo?q=a'))).json();
-  assert.deepEqual(simples(vazio), { q: 'a', publicacoes: [], pessoas: [], historicas: [] });
+  assert.deepEqual(simples(vazio), { q: 'a', publicacoes: [], listas: [], rodas: [], pessoas: [], historicas: [] });
 
   // Um verbete da pauta, buscado sem acento e em minúsculas, aparece nas históricas.
   const [tema, lista] = Object.entries(pauta.PAUTA).find(([t]) => t === 'musica' || t === 'cultura');

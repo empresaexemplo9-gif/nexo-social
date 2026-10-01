@@ -14,6 +14,7 @@ import AgendaTimeline from '@/components/AgendaTimeline';
 import MontarHome from '@/components/home/MontarHome';
 import EscolherWidgets from '@/components/home/EscolherWidgets';
 import { ComunidadeDestaque, ConvitesDestaque } from '@/components/home/Destaques';
+import SugestoesDeListas from '@/components/social/SugestoesDeListas';
 import EventosDoTema from '@/components/home/EventosDoTema';
 import { GratisWidget, RevistaWidget, ShortsWidget } from '@/components/home/WidgetsDeMidia';
 import { usePreferences } from '@/lib/preferences';
@@ -98,6 +99,8 @@ export default function HomeView({ events }: Props) {
           <div className="min-w-0 xl:flex-1"><ComunidadeDestaque /></div>
           <ConvitesDestaqueCaixa />
         </div>
+        {/* Listas que outras pessoas abriram para todos: sugestões */}
+        <SugestoesDeListas />
 
         {/* Os widgets, na ordem e no tamanho que a pessoa escolheu */}
         <div id="widgets" className="scroll-mt-20">

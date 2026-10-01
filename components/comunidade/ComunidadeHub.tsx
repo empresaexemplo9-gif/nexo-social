@@ -12,12 +12,18 @@ import { trocarImagemDoGrupo } from '@/lib/imagens';
 import type { GrupoResumo, Privacidade } from '@/lib/comunidade-tipos';
 import JogosDaComunidade from './jogos/JogosDaComunidade';
 import MuralSocial from '../social/MuralSocial';
+import ListasView from '../social/ListasView';
+import RodasView from '../social/RodasView';
 import type { Rascunho } from '../social/NovaPublicacao';
+import { ehAssuntoTipo, type AssuntoTipo } from '@/lib/mural-tipos';
+
+type Secao = 'mural' | 'listas' | 'rodas' | 'grupos' | 'jogos';
+const ehSecao = (v: unknown): v is Secao => v === 'mural' || v === 'listas' || v === 'rodas' || v === 'grupos' || v === 'jogos';
 
 const campo =
   'w-full rounded-2xl border border-zinc-800 bg-zinc-950/70 px-4 py-2.5 text-sm text-zinc-100 placeholder-zinc-500 focus:border-emerald-600 focus:outline-none';
 
-/** Página da Comunidade: o mural (conversas, opiniões, resenhas), os grupos e os jogos. */
+/** Página da Comunidade: o mural (conversas, opiniões, resenhas), as listas, as rodas de conversa, os grupos e os jogos. */
 export default function ComunidadeHub() {
   const router = useRouter();
   const [estado, setEstado] = useState<'carregando' | 'ok' | 'anon' | 'off'>('carregando');
@@ -31,7 +37,9 @@ export default function ComunidadeHub() {
     description: '',
     privacy: 'fechado',
   });
-  const [secao, setSecao] = useState<'mural' | 'grupos' | 'jogos'>('mural');
+  const [secao, setSecao] = useState<Secao>('mural');
+  // "Abrir uma roda" (de Livros que li, de uma publicação) chega com o tema na URL.
+  const [rodaInicial, setRodaInicial] = useState<{ tema?: string; assuntoTipo?: AssuntoTipo } | null>(null);
   // "Comentar na comunidade" (de Livros que li, por exemplo) chega com o rascunho na URL.
   const [rascunho, setRascunho] = useState<Rascunho | null>(null);
   const [imagem, setImagem] = useState<File | null>(null);
@@ -62,11 +70,17 @@ export default function ComunidadeHub() {
     }
   }, []);
 
-  // /comunidade?aba=grupos|jogos abre direto na aba; ?nova=livro&assunto=… abre o mural com o rascunho.
+  // /comunidade?aba=listas|rodas|grupos|jogos abre direto na aba; ?nova=livro&assunto=… abre o mural com
+  // o rascunho; ?aba=rodas&tema=… abre o formulário da roda já com o tema.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
     const aba = p.get('aba');
-    if (aba === 'jogos' || aba === 'grupos') setSecao(aba);
+    if (ehSecao(aba)) setSecao(aba);
+    const tema = p.get('tema');
+    if (aba === 'rodas' && tema) {
+      const assunto = p.get('assunto');
+      setRodaInicial({ tema: tema.slice(0, 160), assuntoTipo: ehAssuntoTipo(assunto) ? assunto : undefined });
+    }
     const nova = p.get('nova');
     if (nova === 'livro' || nova === 'resenha' || nova === 'experiencia' || nova === 'pergunta') {
       setSecao('mural');
@@ -144,10 +158,12 @@ export default function ComunidadeHub() {
   }
 
   const abas = (
-    <div className="flex gap-1.5 border-b border-zinc-800" role="tablist" aria-label="Seções da Comunidade">
+    <div className="-mx-4 flex gap-1 overflow-x-auto border-b border-zinc-800 px-4 sm:mx-0 sm:px-0" role="tablist" aria-label="Seções da Comunidade">
       {(
         [
           ['mural', 'Mural', 'chat'],
+          ['listas', 'Listas', 'music'],
+          ['rodas', 'Rodas', 'sparkles'],
           ['grupos', 'Grupos', 'users'],
           ['jogos', 'Jogos', 'gamepad'],
         ] as const
@@ -161,7 +177,7 @@ export default function ComunidadeHub() {
             setSecao(k);
             window.history.replaceState(null, '', k === 'mural' ? '/comunidade' : `/comunidade?aba=${k}`);
           }}
-          className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition ${
+          className={`-mb-px inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition ${
             secao === k ? 'border-emerald-500 text-emerald-300' : 'border-transparent text-zinc-400 hover:text-zinc-100'
           }`}
         >
@@ -188,6 +204,15 @@ export default function ComunidadeHub() {
           </button>
         )}
         <MuralSocial rascunho={rascunho} />
+      </div>
+    );
+  }
+
+  if (secao === 'listas' || secao === 'rodas') {
+    return (
+      <div className="space-y-6">
+        {abas}
+        {secao === 'listas' ? <ListasView /> : <RodasView inicial={rodaInicial} />}
       </div>
     );
   }

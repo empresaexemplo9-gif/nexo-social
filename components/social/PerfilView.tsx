@@ -5,6 +5,28 @@ import Link from 'next/link';
 import Icon from '../icons';
 import Avatar from '../Avatar';
 import MuralSocial from './MuralSocial';
+import ListaCard from './ListaCard';
+import type { ListaResumo } from '@/lib/listas-tipos';
+
+/** As listas da pessoa que estão abertas para quem olha. */
+function ListasDaPessoa({ id, titulo }: { id: string; titulo: string }) {
+  const [listas, setListas] = useState<ListaResumo[]>([]);
+  useEffect(() => {
+    fetch(`/api/listas?autor=${id}`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : { listas: [] }))
+      .then((j) => setListas(j.listas || []))
+      .catch(() => setListas([]));
+  }, [id]);
+  if (!listas.length) return null;
+  return (
+    <section className="space-y-3">
+      <h2 className="font-display text-2xl font-bold text-zinc-50">{titulo}</h2>
+      <ul className="grid gap-3 lg:grid-cols-2">
+        {listas.map((l) => <li key={l.id}><ListaCard lista={l} /></li>)}
+      </ul>
+    </section>
+  );
+}
 
 interface Pessoa {
   id: string;
@@ -104,10 +126,13 @@ export default function PerfilView({ id }: { id: string }) {
       {pessoa.banida ? (
         <p className="card-soft p-6 text-center text-sm text-zinc-400">Esta conta foi banida por violar as regras da comunidade.</p>
       ) : pessoa.podeVer ? (
+        <>
+        <ListasDaPessoa id={pessoa.id} titulo={pessoa.contato === 'eu' ? 'Suas listas' : `Listas de ${pessoa.nome.split(' ')[0]}`} />
         <section className="space-y-3">
           <h2 className="font-display text-2xl font-bold text-zinc-50">{pessoa.contato === 'eu' ? 'O que você publicou' : `O que ${pessoa.nome.split(' ')[0]} publicou`}</h2>
           <MuralSocial autor={pessoa.id} comFormulario={false} />
         </section>
+        </>
       ) : (
         <p className="card-soft p-6 text-center text-sm text-zinc-400">
           {pessoa.nome.split(' ')[0]} deixou a página aberta só para os contatos. Adicione aos contatos para ver o que publica.

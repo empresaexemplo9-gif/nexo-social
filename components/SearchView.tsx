@@ -9,6 +9,7 @@ import InlinePlayer, { type PlayRequest } from './InlinePlayer';
 import { rotuloDoTipo, sugestoes, type SearchResult } from '@/lib/search';
 import { getTopic } from '@/lib/data';
 import { TIPOS_PUBLICACAO, type Publicacao } from '@/lib/mural-tipos';
+import { tipoDaLista, type ListaResumo, type RodaResumo } from '@/lib/listas-tipos';
 
 interface Video {
   id: string;
@@ -21,11 +22,13 @@ interface Video {
 /** O que a comunidade publicou, quem está nela e as matérias históricas. */
 interface Conteudo {
   publicacoes: Publicacao[];
+  listas: ListaResumo[];
+  rodas: RodaResumo[];
   pessoas: { id: string; name: string; avatarPath: string | null; proximo: boolean }[];
   historicas: { tema: string; temaRotulo: string; slug: string; titulo: string; formato: string }[];
 }
 
-const SEM_CONTEUDO: Conteudo = { publicacoes: [], pessoas: [], historicas: [] };
+const SEM_CONTEUDO: Conteudo = { publicacoes: [], listas: [], rodas: [], pessoas: [], historicas: [] };
 
 function tituloDaPublicacao(p: Publicacao): string {
   return p.titulo || p.assunto || (p.corpo ?? '').slice(0, 90) || 'Publicação';
@@ -66,6 +69,8 @@ export default function SearchView() {
     setVideoDisponivel(Boolean(catalogo.videoDisponivel));
     setConteudo({
       publicacoes: comunidade.publicacoes ?? [],
+      listas: comunidade.listas ?? [],
+      rodas: comunidade.rodas ?? [],
       pessoas: comunidade.pessoas ?? [],
       historicas: comunidade.historicas ?? [],
     });
@@ -186,7 +191,7 @@ export default function SearchView() {
       )}
 
       {/* O que as pessoas publicaram (só o que quem busca pode ver) e quem está na plataforma */}
-      {termo.trim().length >= 2 && (conteudo.publicacoes.length > 0 || conteudo.pessoas.length > 0) && (
+      {termo.trim().length >= 2 && (conteudo.publicacoes.length > 0 || conteudo.listas.length > 0 || conteudo.rodas.length > 0 || conteudo.pessoas.length > 0) && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold text-zinc-100">Na comunidade</h2>
           {conteudo.publicacoes.length > 0 && (
@@ -208,6 +213,37 @@ export default function SearchView() {
                           {tipo?.rotulo ?? 'Publicação'} · {p.autor.nome}
                           {p.opinioes > 0 && ` · ${p.opinioes} ${p.opinioes === 1 ? 'opinião' : 'opiniões'}`}
                         </span>
+                      </span>
+                      <Icon name="chevronRight" size={15} className="shrink-0 text-zinc-600" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {(conteudo.listas.length > 0 || conteudo.rodas.length > 0) && (
+            <ul className="space-y-2" aria-label="Listas e rodas de conversa">
+              {conteudo.rodas.map((r) => (
+                <li key={r.id}>
+                  <Link href={`/comunidade/roda/${r.id}`} className="flex items-center gap-3 rounded-2xl border border-zinc-800/70 bg-zinc-900/50 p-3 transition hover:border-zinc-700">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300"><Icon name="users" size={16} /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-zinc-50">{r.tema}</span>
+                      <span className="block truncate text-[11px] text-zinc-500">Roda de conversa acontecendo · {r.participantes} {r.participantes === 1 ? 'pessoa' : 'pessoas'}</span>
+                    </span>
+                    <Icon name="chevronRight" size={15} className="shrink-0 text-zinc-600" />
+                  </Link>
+                </li>
+              ))}
+              {conteudo.listas.map((l) => {
+                const tipo = tipoDaLista(l.tipo);
+                return (
+                  <li key={l.id}>
+                    <Link href={`/comunidade/lista/${l.id}`} className="flex items-center gap-3 rounded-2xl border border-zinc-800/70 bg-zinc-900/50 p-3 transition hover:border-zinc-700">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300"><Icon name={tipo.icone} size={16} /></span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-zinc-50">{l.titulo}</span>
+                        <span className="block truncate text-[11px] text-zinc-500">Lista de {tipo.rotulo.toLowerCase()} · {l.autor.nome} · {l.itens} {l.itens === 1 ? 'item' : 'itens'}</span>
                       </span>
                       <Icon name="chevronRight" size={15} className="shrink-0 text-zinc-600" />
                     </Link>
