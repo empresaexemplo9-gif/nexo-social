@@ -9,6 +9,7 @@ import { describeAuthError } from '@/lib/auth-errors';
 import { ensureProfile } from '@/lib/provisioning';
 import { safeAuthDestination } from '@/lib/auth-redirect';
 import { getSupabaseEnv } from '@/lib/supabase-config';
+import { AVISO_DA_SENHA, REGRAS_DA_SENHA, SENHA_MINIMO, senhaValida } from '@/lib/senha';
 
 function destinoSeguro(raw: string | null): string | null {
   return safeAuthDestination(raw);
@@ -95,6 +96,7 @@ export default function LoginPage() {
       const tenantName = accountType === 'organizacao' ? organizationName : fullName;
       if (isRegistering) {
         if (inviteValid !== true) throw new Error('Você precisa de um convite válido para criar a conta.');
+        if (!senhaValida(password)) throw new Error(AVISO_DA_SENHA);
         const res = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -194,7 +196,22 @@ export default function LoginPage() {
           <div>
             <label className="mb-1 block text-xs text-zinc-400">Senha</label>
             <input type="password" autoComplete={isRegistering ? 'new-password' : 'current-password'} required value={password} onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••" minLength={6} className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none" />
+              placeholder="••••••••" minLength={isRegistering ? SENHA_MINIMO : undefined} aria-describedby={isRegistering ? 'regras-da-senha' : undefined}
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm text-zinc-50 focus:border-emerald-500 focus:outline-none" />
+            {/* Só no cadastro: quem já tem conta entra com a senha que já usa. */}
+            {isRegistering && (
+              <ul id="regras-da-senha" aria-label="A senha precisa ter" className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                {REGRAS_DA_SENHA.map((r) => {
+                  const ok = r.ok(password);
+                  return (
+                    <li key={r.id} className={ok ? 'text-emerald-400' : 'text-zinc-500'}>
+                      <span aria-hidden>{ok ? '✓' : '○'}</span> {r.texto}
+                      <span className="sr-only">{ok ? ' (ok)' : ' (falta)'}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
           <button type="submit" disabled={loading || (isRegistering && inviteValid !== true)}
             className="w-full rounded-xl bg-emerald-500 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400 disabled:opacity-60">

@@ -184,7 +184,7 @@ ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS frequency TEXT DEFAULT 'semanal
 -- Identifica o super admin da plataforma pelo e-mail do JWT.
 CREATE OR REPLACE FUNCTION is_platform_admin()
 RETURNS BOOLEAN
-LANGUAGE sql STABLE
+LANGUAGE sql STABLE SET search_path = public
 AS $$
   SELECT COALESCE(auth.jwt() ->> 'email', '') = 'thiagohccarvalho00@gmail.com';
 $$;
@@ -563,12 +563,12 @@ ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS reading_goal SMALLINT DEFA
 
 -- E-mail do super admin em um único lugar do schema.
 CREATE OR REPLACE FUNCTION platform_admin_email()
-RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
+RETURNS TEXT LANGUAGE sql IMMUTABLE SET search_path = public AS $$
   SELECT 'thiagohccarvalho00@gmail.com';
 $$;
 
 CREATE OR REPLACE FUNCTION is_platform_admin()
-RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
+RETURNS BOOLEAN LANGUAGE sql STABLE SET search_path = public AS $$
   SELECT lower(COALESCE(auth.jwt() ->> 'email', '')) = platform_admin_email();
 $$;
 
@@ -609,7 +609,7 @@ WHERE is_platform_admin IS DISTINCT FROM (lower(email) = platform_admin_email())
 
 -- --- 2) Auto-provisionamento --------------------------------------------------
 CREATE OR REPLACE FUNCTION slugify(p_text TEXT)
-RETURNS TEXT LANGUAGE sql IMMUTABLE AS $$
+RETURNS TEXT LANGUAGE sql IMMUTABLE SET search_path = public AS $$
   SELECT COALESCE(
     NULLIF(
       trim(BOTH '-' FROM regexp_replace(lower(COALESCE(p_text, '')), '[^a-z0-9]+', '-', 'g')),
