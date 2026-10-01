@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { exigirSessao, idInvalido, minhaParticipacao, seBanido } from '@/lib/comunidade';
 import { profilesByIds, isUuid } from '@/lib/social';
-import { avataresPorId, citacoesDasRespostas, conteudoParaCliente, inserirMensagem, lerMensagens, linksDaMidia, previa, respostaPedida, validarMensagem } from '@/lib/chat-mensagens';
+import { avataresPorId, citacoesDasRespostas, inserirMensagem, lerMensagens, linksDaMidia, previa, respostaPedida } from '@/lib/chat-mensagens';
+import { conteudoParaClienteComExclusivos, validarMensagemComExclusivos } from '@/lib/chat-exclusivos';
 import { semColuna } from '@/lib/erros-banco';
 import { enviarAviso, pushConfigurado } from '@/lib/push';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -64,7 +65,7 @@ export async function GET(request: Request, { params }: Ctx) {
       authorAvatar: fotos.get(m.author_id) ?? null,
       fromMe: m.author_id === s.user.id,
       createdAt: m.created_at,
-      ...conteudoParaCliente(m, links),
+      ...conteudoParaClienteComExclusivos(m, links),
       replyTo: citar(m.id),
     })),
   }, { headers: { 'Cache-Control': 'private, no-store' } });
@@ -77,7 +78,7 @@ export async function POST(request: Request, { params }: Ctx) {
   const { s } = r;
 
   const b = await request.json().catch(() => null);
-  const nova = validarMensagem(b, `grupos/${params.id}`, s.user.id);
+  const nova = await validarMensagemComExclusivos(s.sb, b, `grupos/${params.id}`, s.user.id);
   if ('erro' in nova) return NextResponse.json({ error: nova.erro }, { status: 400 });
 
   // Resposta: só a uma mensagem deste mesmo grupo (se sumiu, vai sem citação).
