@@ -16,6 +16,7 @@ import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
 import { MidiaProvider } from '@/components/midia/MidiaProvider';
 import AplicarAparencia from '@/components/AplicarAparencia';
 import FundoExclusivo from '@/components/FundoExclusivo';
+import ExclusivosAtalho from '@/components/ExclusivosAtalho';
 
 // Barlow Condensed: títulos firmes e condensados, como nos cartazes.
 const display = Barlow_Condensed({
@@ -137,6 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SpotifyProvider>
                 <MidiaProvider>
                   {children}
+                  <ExclusivosAtalho />
                   <MobileTabBar />
                   <AvisoDeChamada />
                 </MidiaProvider>
