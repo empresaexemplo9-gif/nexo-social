@@ -135,7 +135,8 @@ export function HeroDoPerfil({ onMontar, montando, onPersonalizar }: { onMontar:
   const oi = saudacao();
 
   return (
-    <section className="texture-grain relative overflow-hidden rounded-4xl border border-zinc-800 bg-zinc-900/95 shadow-soft">
+    // q-papel: sobre o muro da home, o banner continua claro, como sempre foi.
+    <section className="q-papel texture-grain relative overflow-hidden rounded-4xl border border-zinc-800 bg-zinc-900/95 shadow-soft">
       {/* Fundo: a colmeia de antes só à direita, bem leve, e manchas de cor que derivam */}
       <div
         aria-hidden
