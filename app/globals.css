@@ -1450,3 +1450,189 @@ html[data-lateral='recolhida'] .barra-lateral .menu-denim { border-radius: 8px; 
   background-color: rgb(12 13 16 / 0.82);
   border-color: rgb(255 255 255 / 0.08);
 }
+
+/* --- Um muro para cada aba (lib/comunidade-quadros.ts, PAREDE_DA_ABA) -------- */
+.tema-comunidade:has([data-aba='mural']) .parede-comunidade::before {
+  background-image: url('/bg/comunidade/parede-mural.webp');
+}
+.tema-comunidade:has([data-aba='listas']) .parede-comunidade::before {
+  background-image: url('/bg/comunidade/parede-listas.webp');
+}
+.tema-comunidade:has([data-aba='rodas']) .parede-comunidade::before {
+  background-image: url('/bg/comunidade/parede-rodas.webp');
+}
+.tema-comunidade:has([data-aba='jogos']) .parede-comunidade::before {
+  background-image: url('/bg/comunidade/parede-jogos.webp');
+}
+@media (max-width: 767px) {
+  .tema-comunidade:has([data-aba='mural']) .parede-comunidade::before {
+    background-image: url('/bg/comunidade/parede-mural-cel.webp');
+  }
+  .tema-comunidade:has([data-aba='listas']) .parede-comunidade::before {
+    background-image: url('/bg/comunidade/parede-listas-cel.webp');
+  }
+  .tema-comunidade:has([data-aba='rodas']) .parede-comunidade::before {
+    background-image: url('/bg/comunidade/parede-rodas-cel.webp');
+  }
+  .tema-comunidade:has([data-aba='jogos']) .parede-comunidade::before {
+    background-image: url('/bg/comunidade/parede-jogos-cel.webp');
+  }
+}
+
+/* --- Quadros dos murais de cultura, histórias e movimento -------------------- */
+/* Brasil: verde, amarelo e o azul da bandeira. */
+[data-quadro='brasil'] {
+  --qb-cor: #00843d;
+  --qb-tinta: #fff;
+  --qb-borda: #ffdf00;
+  --qb-borda-l: 2px;
+  --qb-sombra: 0 3px 0 #002776;
+  --qb-raio: 10px;
+  --q-faixa: linear-gradient(90deg, #009c3b 0 42%, #ffdf00 42% 62%, #002776 62%);
+  --q-destaque: #00703a;
+}
+/* Mundo: passarela em preto e branco, letra de revista de moda. */
+[data-quadro='mundo'] {
+  --qb-cor: #f4f1ea;
+  --qb-tinta: #111;
+  --qb-borda: #111;
+  --qb-raio: 2px;
+  --qb-caixa: uppercase;
+  --qb-espaco: 0.14em;
+  --qb-fonte: Georgia, 'Times New Roman', serif;
+  --q-faixa: linear-gradient(90deg, #111 0 30%, #f4f1ea 30% 34%, #111 34% 70%, #d6d0c4 70%);
+}
+/* Futebol: camisa amarela com o verde. */
+[data-quadro='futebol'] {
+  --qb-cor: #ffd200;
+  --qb-tinta: #0d4d24;
+  --qb-borda: #0d4d24;
+  --qb-borda-l: 2px;
+  --qb-sombra: 0 3px 0 #0d4d24;
+  --qb-raio: 999px;
+  --q-faixa: linear-gradient(90deg, #ffd200 0 68%, #0d7a3a 68% 86%, #1d3fb8 86%);
+  --q-destaque: #0d6b33;
+}
+/* Violão: madeira e corda. */
+[data-quadro='violao'] {
+  --qb-cor: #7a4a24;
+  --qb-img: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px 9px), linear-gradient(135deg, #9a5f2f, #6b3c1b);
+  --qb-tinta: #fbefd9;
+  --qb-borda: #3e2410;
+  --qb-raio: 12px;
+  --q-faixa: repeating-linear-gradient(0deg, #e9d6b0 0 1px, transparent 1px 2px), linear-gradient(90deg, #9a5f2f, #6b3c1b);
+  --q-destaque: #7a4a24;
+}
+/* Anime: tinta vermelha no papel de arroz, sol nascente. */
+[data-quadro='anime'] {
+  --qb-cor: #c1121f;
+  --qb-tinta: #fff;
+  --qb-borda: #111;
+  --qb-borda-l: 2px;
+  --qb-sombra: 3px 3px 0 #111;
+  --qb-raio: 2px;
+  --q-faixa: linear-gradient(90deg, #f5efe3 0 30%, #c1121f 30% 40%, #f5efe3 40% 72%, #111 72%);
+  --q-destaque: #b10f1c;
+}
+/* Faroeste: cartaz de "procura-se" no deserto. */
+[data-quadro='faroeste'] {
+  --qb-cor: #e8d3a6;
+  --qb-img: var(--grao);
+  --qb-tam: 120px;
+  --qb-tinta: #3b2312;
+  --qb-borda: #3b2312;
+  --qb-borda-l: 2px;
+  --qb-raio: 3px;
+  --qb-caixa: uppercase;
+  --qb-espaco: 0.06em;
+  --qb-fonte: Georgia, 'Times New Roman', serif;
+  --q-faixa: linear-gradient(90deg, #7c2d12, #c2410c 35%, #f59e0b 60%, #7c2d12);
+  --q-destaque: #9a3412;
+}
+/* Cyber: cidade de neon. */
+[data-quadro='cyber'] {
+  --qb-cor: #0b0b1a;
+  --qb-tinta: #e0f7ff;
+  --qb-borda: #22d3ee;
+  --qb-borda-l: 1.5px;
+  --qb-sombra: 0 0 0 1px #ff2bd6, 0 0 18px -4px #22d3ee;
+  --qb-raio: 6px;
+  --qb-caixa: uppercase;
+  --qb-espaco: 0.08em;
+  --qb-texto-sombra: 0 0 6px rgb(34 211 238 / 0.7);
+  --q-faixa: linear-gradient(90deg, #ff2bd6, #7c3aed 50%, #22d3ee);
+  --q-destaque: #7c3aed;
+}
+/* F1: vermelho de corrida e a bandeira quadriculada. */
+[data-quadro='f1'] {
+  --qb-cor: #e10600;
+  --qb-tinta: #fff;
+  --qb-borda: #7a0300;
+  --qb-sombra: 0 3px 0 #7a0300;
+  --qb-raio: 4px 14px 4px 14px;
+  --qb-caixa: uppercase;
+  --qb-espaco: 0.06em;
+  --q-faixa: linear-gradient(90deg, #e10600 0 66%, transparent 66%), repeating-conic-gradient(#111 0 25%, #fff 0 50%) 0 0 / 7px 7px;
+  --q-destaque: #c30500;
+}
+/* Fantasia: ilhas no céu, flor de cerejeira. */
+[data-quadro='fantasia'] {
+  --qb-cor: #e9d5ff;
+  --qb-img: linear-gradient(135deg, #fbcfe8, #c4b5fd 45%, #a5f3fc);
+  --qb-tinta: #1e1b4b;
+  --qb-borda: #fff;
+  --qb-borda-l: 1.5px;
+  --qb-sombra: 0 6px 18px -8px rgb(167 139 250 / 0.8);
+  --qb-raio: 999px;
+  --q-faixa: linear-gradient(90deg, #fbcfe8, #c4b5fd 45%, #a5f3fc);
+  --q-destaque: #6d28d9;
+}
+/* Oxford: lombadas de couro com letra dourada. */
+[data-quadro='oxford'] {
+  --qb-cor: #3b2412;
+  --qb-img: linear-gradient(180deg, transparent 0 18%, rgb(184 134 43 / 0.5) 18% 21%, transparent 21% 79%, rgb(184 134 43 / 0.5) 79% 82%, transparent 82%);
+  --qb-tinta: #f3d58a;
+  --qb-borda: #b8862b;
+  --qb-borda-l: 1.5px;
+  --qb-raio: 4px;
+  --qb-fonte: Georgia, 'Times New Roman', serif;
+  --q-faixa: repeating-linear-gradient(90deg, #5a2e14 0 22px, #2a3a5c 22px 40px, #6b4a1e 40px 58px, #b8862b 58px 60px);
+  --q-destaque: #7a4a12;
+}
+/* Paraquedas: céu aberto. */
+[data-quadro='paraquedas'] {
+  --qb-cor: #0369a1;
+  --qb-img: linear-gradient(180deg, #0284c7, #075985);
+  --qb-tinta: #fff;
+  --qb-borda: #fff;
+  --qb-borda-l: 1.5px;
+  --qb-sombra: 0 6px 16px -8px #0284c7;
+  --qb-raio: 14px;
+  --q-faixa: linear-gradient(90deg, #0284c7, #38bdf8 40%, #f8fafc 50%, #38bdf8 60%, #0369a1);
+  --q-destaque: #0369a1;
+}
+/* Xadrez: tabuleiro em preto e branco. */
+[data-quadro='xadrez'] {
+  --qb-cor: #161616;
+  --qb-img: repeating-conic-gradient(#161616 0 25%, #222 0 50%);
+  --qb-tam: 12px 12px;
+  --qb-tinta: #fff;
+  --qb-borda: #f5f5f4;
+  --qb-borda-l: 1.5px;
+  --qb-sombra: 0 0 0 1.5px #161616;
+  --qb-raio: 4px;
+  --q-faixa: repeating-conic-gradient(#111 0 25%, #f5f5f4 0 50%) 0 0 / 14px 14px;
+}
+/* Festa: fogos e luz de pista. */
+[data-quadro='festa'] {
+  --qb-cor: #7c3aed;
+  --qb-img: linear-gradient(120deg, #db2777, #7c3aed 52%, #2563eb);
+  --qb-tam: 200% 100%;
+  --qb-tinta: #fff;
+  --qb-borda: rgb(255 255 255 / 0.65);
+  --qb-sombra: 0 8px 22px -10px #db2777;
+  --qb-raio: 999px;
+  --qb-texto-sombra: 0 1px 2px rgb(0 0 0 / 0.3);
+  --q-faixa: radial-gradient(circle, #fff 1px, transparent 1.6px) 0 0 / 11px 7px, linear-gradient(90deg, #db2777, #7c3aed 50%, #2563eb);
+  --q-destaque: #9d174d;
+}

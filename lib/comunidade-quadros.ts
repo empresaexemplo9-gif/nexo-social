@@ -22,7 +22,28 @@ export type Quadro =
   | 'grafite'
   | 'laranja'
   | 'metro'
-  | 'pincel';
+  | 'pincel'
+  // Dos murais de cultura, histórias e movimento:
+  | 'brasil'
+  | 'mundo'
+  | 'futebol'
+  | 'violao'
+  | 'anime'
+  | 'faroeste'
+  | 'cyber'
+  | 'f1'
+  | 'fantasia'
+  | 'oxford'
+  | 'paraquedas'
+  | 'xadrez'
+  | 'festa';
+
+/** Todos os quadros (cada um tem imagem, miniatura e estilo próprios). */
+export const QUADROS: Quadro[] = [
+  'lambe', 'recorte', 'selo', 'halftone', 'skyline', 'palco', 'estatua', 'holo', 'holo-d', 'listras', 'placa', 'sinal',
+  'grafite', 'laranja', 'metro', 'pincel', 'brasil', 'mundo', 'futebol', 'violao', 'anime', 'faroeste', 'cyber', 'f1',
+  'fantasia', 'oxford', 'paraquedas', 'xadrez', 'festa',
+];
 
 /** Capa do quadro (o recorte do mural). */
 export const capaDoQuadro = (q: Quadro) => `/bg/comunidade/quadros/${q}.webp`;
@@ -30,6 +51,21 @@ export const capaDoQuadro = (q: Quadro) => `/bg/comunidade/quadros/${q}.webp`;
 export const miniDoQuadro = (q: Quadro) => `/bg/comunidade/quadros/${q}-mini.webp`;
 
 export type AbaDaComunidade = 'mural' | 'listas' | 'rodas' | 'grupos' | 'jogos';
+
+/**
+ * O muro do fundo de cada aba (public/bg/comunidade/parede-*.webp; o CSS
+ * troca pelo [data-aba] da página): o mural de mundo, moda e futebol no Mural;
+ * o de histórias (anime, faroeste, ficção, Oxford) nas Listas; o de amizade,
+ * música e adrenalina nas Rodas; o da marca nos Grupos; e, nos Jogos, tiras
+ * de estratégia, velocidade e esporte.
+ */
+export const PAREDE_DA_ABA: Record<AbaDaComunidade, string> = {
+  mural: 'parede-mural',
+  listas: 'parede-listas',
+  rodas: 'parede-rodas',
+  grupos: 'parede',
+  jogos: 'parede-jogos',
+};
 
 /** O quadro e a capa de cada aba. */
 export const ABAS_DA_COMUNIDADE: Record<AbaDaComunidade, { quadro: Quadro; rotulo: string; titulo: string; texto: string }> = {
@@ -70,42 +106,43 @@ export const QUADRO_DA_PUBLICACAO: Record<TipoPublicacao, Quadro> = {
   conversa: 'selo',
   pergunta: 'halftone',
   resenha: 'recorte',
-  experiencia: 'skyline',
-  video: 'palco',
+  experiencia: 'paraquedas',
+  video: 'cyber',
   livro: 'estatua',
 };
 
 /** Cada tipo de lista, com o seu quadro. */
 export const QUADRO_DA_LISTA: Record<TipoLista, Quadro> = {
-  musicas: 'holo-d',
+  musicas: 'festa',
   clipes: 'palco',
-  livros: 'estatua',
-  filmes: 'listras',
-  series: 'placa',
-  jogos: 'sinal',
-  mista: 'grafite',
+  livros: 'oxford',
+  filmes: 'faroeste',
+  series: 'anime',
+  jogos: 'f1',
+  mista: 'fantasia',
 };
 
 /** O assunto de uma roda de conversa (ou de uma resenha), com o seu quadro. */
 export function quadroDoAssunto(a: AssuntoTipo | null | undefined): Quadro {
   switch (a) {
     case 'livro':
-      return 'estatua';
+      return 'oxford';
     case 'show':
-      return 'palco';
+      return 'festa';
     case 'musica':
-      return 'holo-d';
+      return 'violao';
     case 'filme':
       return 'listras';
     case 'serie':
       return 'placa';
     case 'jogo':
-      return 'sinal';
+      return 'xadrez';
     case 'esporte':
-      return 'laranja';
+      return 'futebol';
     case 'evento':
+      return 'brasil';
     case 'lugar':
-      return 'skyline';
+      return 'mundo';
     default:
       return 'grafite';
   }
