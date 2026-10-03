@@ -241,3 +241,39 @@ test('plano de fundo claro (Gatinhos) ganha mais cobertura no muro escuro; os es
   const gatos = linhas.filter((l) => l.tema === 'Gatinhos');
   assert.deepEqual(gatos.map((l) => l.tipo), ['wallpaper', 'wallpaper', 'wallpaper', 'button', 'button', 'button', 'button', 'button', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker']);
 });
+
+test('recorte: folha com fundo em degradê, vinheta, xadrez de transparência falsa ou textura também se separa', () => {
+  const W = 600;
+  const H = 400;
+  const ruido = (x, y) => (Math.sin(x * 12.9898 + y * 78.233) * 43758.5453) % 1; // grão de -1 a 1
+  const fundos = {
+    liso: () => [226, 224, 220],
+    degrade: (x, y) => { const t = (x / W) * 0.6 + (y / H) * 0.4; return [235 - 120 * t, 228 - 110 * t, 222 - 90 * t]; },
+    vinheta: (x, y) => { const d = Math.hypot(x / W - 0.5, y / H - 0.5) / 0.7; return [245 - 150 * d * d, 240 - 150 * d * d, 236 - 140 * d * d]; },
+    xadrez: (x, y) => ((Math.floor(x / 16) + Math.floor(y / 16)) % 2 ? [255, 255, 255] : [204, 204, 204]),
+    textura: (x, y) => { const n = ruido(x, y) * 34; return [190 + n, 168 + n, 132 + n]; },
+  };
+  const esperado = { liso: 'liso', degrade: 'degrade', vinheta: 'degrade', xadrez: 'xadrez', textura: 'degrade' };
+  for (const [nome, fundo] of Object.entries(fundos)) {
+    // 2 × 3 adesivos: borda branca de recorte e arte colorida.
+    const px = new Uint8ClampedArray(W * H * 4);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        let cor = fundo(x, y);
+        for (let k = 0; k < 6; k++) {
+          const cx = (W * ((k % 3) + 0.5)) / 3;
+          const cy = (H * (Math.floor(k / 3) + 0.5)) / 2;
+          const d = Math.hypot(x - cx, y - cy);
+          if (d <= 66) cor = d <= 58 ? [40 + 30 * k, 90 + 20 * Math.sin(x / 7), 200 - 25 * k] : [252, 251, 248];
+        }
+        px.set([...cor.map((v) => Math.max(0, Math.min(255, Math.round(v)))), 255], (y * W + x) * 4);
+      }
+    }
+    assert.equal(rc.modeloDoFundo(px, W, H).tipo, esperado[nome], `fundo ${nome}`);
+    const pecas = rc.recortarAdesivos(px, W, H);
+    assert.equal(pecas.length, 6, `${nome}: seis adesivos`);
+    for (const p of pecas) assert.ok(p.w < W / 3 && p.h < H / 2, `${nome}: cada peça é um adesivo, não a folha`);
+  }
+  // O painel avisa quando o fundo não foi achado, em vez de devolver a folha inteira como um adesivo.
+  assert.match(fs.readFileSync('components/AdminExclusivos.tsx', 'utf8'), /pecas\.length === 1 && pecas\[0\]\.w \* pecas\[0\]\.h >= W \* H \* 0\.97/);
+});

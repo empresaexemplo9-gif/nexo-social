@@ -44,6 +44,120 @@ export function corDoFundo(px: Pixels, W: number, H: number): [number, number, n
   }) as [number, number, number];
 }
 
+/**
+ * Como é o fundo da folha, pixel a pixel. Quase sempre liso (a cor da
+ * moldura). Quando a moldura não é de uma cor só, pode ser o xadrez da
+ * "transparência" falsa das imagens geradas (duas cores claras alternando) ou
+ * um degradê, vinheta ou textura de papel: aí vale uma superfície suave
+ * ajustada à moldura, com a tolerância do grão que ela tem.
+ */
+export type ModeloDoFundo =
+  | { tipo: 'liso'; cor: [number, number, number]; tolerancia: number }
+  | { tipo: 'xadrez'; cores: [number, number, number][]; tolerancia: number }
+  | { tipo: 'degrade'; coef: number[][]; tolerancia: number };
+
+const distancia = (a: number[], r: number, g: number, b: number) => Math.hypot(a[0] - r, a[1] - g, a[2] - b);
+
+/** Resolve o sistema linear `A·x = b` (eliminação de Gauss com pivô). */
+function resolver(A: number[][], b: number[]) {
+  const n = b.length;
+  const M = A.map((l, i) => [...l, b[i]]);
+  for (let c = 0; c < n; c++) {
+    let p = c;
+    for (let l = c + 1; l < n; l++) if (Math.abs(M[l][c]) > Math.abs(M[p][c])) p = l;
+    [M[c], M[p]] = [M[p], M[c]];
+    if (Math.abs(M[c][c]) < 1e-9) continue;
+    for (let l = 0; l < n; l++) {
+      if (l === c) continue;
+      const f = M[l][c] / M[c][c];
+      for (let k = c; k <= n; k++) M[l][k] -= f * M[c][k];
+    }
+  }
+  return M.map((l, i) => (Math.abs(l[i]) < 1e-9 ? 0 : l[n] / l[i]));
+}
+
+const termos = (u: number, v: number) => [1, u, v, u * u, v * v, u * v];
+
+export function modeloDoFundo(px: Pixels, W: number, H: number, tolerancia = 26): ModeloDoFundo {
+  const cor = corDoFundo(px, W, H);
+  // A moldura de 1 px e um anel 3 px para dentro.
+  const am: number[][] = [];
+  const pega = (x: number, y: number) => {
+    const i = (y * W + x) * 4;
+    am.push([x, y, px[i], px[i + 1], px[i + 2]]);
+  };
+  for (const d of [0, Math.min(3, Math.floor(Math.min(W, H) / 4))]) {
+    for (let x = d; x < W - d; x++) pega(x, d), pega(x, H - 1 - d);
+    for (let y = d + 1; y < H - 1 - d; y++) pega(d, y), pega(W - 1 - d, y);
+  }
+  const parte = (f: (a: number[]) => boolean) => am.filter(f).length / am.length;
+  if (parte((a) => distancia(cor, a[2], a[3], a[4]) < tolerancia) >= 0.7) return { tipo: 'liso', cor, tolerancia };
+
+  // Xadrez: as duas cores mais comuns da moldura, claras e neutras, se alternando.
+  const caixas = new Map<number, number[]>();
+  for (const a of am) {
+    const k = ((a[2] >> 4) << 8) | ((a[3] >> 4) << 4) | (a[4] >> 4);
+    const c = caixas.get(k) ?? [0, 0, 0, 0];
+    c[0] += a[2], c[1] += a[3], c[2] += a[4], c[3]++;
+    caixas.set(k, c);
+  }
+  const top = Array.from(caixas.values()).sort((a, b) => b[3] - a[3]);
+  if (top.length >= 2) {
+    let cores = top.slice(0, 2).map((c) => [c[0] / c[3], c[1] / c[3], c[2] / c[3]]);
+    for (let it = 0; it < 4; it++) {
+      const soma = [[0, 0, 0, 0], [0, 0, 0, 0]];
+      for (const a of am) {
+        const k = distancia(cores[0], a[2], a[3], a[4]) <= distancia(cores[1], a[2], a[3], a[4]) ? 0 : 1;
+        if (distancia(cores[k], a[2], a[3], a[4]) < tolerancia * 2) soma[k][0] += a[2], soma[k][1] += a[3], soma[k][2] += a[4], soma[k][3]++;
+      }
+      cores = cores.map((c, k) => (soma[k][3] ? [soma[k][0] / soma[k][3], soma[k][1] / soma[k][3], soma[k][2] / soma[k][3]] : c));
+    }
+    const de = (k: number) => parte((a) => distancia(cores[k], a[2], a[3], a[4]) < tolerancia);
+    const neutra = (c: number[]) => Math.max(...c) - Math.min(...c) < 24 && 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2] > 120;
+    const entre = distancia(cores[0], cores[1][0], cores[1][1], cores[1][2]);
+    // O xadrez troca de cor aos saltos (a cada quadradinho); a vinheta, aos poucos.
+    let saltos = 0;
+    const salta = (i: number, j: number) => distancia([px[i], px[i + 1], px[i + 2]], px[j], px[j + 1], px[j + 2]) > entre * 0.6;
+    for (let x = 1; x < W; x++) if (salta(x * 4, (x - 1) * 4)) saltos++;
+    for (let y = 1; y < H; y++) if (salta(y * W * 4, (y - 1) * W * 4)) saltos++;
+    if (saltos >= 6 && de(0) >= 0.15 && de(1) >= 0.15 && de(0) + de(1) >= 0.8 && entre >= tolerancia && cores.every(neutra)) {
+      return { tipo: 'xadrez', cores: cores.map((c) => c.map(Math.round)) as [number, number, number][], tolerancia };
+    }
+  }
+
+  // Degradê, vinheta ou textura: superfície de 2º grau por canal, ajustada à
+  // moldura em duas passadas (a 2ª sem o que destoa, como um adesivo encostado).
+  let usar = am;
+  let coef: number[][] = [];
+  let erros: number[] = [];
+  for (let passo = 0; passo < 2; passo++) {
+    coef = [0, 1, 2].map((c) => {
+      const A = Array.from({ length: 6 }, () => new Array(6).fill(0));
+      const b = new Array(6).fill(0);
+      for (const a of usar) {
+        const t = termos(a[0] / W - 0.5, a[1] / H - 0.5);
+        for (let i = 0; i < 6; i++) {
+          b[i] += t[i] * a[2 + c];
+          for (let j = 0; j < 6; j++) A[i][j] += t[i] * t[j];
+        }
+      }
+      return resolver(A, b);
+    });
+    erros = am.map((a) => {
+      const t = termos(a[0] / W - 0.5, a[1] / H - 0.5);
+      const ref = coef.map((k) => k.reduce((s, v, i) => s + v * t[i], 0));
+      return distancia(ref, a[2], a[3], a[4]);
+    });
+    const ordem = [...erros].sort((a, b) => a - b);
+    const corte = Math.max(20, 2.5 * ordem[Math.floor(ordem.length / 2)]);
+    usar = am.filter((_, i) => erros[i] <= corte);
+  }
+  const ordem = [...erros].sort((a, b) => a - b);
+  const p80 = ordem[Math.floor(ordem.length * 0.8)];
+  if (p80 < 60) return { tipo: 'degrade', coef, tolerancia: Math.max(tolerancia, Math.min(70, Math.round(p80 * 1.5 + 8))) };
+  return { tipo: 'liso', cor, tolerancia };
+}
+
 /** Ordena as peças como se lê a folha: linha por linha, da esquerda para a direita. */
 function emOrdemDeLeitura<T extends { x: number; y: number; w: number; h: number }>(pecas: T[]): T[] {
   if (pecas.length < 2) return pecas;
@@ -190,25 +304,45 @@ export function recortarAdesivos(
     fundo = new Uint8Array(N);
     for (let i = 0; i < N; i++) fundo[i] = px[i * 4 + 3] < 128 ? 1 : 0;
   } else {
-    const [fr, fg, fb] = corDoFundo(px, W, H);
-    const luzDoFundo = 0.299 * fr + 0.587 * fg + 0.114 * fb;
+    const modelo = modeloDoFundo(px, W, H, tolerancia);
+    tolerancia = modelo.tolerancia;
     // A sombra que a folha desenha embaixo dos adesivos (cinza, um pouco mais
     // escura que o fundo) também é fundo — menos quando o fundo é branco puro,
     // em que o fio cinza do contorno é o que separa o adesivo da folha. O
-    // papel do adesivo, mais claro que a folha, nunca é fundo.
-    const comSombra = luzDoFundo < 245;
+    // papel do adesivo, mais claro que a folha, nunca é fundo (no fundo liso;
+    // no degradê e na textura o grão do papel dá uma folga).
+    const folga = modelo.tipo === 'liso' ? 6 : Math.round(tolerancia * 0.6);
     const pareceFundo = new Uint8Array(N);
+    const ref = [0, 0, 0];
+    const tv = modelo.tipo === 'degrade' ? new Float64Array(6) : null;
     for (let i = 0; i < N; i++) {
       const r = px[i * 4];
       const g = px[i * 4 + 1];
       const b = px[i * 4 + 2];
-      const dr = r - fr;
-      const dg = g - fg;
-      const db = b - fb;
+      if (modelo.tipo === 'liso') (ref[0] = modelo.cor[0]), (ref[1] = modelo.cor[1]), (ref[2] = modelo.cor[2]);
+      else if (modelo.tipo === 'xadrez') {
+        const [a, c] = modelo.cores;
+        const k = distancia(a, r, g, b) <= distancia(c, r, g, b) ? a : c;
+        (ref[0] = k[0]), (ref[1] = k[1]), (ref[2] = k[2]);
+      } else if (tv) {
+        const x = i % W;
+        const u = x / W - 0.5;
+        const v = (i - x) / W / H - 0.5;
+        (tv[0] = 1), (tv[1] = u), (tv[2] = v), (tv[3] = u * u), (tv[4] = v * v), (tv[5] = u * v);
+        for (let c = 0; c < 3; c++) {
+          const k = modelo.coef[c];
+          ref[c] = k[0] + k[1] * tv[1] + k[2] * tv[2] + k[3] * tv[3] + k[4] * tv[4] + k[5] * tv[5];
+        }
+      }
+      const luzDoFundo = 0.299 * ref[0] + 0.587 * ref[1] + 0.114 * ref[2];
+      const comSombra = luzDoFundo < 245;
+      const dr = r - ref[0];
+      const dg = g - ref[1];
+      const db = b - ref[2];
       dist[i] = Math.min(255, Math.sqrt(dr * dr + dg * dg + db * db));
       const luz = 0.299 * r + 0.587 * g + 0.114 * b;
       const croma = Math.max(r, g, b) - Math.min(r, g, b);
-      const mesmaCor = dist[i] < tolerancia && (luzDoFundo > 249 || luz <= luzDoFundo + 6);
+      const mesmaCor = dist[i] < tolerancia && (luzDoFundo > 249 || luz <= luzDoFundo + folga);
       const sombra = comSombra && luz <= luzDoFundo + 2 && luzDoFundo - luz < 55 && croma < 16;
       pareceFundo[i] = mesmaCor || sombra ? 1 : 0;
     }

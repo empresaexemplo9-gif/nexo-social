@@ -243,6 +243,10 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
               : modo === 'cartela'
                 ? recortarBottons(px, W, H, { quantidade: quantidade || undefined })
                 : recortarAdesivos(px, W, H);
+          // Uma peça do tamanho da folha inteira: o fundo não foi achado (melhor avisar que devolver a folha).
+          if (modo === 'folha' && pecas.length === 1 && pecas[0].w * pecas[0].h >= W * H * 0.97) {
+            throw new Error(`Não consegui separar o fundo de ${file.name}. Tente “Folha em grade” (linhas × colunas) ou “Imagens soltas”.`);
+          }
           partes = pecas.map((p) => pecaEmCanvas(canvas, p));
           if (!partes.length) throw new Error(`Não achei peças em ${file.name}. Tente “Folha em grade” ou “Imagens soltas”.`);
         }
