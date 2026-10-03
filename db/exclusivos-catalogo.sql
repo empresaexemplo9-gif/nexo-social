@@ -135,7 +135,15 @@ VALUES
   ('Gatinhos · Doodle clássico', 'wallpaper', 'Gatinhos', 'Doodle', '/colecao/gatinhos/fundos/doodle-classico.webp', '/colecao/gatinhos/fundos/doodle-classico-mini.webp', 127),
   ('Gatinhos · Doodle panorâmico', 'wallpaper', 'Gatinhos', 'Doodle', '/colecao/gatinhos/fundos/doodle-panoramico.webp', '/colecao/gatinhos/fundos/doodle-panoramico-mini.webp', 128),
   ('Novelo', 'button', 'Gatinhos', 'Doodle', '/colecao/gatinhos/bottons/doodle-01.webp', NULL, 129),
-  ('Espreguiçando', 'button', 'Gatinhos', 'Doodle', '/colecao/gatinhos/bottons/doodle-02.webp', NULL, 130)
+  ('Espreguiçando', 'button', 'Gatinhos', 'Doodle', '/colecao/gatinhos/bottons/doodle-02.webp', NULL, 130),
+  ('Soneca', 'button', 'Gatinhos', 'Doodle', '/colecao/gatinhos/bottons/doodle-03.webp', NULL, 131),
+  ('Tchauzinho', 'button', 'Gatinhos', 'Doodle', '/colecao/gatinhos/bottons/doodle-04.webp', NULL, 132),
+  ('Pose', 'button', 'Gatinhos', 'Doodle', '/colecao/gatinhos/bottons/doodle-05.webp', NULL, 133),
+  ('Pensativo', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-01.webp', NULL, 134),
+  ('Tímido', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-02.webp', NULL, 135),
+  ('Bocejo', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-03.webp', NULL, 136),
+  ('Comemorando', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-04.webp', NULL, 137),
+  ('Coração', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-05.webp', NULL, 138)
 ON CONFLICT (image_path) DO UPDATE SET
   title = EXCLUDED.title,
   kind = EXCLUDED.kind,

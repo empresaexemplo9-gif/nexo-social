@@ -29,7 +29,7 @@ const linhas = [...catalogo.matchAll(/^  \('((?:[^']|'')+)', '(\w+)', '((?:[^']|
 }));
 
 test('coleção embutida: cada arquivo existe, no lugar do seu tema e tipo', () => {
-  assert.equal(linhas.length, 130);
+  assert.equal(linhas.length, 138);
   for (const l of linhas) {
     for (const c of [l.caminho, l.mini].filter(Boolean)) {
       assert.ok(fs.existsSync(`public${c}`), c);
@@ -52,7 +52,7 @@ test('coleção embutida: os planos de fundo de cada banda ficam todos (com mini
   const porTema = (t) => fundos.filter((f) => f.tema === t).length;
   assert.equal(porTema('Linkin Park'), 2);
   assert.equal(porTema('System of a Down'), 2);
-  assert.equal(linhas.filter((l) => l.tipo === 'button').length, 16);
+  assert.equal(linhas.filter((l) => l.tipo === 'button').length, 19);
   assert.equal(porTema('Gatinhos'), 3, 'os três formatos dos Gatinhos ficam');
   assert.deepEqual([...new Set(linhas.map((l) => l.tema))].sort(), ['DRAP · Inauguração', 'Gatinhos', 'Linkin Park', 'Nexo Social · Inauguração', 'System of a Down', 'Twenty One Pilots']);
 });
@@ -239,5 +239,5 @@ test('plano de fundo claro (Gatinhos) ganha mais cobertura no muro escuro; os es
   assert.ok(css.includes("html:not([data-muro='claro'])[data-fundo-tom='claro'][data-fundo-exclusivo='todas'] .parede-mural::after"));
   // Os Gatinhos: três formatos e dois bottons, no tema próprio.
   const gatos = linhas.filter((l) => l.tema === 'Gatinhos');
-  assert.deepEqual(gatos.map((l) => l.tipo), ['wallpaper', 'wallpaper', 'wallpaper', 'button', 'button']);
+  assert.deepEqual(gatos.map((l) => l.tipo), ['wallpaper', 'wallpaper', 'wallpaper', 'button', 'button', 'button', 'button', 'button', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker']);
 });
