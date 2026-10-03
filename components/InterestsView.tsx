@@ -1,8 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Icon, { type IconName } from './icons';
+import AdesivosDoBanner from './home/AdesivosDoBanner';
 import TopicGrid from './TopicGrid';
 import ProfilePlaylist from './ProfilePlaylist';
 import { Selo } from './Logo';
@@ -125,6 +126,8 @@ function Contador({ valor, rotulo }: { valor: string | number; rotulo: string })
  */
 export function HeroDoPerfil({ onMontar, montando, onPersonalizar }: { onMontar: () => void; montando: boolean; onPersonalizar?: () => void }) {
   const { prefs, ready, hasCompleted } = usePreferences();
+  // Colar adesivos e bottons da coleção no banner (components/home/AdesivosDoBanner.tsx).
+  const [enfeitando, setEnfeitando] = useState(false);
 
   if (!ready) {
     return <div className="h-[26rem] animate-pulse rounded-4xl border border-zinc-800 bg-zinc-900/60" aria-busy="true" />;
@@ -224,6 +227,14 @@ export function HeroDoPerfil({ onMontar, montando, onPersonalizar }: { onMontar:
                 <Icon name="image" size={16} /> Personalizar cores
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => setEnfeitando(true)}
+              aria-pressed={enfeitando}
+              className="group inline-flex w-fit items-center gap-2 rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3 text-sm font-semibold text-zinc-100 transition hover:-translate-y-0.5 hover:border-clay-500 hover:text-clay-300 action-patch action-patch--paper"
+            >
+              <Icon name="sparkles" size={16} /> {(prefs.aparencia?.banner?.length ?? 0) > 0 ? 'Mudar adesivos' : 'Enfeitar com adesivos'}
+            </button>
           </div>
         </div>
 
@@ -271,6 +282,7 @@ export function HeroDoPerfil({ onMontar, montando, onPersonalizar }: { onMontar:
           </span>
         </div>
       </div>
+      <AdesivosDoBanner editando={enfeitando} onFechar={() => setEnfeitando(false)} />
     </section>
   );
 }
