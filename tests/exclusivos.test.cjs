@@ -29,7 +29,7 @@ const linhas = [...catalogo.matchAll(/^  \('((?:[^']|'')+)', '(\w+)', '((?:[^']|
 }));
 
 test('coleção embutida: cada arquivo existe, no lugar do seu tema e tipo', () => {
-  assert.equal(linhas.length, 138);
+  assert.equal(linhas.length, 141);
   for (const l of linhas) {
     for (const c of [l.caminho, l.mini].filter(Boolean)) {
       assert.ok(fs.existsSync(`public${c}`), c);
@@ -239,5 +239,5 @@ test('plano de fundo claro (Gatinhos) ganha mais cobertura no muro escuro; os es
   assert.ok(css.includes("html:not([data-muro='claro'])[data-fundo-tom='claro'][data-fundo-exclusivo='todas'] .parede-mural::after"));
   // Os Gatinhos: três formatos e dois bottons, no tema próprio.
   const gatos = linhas.filter((l) => l.tema === 'Gatinhos');
-  assert.deepEqual(gatos.map((l) => l.tipo), ['wallpaper', 'wallpaper', 'wallpaper', 'button', 'button', 'button', 'button', 'button', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker']);
+  assert.deepEqual(gatos.map((l) => l.tipo), ['wallpaper', 'wallpaper', 'wallpaper', 'button', 'button', 'button', 'button', 'button', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker', 'sticker']);
 });

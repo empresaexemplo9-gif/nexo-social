@@ -74,7 +74,7 @@ INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES
 ON CONFLICT DO NOTHING;
 
 -- --- 1) Coleção embutida ---------------------------------------------------------------------
-SELECT assert((SELECT count(*) FROM exclusive_assets) = 138, '1. a coleção embutida tem 138 itens');
+SELECT assert((SELECT count(*) FROM exclusive_assets) = 141, '1. a coleção embutida tem 141 itens');
 SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'wallpaper') = 12, '1. 12 planos de fundo (mais de um por banda quando há)');
 SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'wallpaper' AND collection = 'Linkin Park') = 2, '1. Linkin Park com os 2 planos de fundo');
 SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'wallpaper' AND collection = 'System of a Down') = 2, '1. System of a Down com os 2 planos de fundo');
@@ -110,7 +110,7 @@ SELECT assert(ve(:'jwt_ana', $q$SELECT 1 FROM exclusive_assets WHERE kind = 'wal
 SELECT assert(ve(:'jwt_beto', 'SELECT 1 FROM exclusive_assets') = 0, '3. Beto não recebeu nada e não vê nada');
 SELECT assert(ve(:'jwt_beto', 'SELECT 1 FROM exclusive_asset_grants') = 0, '3. nem as concessões dos outros');
 SELECT assert(ve(:'jwt_ana', 'SELECT 1 FROM exclusive_asset_grants') = 18, '3. Ana vê as próprias concessões');
-SELECT assert(ve(:'jwt_chefe', 'SELECT 1 FROM exclusive_assets') = 139, '3. o superadministrador vê o catálogo inteiro');
+SELECT assert(ve(:'jwt_chefe', 'SELECT 1 FROM exclusive_assets') = 142, '3. o superadministrador vê o catálogo inteiro');
 
 -- --- 4) Não expira; rodar a coleção de novo não mexe em nada ---------------------------------
 SELECT assert(NOT EXISTS (
@@ -119,7 +119,7 @@ SELECT assert(NOT EXISTS (
 ), '4. a concessão não tem validade');
 UPDATE exclusive_assets SET title = 'Renomeado' WHERE image_path = '/colecao/linkin-park/fundos/discografia.webp';
 \i db/exclusivos-catalogo.sql
-SELECT assert((SELECT count(*) FROM exclusive_assets) = 139, '4. rodar a coleção de novo não duplica');
+SELECT assert((SELECT count(*) FROM exclusive_assets) = 142, '4. rodar a coleção de novo não duplica');
 SELECT assert((SELECT title FROM exclusive_assets WHERE image_path = '/colecao/linkin-park/fundos/discografia.webp') = 'Linkin Park · Discografia',
   '4. e devolve o nome da coleção');
 SELECT assert(ve(:'jwt_ana', 'SELECT 1 FROM exclusive_asset_grants') = 18, '4. e Ana continua com o kit');

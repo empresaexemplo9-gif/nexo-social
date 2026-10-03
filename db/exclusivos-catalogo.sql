@@ -143,7 +143,10 @@ VALUES
   ('Tímido', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-02.webp', NULL, 135),
   ('Bocejo', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-03.webp', NULL, 136),
   ('Comemorando', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-04.webp', NULL, 137),
-  ('Coração', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-05.webp', NULL, 138)
+  ('Coração', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-05.webp', NULL, 138),
+  ('Bravo', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-06.webp', NULL, 139),
+  ('Susto', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-07.webp', NULL, 140),
+  ('Choro', 'sticker', 'Gatinhos', 'Doodle', '/colecao/gatinhos/adesivos/doodle-08.webp', NULL, 141)
 ON CONFLICT (image_path) DO UPDATE SET
   title = EXCLUDED.title,
   kind = EXCLUDED.kind,
