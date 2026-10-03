@@ -35,6 +35,16 @@ export const CACHE_DO_MURO = 'nexo:muro';
 
 /** Chave do cache do plano de fundo exclusivo ({url, escopo}; aplicado antes de pintar). */
 export const CACHE_DO_FUNDO_EXCLUSIVO = 'nexo:fundo-exclusivo';
+/** Chave do tom medido do plano de fundo ({url, tom}): o script do layout marca o <html> antes de pintar. */
+export const CACHE_DO_TOM_DO_FUNDO = 'nexo:fundo-exclusivo:tom';
+
+/**
+ * Tom do plano de fundo exclusivo, medido no aparelho. Arte clara (traço preto
+ * no branco, como os Gatinhos) precisa de mais cobertura no muro escuro para o
+ * texto não brigar com o desenho.
+ */
+export type TomDoFundo = 'claro' | 'escuro';
+export const tomPelaLuz = (media: number): TomDoFundo => (media > 0.55 ? 'claro' : 'escuro');
 
 export const formaDoMuro = (v: unknown): Muro => (v === 'claro' ? 'claro' : 'escuro');
 

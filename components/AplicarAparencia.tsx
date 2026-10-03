@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { usePreferences } from '@/lib/preferences';
-import { APARENCIA_PADRAO, CACHE_DA_APARENCIA, CACHE_DO_FUNDO_EXCLUSIVO, CACHE_DO_MURO } from '@/lib/aparencia-tipos';
+import { APARENCIA_PADRAO, CACHE_DA_APARENCIA, CACHE_DO_FUNDO_EXCLUSIVO, CACHE_DO_MURO, CACHE_DO_TOM_DO_FUNDO, tomPelaLuz } from '@/lib/aparencia-tipos';
 
 /**
  * Aplica a cor dos botões e destaques escolhida pela pessoa em todas as
@@ -10,7 +10,8 @@ import { APARENCIA_PADRAO, CACHE_DA_APARENCIA, CACHE_DO_FUNDO_EXCLUSIVO, CACHE_D
  * aparelho: o script do layout as aplica antes de pintar, sem piscar o azul.
  * Também marca no <html> a versão dos murais (data-muro="claro") e o plano de
  * fundo exclusivo (data-fundo-exclusivo="home" | "todas", com a imagem em
- * --fundo-exclusivo), lidos pelo CSS do .tema-mural.
+ * --fundo-exclusivo, e data-fundo-tom com a luz da arte), lidos pelo CSS do
+ * .tema-mural.
  */
 export default function AplicarAparencia() {
   const { prefs, ready, save } = usePreferences();
@@ -37,6 +38,52 @@ export default function AplicarAparencia() {
       /* sem armazenamento */
     }
   }, [fundoUrl, fundoEscopo, ready]);
+
+  // A luz da arte (uma vez por imagem): fundo claro ganha mais cobertura no muro escuro.
+  useEffect(() => {
+    if (!ready) return;
+    const raiz = document.documentElement;
+    if (!fundoUrl) {
+      delete raiz.dataset.fundoTom;
+      return;
+    }
+    try {
+      const guardado = JSON.parse(localStorage.getItem(CACHE_DO_TOM_DO_FUNDO) || 'null');
+      if (guardado?.url === fundoUrl && (guardado.tom === 'claro' || guardado.tom === 'escuro')) {
+        raiz.dataset.fundoTom = guardado.tom;
+        return;
+      }
+    } catch {
+      /* sem armazenamento */
+    }
+    delete raiz.dataset.fundoTom;
+    let vivo = true;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      if (!vivo) return;
+      try {
+        const lado = 24;
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = lado;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, lado, lado);
+        const px = ctx.getImageData(0, 0, lado, lado).data;
+        let soma = 0;
+        for (let i = 0; i < px.length; i += 4) soma += (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255;
+        const tom = tomPelaLuz(soma / (lado * lado));
+        raiz.dataset.fundoTom = tom;
+        localStorage.setItem(CACHE_DO_TOM_DO_FUNDO, JSON.stringify({ url: fundoUrl, tom }));
+      } catch {
+        /* imagem de outra origem sem CORS: fica a cobertura padrão */
+      }
+    };
+    img.src = fundoUrl;
+    return () => {
+      vivo = false;
+    };
+  }, [fundoUrl, ready]);
 
   // Uma vez por sessão: o plano de fundo ainda é da pessoa? (o superadministrador pode tirar)
   const idDoFundo = exclusivo?.id ?? '';
