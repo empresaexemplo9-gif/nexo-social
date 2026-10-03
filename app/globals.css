@@ -2458,6 +2458,90 @@ html[data-muro='claro'] .tema-mural[data-area='colecionaveis'] {
 }
 
 /* ===========================================================================
+   Adesivos e bottons no banner da home (AdesivosDoBanner.tsx): colados por
+   cima do banner, um pouco menores que no chat (lá o adesivo vai a 160 px e o
+   botton a 112 px). Fora da edição não pegam o toque.
+   ========================================================================= */
+.banner-item {
+  position: absolute;
+  transform: translate(-50%, -50%) rotate(var(--giro, 0deg));
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.28));
+  user-select: none;
+  -webkit-user-select: none;
+}
+.banner-item img {
+  display: block;
+  pointer-events: none;
+}
+.banner-item--adesivo img {
+  height: clamp(52px, 7vw, 92px);
+  width: auto;
+  max-width: clamp(72px, 10vw, 128px);
+  object-fit: contain;
+}
+.banner-item--botton img {
+  width: clamp(42px, 5.2vw, 68px);
+  height: clamp(42px, 5.2vw, 68px);
+  border-radius: 999px;
+  object-fit: cover;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.35);
+}
+.banner-camada--editando {
+  pointer-events: none;
+  box-shadow: inset 0 0 0 2px rgb(34 197 94 / 0.7);
+  border-radius: inherit;
+}
+.banner-camada--editando .banner-item {
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+.banner-camada--editando .banner-item:active {
+  cursor: grabbing;
+}
+.banner-item--selecionado {
+  outline: 2px dashed #22c55e;
+  outline-offset: 5px;
+  border-radius: 14px;
+}
+/* A bandeja de escolher (fica fora do tema da área: cores próprias). */
+.banner-bandeja {
+  bottom: calc(var(--altura-abas, 0px) + 0.75rem);
+  background: rgb(18 18 22 / 0.96);
+  color: #f4f4f5;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.banner-escolha {
+  background: rgb(255 255 255 / 0.07);
+  border: 1px solid rgb(255 255 255 / 0.12);
+}
+.banner-escolha:not(:disabled):hover {
+  border-color: #22c55e;
+}
+.banner-acao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  border-radius: 0.75rem;
+  padding: 0.4rem 0.8rem;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.banner-acao--pronto {
+  border-color: transparent;
+  background: #22c55e;
+  color: #052e16;
+}
+.banner-acao--tirar {
+  border-color: rgb(248 113 113 / 0.55);
+  color: #fecaca;
+}
+
+/* ===========================================================================
    Missões e trocas (Colecionáveis): o "×2" do repetido, a barra de progresso,
    a missão pronta para resgatar (pulsa de leve) e as cartas do prêmio, que
    viram uma a uma.

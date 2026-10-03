@@ -8,7 +8,7 @@
 
 import { THEMES, TEX_FILES, isDark, type TexKey, type ThemeId } from './invite-themes';
 
-import { formaDoFundoExclusivo, formaDoMuro, type Aparencia } from './aparencia-tipos';
+import { formaDoBanner, formaDoFundoExclusivo, formaDoMuro, type Aparencia } from './aparencia-tipos';
 
 export { APARENCIA_PADRAO, CACHE_DA_APARENCIA, CACHE_DO_MURO, type Aparencia, type EscopoDoFundo, type FundoExclusivo, type Muro } from './aparencia-tipos';
 
@@ -186,6 +186,8 @@ export function normalizarAparencia(v: unknown): Aparencia {
     // Que o item foi mesmo dado à pessoa, quem confere é o aplicador
     // (components/AplicarAparencia.tsx), contra /api/exclusivos.
     exclusivo: formaDoFundoExclusivo(o.exclusivo),
+    // Idem para os adesivos e bottons do banner (components/home/AdesivosDoBanner.tsx).
+    banner: formaDoBanner(o.banner),
   };
 }
 
