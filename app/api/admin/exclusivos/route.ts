@@ -23,12 +23,16 @@ export async function GET() {
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: 'Chave administrativa do Supabase indisponível.' }, { status: 503 });
 
-  const [assetsR, profilesR, grantsR] = await Promise.all([
-    admin.from('exclusive_assets').select(COLUNAS).order('sort_order', { ascending: true }).order('created_at', { ascending: true }),
+  const catalogo = (colunas: string) =>
+    admin.from('exclusive_assets').select(colunas).order('sort_order', { ascending: true }).order('created_at', { ascending: true });
+  const [assetsComSorteio, profilesR, grantsR] = await Promise.all([
+    catalogo(`${COLUNAS}, sorteavel`),
     admin.from('profiles').select('id, full_name, email').order('created_at', { ascending: true }),
     admin.from('exclusive_asset_grants').select('asset_id, user_id, granted_at'),
   ]);
 
+  // `sorteavel` vem de db/missoes.sql; sem ela, todo item entra no sorteio.
+  const assetsR = assetsComSorteio.error?.code === '42703' ? await catalogo(COLUNAS) : assetsComSorteio;
   const firstError = assetsR.error || profilesR.error || grantsR.error;
   if (firstError) {
     const missing = faltaMigracao(firstError);
@@ -41,7 +45,7 @@ export async function GET() {
   const bucket = (p: string) => admin.storage.from('exclusivos').getPublicUrl(p).data.publicUrl;
   return NextResponse.json(
     {
-      assets: (assetsR.data ?? []).map((a: any) => ({ ...itemParaCliente(a, bucket), active: a.active !== false })),
+      assets: (assetsR.data ?? []).map((a: any) => ({ ...itemParaCliente(a, bucket), active: a.active !== false, sorteavel: a.sorteavel !== false })),
       users: profilesR.data ?? [],
       grants: grantsR.data ?? [],
     },
@@ -87,6 +91,7 @@ export async function POST(request: Request) {
     if (body?.collection !== undefined) mudanca.collection = texto(body.collection, 80) || 'geral';
     if (body?.edition !== undefined) mudanca.edition = texto(body.edition, 80);
     if (typeof body?.active === 'boolean') mudanca.active = body.active;
+    if (typeof body?.sorteavel === 'boolean') mudanca.sorteavel = body.sorteavel;
     if (mudanca.title === '') return NextResponse.json({ error: 'O item precisa de um nome.' }, { status: 400 });
     const { error } = await admin.from('exclusive_assets').update(mudanca).eq('id', assetId);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });

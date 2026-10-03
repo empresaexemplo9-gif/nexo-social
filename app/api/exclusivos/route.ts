@@ -20,7 +20,12 @@ export async function GET(request: Request) {
   const tipos = (url.searchParams.get('kind') ?? '').split(',').filter(Boolean);
   if (tipos.some((t) => !ehTipoExclusivo(t))) return NextResponse.json({ error: 'Tipo inválido.' }, { status: 400 });
 
-  const { data: grants, error: grantsError } = await sb.from('exclusive_asset_grants').select('asset_id').eq('user_id', user.id);
+  // A quantidade (repetidos) vem de db/missoes.sql; sem ela, cada item conta um.
+  let { data: grants, error: grantsError } = (await sb.from('exclusive_asset_grants').select('asset_id, quantidade').eq('user_id', user.id)) as {
+    data: { asset_id: string; quantidade?: number }[] | null;
+    error: { code?: string; message?: string } | null;
+  };
+  if (grantsError?.code === '42703') ({ data: grants, error: grantsError } = await sb.from('exclusive_asset_grants').select('asset_id').eq('user_id', user.id));
   if (grantsError) {
     const missing = grantsError.code === '42P01' || grantsError.code === 'PGRST205' || /exclusive_asset_grants/i.test(grantsError.message || '');
     return NextResponse.json(
@@ -30,6 +35,7 @@ export async function GET(request: Request) {
   }
 
   const ids = (grants ?? []).map((g: any) => g.asset_id).filter(Boolean);
+  const quantidade = new Map((grants ?? []).map((g: any) => [g.asset_id, Number(g.quantidade) || 1]));
   if (!ids.length) return NextResponse.json({ items: [] }, { headers: { 'Cache-Control': 'private, no-store' } });
 
   let query = sb
@@ -46,7 +52,7 @@ export async function GET(request: Request) {
 
   const bucket = (p: string) => sb.storage.from('exclusivos').getPublicUrl(p).data.publicUrl as string;
   return NextResponse.json(
-    { items: (data ?? []).map((a: any) => itemParaCliente(a, bucket)).filter((i) => i.url) },
+    { items: (data ?? []).map((a: any) => ({ ...itemParaCliente(a, bucket), quantidade: quantidade.get(a.id) ?? 1 })).filter((i) => i.url) },
     { headers: { 'Cache-Control': 'private, no-store' } },
   );
 }
