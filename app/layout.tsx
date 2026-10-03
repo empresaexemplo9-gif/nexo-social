@@ -124,7 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               // Versão clara dos murais das áreas (ver components/AplicarAparencia.tsx).
               "try{if(localStorage.getItem('nexo:muro')==='claro')document.documentElement.dataset.muro='claro'}catch(e){}" +
               // Plano de fundo exclusivo: só na home ou em todas as abas (ver components/AplicarAparencia.tsx).
-              "try{var f=JSON.parse(localStorage.getItem('nexo:fundo-exclusivo')||'null');if(f&&(f.escopo==='home'||f.escopo==='todas')&&/^(\\/colecao\\/[a-z0-9-]+\\/fundos\\/[a-z0-9-]+\\.webp|https:\\/\\/[a-z0-9-]+\\.supabase\\.co\\/storage\\/v1\\/object\\/public\\/exclusivos\\/[A-Za-z0-9_\\/.-]+)$/.test(f.url)&&f.url.indexOf('..')<0){document.documentElement.dataset.fundoExclusivo=f.escopo;document.documentElement.style.setProperty('--fundo-exclusivo','url(\"'+f.url+'\")')}}catch(e){}",
+              "try{var f=JSON.parse(localStorage.getItem('nexo:fundo-exclusivo')||'null');if(f&&(f.escopo==='home'||f.escopo==='todas')&&/^(\\/colecao\\/[a-z0-9-]+\\/fundos\\/[a-z0-9-]+\\.webp|https:\\/\\/[a-z0-9-]+\\.supabase\\.co\\/storage\\/v1\\/object\\/public\\/exclusivos\\/[A-Za-z0-9_\\/.-]+)$/.test(f.url)&&f.url.indexOf('..')<0){document.documentElement.dataset.fundoExclusivo=f.escopo;document.documentElement.style.setProperty('--fundo-exclusivo','url(\"'+f.url+'\")');var t=JSON.parse(localStorage.getItem('nexo:fundo-exclusivo:tom')||'null');if(t&&t.url===f.url&&(t.tom==='claro'||t.tom==='escuro'))document.documentElement.dataset.fundoTom=t.tom}}catch(e){}",
           }}
         />
       </head>

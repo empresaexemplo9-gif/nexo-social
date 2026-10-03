@@ -130,7 +130,12 @@ VALUES
   ('Astronauta', 'sticker', 'DRAP · Inauguração', 'Edição Futurista', '/colecao/drap-inauguracao/adesivos/futurista-07.webp', NULL, 122),
   ('Novos horizontes', 'sticker', 'DRAP · Inauguração', 'Edição Futurista', '/colecao/drap-inauguracao/adesivos/futurista-08.webp', NULL, 123),
   ('Samurai', 'sticker', 'DRAP · Inauguração', 'Edição Futurista', '/colecao/drap-inauguracao/adesivos/futurista-09.webp', NULL, 124),
-  ('Planeta', 'sticker', 'DRAP · Inauguração', 'Edição Futurista', '/colecao/drap-inauguracao/adesivos/futurista-10.webp', NULL, 125)
+  ('Planeta', 'sticker', 'DRAP · Inauguração', 'Edição Futurista', '/colecao/drap-inauguracao/adesivos/futurista-10.webp', NULL, 125),
+  ('Gatinhos · Doodle vertical', 'wallpaper', 'Gatinhos', 'Doodle', '/colecao/gatinhos/fundos/doodle-vertical.webp', '/colecao/gatinhos/fundos/doodle-vertical-mini.webp', 126),
+  ('Gatinhos · Doodle clássico', 'wallpaper', 'Gatinhos', 'Doodle', '/colecao/gatinhos/fundos/doodle-classico.webp', '/colecao/gatinhos/fundos/doodle-classico-mini.webp', 127),
+  ('Gatinhos · Doodle panorâmico', 'wallpaper', 'Gatinhos', 'Doodle', '/colecao/gatinhos/fundos/doodle-panoramico.webp', '/colecao/gatinhos/fundos/doodle-panoramico-mini.webp', 128),
+  ('Novelo', 'button', 'Gatinhos', 'Doodle', '/colecao/gatinhos/bottons/doodle-01.webp', NULL, 129),
+  ('Espreguiçando', 'button', 'Gatinhos', 'Doodle', '/colecao/gatinhos/bottons/doodle-02.webp', NULL, 130)
 ON CONFLICT (image_path) DO UPDATE SET
   title = EXCLUDED.title,
   kind = EXCLUDED.kind,

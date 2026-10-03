@@ -29,7 +29,7 @@ const linhas = [...catalogo.matchAll(/^  \('((?:[^']|'')+)', '(\w+)', '((?:[^']|
 }));
 
 test('coleção embutida: cada arquivo existe, no lugar do seu tema e tipo', () => {
-  assert.equal(linhas.length, 125);
+  assert.equal(linhas.length, 130);
   for (const l of linhas) {
     for (const c of [l.caminho, l.mini].filter(Boolean)) {
       assert.ok(fs.existsSync(`public${c}`), c);
@@ -47,13 +47,14 @@ test('coleção embutida: cada arquivo existe, no lugar do seu tema e tipo', () 
 
 test('coleção embutida: os planos de fundo de cada banda ficam todos (com miniatura)', () => {
   const fundos = linhas.filter((l) => l.tipo === 'wallpaper');
-  assert.equal(fundos.length, 9);
+  assert.equal(fundos.length, 12);
   for (const f of fundos) assert.ok(f.mini, `${f.titulo} tem miniatura`);
   const porTema = (t) => fundos.filter((f) => f.tema === t).length;
   assert.equal(porTema('Linkin Park'), 2);
   assert.equal(porTema('System of a Down'), 2);
-  assert.equal(linhas.filter((l) => l.tipo === 'button').length, 14);
-  assert.deepEqual([...new Set(linhas.map((l) => l.tema))].sort(), ['DRAP · Inauguração', 'Linkin Park', 'Nexo Social · Inauguração', 'System of a Down', 'Twenty One Pilots']);
+  assert.equal(linhas.filter((l) => l.tipo === 'button').length, 16);
+  assert.equal(porTema('Gatinhos'), 3, 'os três formatos dos Gatinhos ficam');
+  assert.deepEqual([...new Set(linhas.map((l) => l.tema))].sort(), ['DRAP · Inauguração', 'Gatinhos', 'Linkin Park', 'Nexo Social · Inauguração', 'System of a Down', 'Twenty One Pilots']);
 });
 
 test('itens por tema → tipo → edição, e o endereço certo de cada um', () => {
@@ -223,4 +224,20 @@ test('adesivos e bottons exclusivos ficam animados no chat', () => {
   for (const k of ['adesivo-cola', 'adesivo-balanca', 'adesivo-brilho', 'botton-gira']) assert.ok(css.includes(`@keyframes ${k} {`), k);
   assert.match(css, /animation:\s*adesivo-cola[^;]*both,\s*adesivo-balanca[^;]*infinite;/);
   assert.match(css, /prefers-reduced-motion: reduce\) \{\s*\.adesivo-vivo,\s*\.adesivo-vivo::after \{\s*animation: none;/, 'respeita quem pediu menos movimento');
+});
+
+test('plano de fundo claro (Gatinhos) ganha mais cobertura no muro escuro; os escuros ficam como estão', () => {
+  assert.equal(tipos.tomPelaLuz(0.72), 'claro');
+  assert.equal(tipos.tomPelaLuz(0.41), 'escuro');
+  // O tom medido fica no aparelho e o layout o aplica antes de pintar, só para a mesma imagem.
+  assert.ok(fs.readFileSync('app/layout.tsx', 'utf8').includes(`localStorage.getItem('${tipos.CACHE_DO_TOM_DO_FUNDO}')`));
+  assert.match(fs.readFileSync('app/layout.tsx', 'utf8'), /t\.url===f\.url&&\(t\.tom==='claro'\|\|t\.tom==='escuro'\)\)document\.documentElement\.dataset\.fundoTom=t\.tom/);
+  const aplicar = fs.readFileSync('components/AplicarAparencia.tsx', 'utf8');
+  assert.match(aplicar, /raiz\.dataset\.fundoTom = tom;/);
+  assert.match(aplicar, /img\.crossOrigin = 'anonymous'/);
+  const css = fs.readFileSync('app/globals.css', 'utf8');
+  assert.ok(css.includes("html:not([data-muro='claro'])[data-fundo-tom='claro'][data-fundo-exclusivo='todas'] .parede-mural::after"));
+  // Os Gatinhos: três formatos e dois bottons, no tema próprio.
+  const gatos = linhas.filter((l) => l.tema === 'Gatinhos');
+  assert.deepEqual(gatos.map((l) => l.tipo), ['wallpaper', 'wallpaper', 'wallpaper', 'button', 'button']);
 });

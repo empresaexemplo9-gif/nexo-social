@@ -74,13 +74,13 @@ INSERT INTO auth.users (id, email, raw_user_meta_data) VALUES
 ON CONFLICT DO NOTHING;
 
 -- --- 1) Coleção embutida ---------------------------------------------------------------------
-SELECT assert((SELECT count(*) FROM exclusive_assets) = 125, '1. a coleção embutida tem 125 itens');
-SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'wallpaper') = 9, '1. 9 planos de fundo (mais de um por banda quando há)');
+SELECT assert((SELECT count(*) FROM exclusive_assets) = 130, '1. a coleção embutida tem 130 itens');
+SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'wallpaper') = 12, '1. 12 planos de fundo (mais de um por banda quando há)');
 SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'wallpaper' AND collection = 'Linkin Park') = 2, '1. Linkin Park com os 2 planos de fundo');
 SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'wallpaper' AND collection = 'System of a Down') = 2, '1. System of a Down com os 2 planos de fundo');
-SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'button') = 14, '1. 14 bottons');
+SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'button') = 16, '1. 16 bottons');
 SELECT assert((SELECT count(*) FROM exclusive_assets WHERE kind = 'wallpaper' AND thumb_path IS NULL) = 0, '1. todo plano de fundo tem miniatura');
-SELECT assert((SELECT count(DISTINCT collection) FROM exclusive_assets) = 5, '1. cinco temas/bandas, cada um no seu espaço');
+SELECT assert((SELECT count(DISTINCT collection) FROM exclusive_assets) = 6, '1. seis temas/bandas, cada um no seu espaço');
 SELECT assert(NOT EXISTS (
   SELECT 1 FROM exclusive_assets
   WHERE image_path NOT LIKE '/colecao/%/' || CASE kind WHEN 'wallpaper' THEN 'fundos' WHEN 'sticker' THEN 'adesivos' ELSE 'bottons' END || '/%'
@@ -110,7 +110,7 @@ SELECT assert(ve(:'jwt_ana', $q$SELECT 1 FROM exclusive_assets WHERE kind = 'wal
 SELECT assert(ve(:'jwt_beto', 'SELECT 1 FROM exclusive_assets') = 0, '3. Beto não recebeu nada e não vê nada');
 SELECT assert(ve(:'jwt_beto', 'SELECT 1 FROM exclusive_asset_grants') = 0, '3. nem as concessões dos outros');
 SELECT assert(ve(:'jwt_ana', 'SELECT 1 FROM exclusive_asset_grants') = 18, '3. Ana vê as próprias concessões');
-SELECT assert(ve(:'jwt_chefe', 'SELECT 1 FROM exclusive_assets') = 126, '3. o superadministrador vê o catálogo inteiro');
+SELECT assert(ve(:'jwt_chefe', 'SELECT 1 FROM exclusive_assets') = 131, '3. o superadministrador vê o catálogo inteiro');
 
 -- --- 4) Não expira; rodar a coleção de novo não mexe em nada ---------------------------------
 SELECT assert(NOT EXISTS (
@@ -119,7 +119,7 @@ SELECT assert(NOT EXISTS (
 ), '4. a concessão não tem validade');
 UPDATE exclusive_assets SET title = 'Renomeado' WHERE image_path = '/colecao/linkin-park/fundos/discografia.webp';
 \i db/exclusivos-catalogo.sql
-SELECT assert((SELECT count(*) FROM exclusive_assets) = 126, '4. rodar a coleção de novo não duplica');
+SELECT assert((SELECT count(*) FROM exclusive_assets) = 131, '4. rodar a coleção de novo não duplica');
 SELECT assert((SELECT title FROM exclusive_assets WHERE image_path = '/colecao/linkin-park/fundos/discografia.webp') = 'Linkin Park · Discografia',
   '4. e devolve o nome da coleção');
 SELECT assert(ve(:'jwt_ana', 'SELECT 1 FROM exclusive_asset_grants') = 18, '4. e Ana continua com o kit');
