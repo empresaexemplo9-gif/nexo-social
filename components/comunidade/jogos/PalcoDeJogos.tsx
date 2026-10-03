@@ -6,11 +6,11 @@ import Link from 'next/link';
 import Icon from '../../icons';
 import Avatar from '../../Avatar';
 import Arte from './Arte';
-import EscolherEscolas from './EscolherEscolas';
+import EscolherElemento from './EscolherElemento';
 import { CartaGrande } from './CartaArcana';
 import { RegrasDaTrilha, RegrasDoArcanos } from './Regras';
 import { CATEGORIAS_DO_QUIZ } from '@/lib/jogos/perguntas';
-import { ESCOLAS, type Escola } from '@/lib/jogos/arcanos/cartas';
+import { ELEMENTOS, ELEMENTOS_ORDEM, type Elemento } from '@/lib/jogos/arcanos/cartas';
 import { novoId, type JogoId, type MesaAnunciada } from '@/lib/jogos/canal';
 import {
   criarSalaLocal,
@@ -18,7 +18,7 @@ import {
   iniciarRoboDoArcanos,
   ROBO_DO_ARCANOS,
   ROBOS_DA_TRILHA,
-  sortearEscolas,
+  sortearElemento,
   type CanalDeJogos,
 } from '@/lib/jogos/sala-local';
 import type { GrupoResumo } from '@/lib/comunidade-tipos';
@@ -32,8 +32,8 @@ type Eu = { userId: string; nome: string; avatar: string | null };
 type Partida =
   | { jogo: 'trilha'; mesa: string; local: true; robos: number }
   | { jogo: 'trilha'; mesa: string; local: false; papel: 'host' | 'jogador' | 'espectador'; hostNome?: string }
-  | { jogo: 'arcanos'; mesa: string; local: true; escolas: [Escola, Escola] }
-  | { jogo: 'arcanos'; mesa: string; local: false; papel: 'host' | 'desafiante' | 'espectador'; escolas?: [Escola, Escola]; hostNome?: string };
+  | { jogo: 'arcanos'; mesa: string; local: true; elemento: Elemento }
+  | { jogo: 'arcanos'; mesa: string; local: false; papel: 'host' | 'desafiante' | 'espectador'; elemento?: Elemento; hostNome?: string };
 
 /** O ambiente de cada jogo: o palco inteiro muda quando o jogo muda. */
 const AMBIENTE: Record<JogoId, { fundo: string; textura: string; linha: string; destaque: string; sobreDestaque: string; fonte: string; arte: string }> = {
@@ -62,10 +62,10 @@ const AMBIENTE: Record<JogoId, { fundo: string; textura: string; linha: string; 
 
 const NOMES: Record<JogoId, { nome: string; tipo: string }> = {
   trilha: { nome: 'Trilha do Saber', tipo: 'Tabuleiro · conhecimentos e curiosidades' },
-  arcanos: { nome: 'Arcanos', tipo: 'Cartas · estratégia' },
+  arcanos: { nome: 'Arcanos', tipo: 'Cartas e dados · estratégia' },
 };
 
-const VITRINE_DE_CARTAS = ['c10', 'm09', 'b09', 'l11', 's12'];
+const VITRINE_DE_CARTAS = ['fo17', 'ag12', 'te17', 'ar07', 'lu16', 'es17'];
 
 function Carregando() {
   return (
@@ -146,7 +146,7 @@ export default function PalcoDeJogos({
     const paradas =
       partida.jogo === 'trilha'
         ? ROBOS_DA_TRILHA.slice(0, partida.robos).map((r) => iniciarRoboDaTrilha(sala.get(r.userId)!, partida.mesa, r))
-        : [iniciarRoboDoArcanos(sala.get(ROBO_DO_ARCANOS.userId)!, partida.mesa, sortearEscolas())];
+        : [iniciarRoboDoArcanos(sala.get(ROBO_DO_ARCANOS.userId)!, partida.mesa, sortearElemento())];
     return () => paradas.forEach((p) => p());
   }, [sala]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -278,7 +278,7 @@ export default function PalcoDeJogos({
             mesa={partida.mesa}
             papel={partida.local ? 'host' : partida.papel}
             eu={eu}
-            escolas={partida.escolas}
+            elemento={partida.elemento}
             hostNome={partida.local ? undefined : partida.hostNome}
             local={partida.local}
             aoSair={aoSair}
@@ -331,14 +331,14 @@ export default function PalcoDeJogos({
       </div>
 
       {escolhendo && (
-        <EscolherEscolas
+        <EscolherElemento
           titulo={escolhendo.para === 'robo' ? 'Duelo contra o computador' : escolhendo.para === 'criar' ? 'Abrir um duelo no grupo' : `Aceitar o duelo de ${escolhendo.mesa.hostNome.split(' ')[0]}`}
           botao={escolhendo.para === 'robo' ? 'Duelar' : escolhendo.para === 'criar' ? 'Abrir mesa' : 'Aceitar'}
           onCancelar={() => setEscolhendo(null)}
-          onEscolher={(escolas) => {
-            if (escolhendo.para === 'robo') setPartida({ jogo: 'arcanos', mesa: novoId(), local: true, escolas });
-            else if (escolhendo.para === 'criar') setPartida({ jogo: 'arcanos', mesa: novoId(), local: false, papel: 'host', escolas });
-            else setPartida({ jogo: 'arcanos', mesa: escolhendo.mesa.id, local: false, papel: 'desafiante', escolas, hostNome: escolhendo.mesa.hostNome });
+          onEscolher={(elemento) => {
+            if (escolhendo.para === 'robo') setPartida({ jogo: 'arcanos', mesa: novoId(), local: true, elemento });
+            else if (escolhendo.para === 'criar') setPartida({ jogo: 'arcanos', mesa: novoId(), local: false, papel: 'host', elemento });
+            else setPartida({ jogo: 'arcanos', mesa: escolhendo.mesa.id, local: false, papel: 'desafiante', elemento, hostNome: escolhendo.mesa.hostNome });
             setEscolhendo(null);
           }}
         />
@@ -481,12 +481,12 @@ function LobbyDoArcanos({ onRobo, onRegras, grupo }: { onRobo: () => void; onReg
         <div>
           <h2 className="fonte-arcana text-3xl font-black text-[#fdf6e3]">Arcanos</h2>
           <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: '#f5d77a' }}>
-            {NOMES.arcanos.tipo} · duelo de escolas
+            {NOMES.arcanos.tipo} · duelo dos elementos
           </p>
         </div>
       </div>
       <p className="fonte-pergaminho mt-3 max-w-2xl text-base leading-relaxed text-[#fdf6e3]/90">
-        Duelo de magia no estilo dos grandes jogos de cartas: escolha duas das cinco escolas ({(Object.keys(ESCOLAS) as Escola[]).map((e) => ESCOLAS[e].nome).join(', ')}), invoque criaturas, lance feitiços, ataque e bloqueie. Quem zerar a vida do outro vence.
+        Duelo de magia em um tabuleiro 3D: escolha um dos seis elementos ({ELEMENTOS_ORDEM.map((e) => ELEMENTOS[e].nome).join(', ')}), jogue a sua mana, lance feitiços, invoque personagens e role os dados — de 3 a 20 lados — para causar dano, curar, proteger e amplificar. Quem zerar os 20 pontos de vida do outro vence.
       </p>
 
       <div className="-mx-4 mt-5 flex gap-3 overflow-x-auto px-4 pb-2 sm:-mx-7 sm:px-7" aria-label="Algumas cartas">
@@ -508,7 +508,7 @@ function LobbyDoArcanos({ onRobo, onRegras, grupo }: { onRobo: () => void; onReg
           <span className="fonte-arcana flex items-center gap-2 text-lg font-black">
             <Arte nome="wizard-face" className="h-6 w-6" /> Contra o computador
           </span>
-          <span className="fonte-pergaminho mt-0.5 block text-sm opacity-80">O {ROBO_DO_ARCANOS.nome} escolhe duas escolas e aceita o desafio na hora.</span>
+          <span className="fonte-pergaminho mt-0.5 block text-sm opacity-80">O {ROBO_DO_ARCANOS.nome} escolhe um elemento e aceita o desafio na hora.</span>
         </button>
         <div>{grupo}</div>
       </div>

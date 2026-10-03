@@ -3,7 +3,7 @@
 // depender da conexão com o grupo — os jogos não sabem a diferença.
 
 import { aplicar, embaralharBaralho, novaPartida, type Acao, type Estado, type Lado, type Participante } from './arcanos/motor';
-import { montarBaralho, ESCOLAS, type Escola } from './arcanos/cartas';
+import { ELEMENTOS_ORDEM, type Elemento } from './arcanos/cartas';
 import { decidirJogada } from './arcanos/robo';
 import { PERGUNTAS } from './perguntas';
 import type { EstadoTrilha } from './trilha';
@@ -112,7 +112,7 @@ export function iniciarRoboDaTrilha(canal: CanalDeJogos, mesa: string, robo: (ty
 }
 
 /** O adversário do Arcanos: aceita o duelo, joga com a própria mão e responde a cada lance. */
-export function iniciarRoboDoArcanos(canal: CanalDeJogos, mesa: string, escolas: [Escola, Escola] = sortearEscolas()): () => void {
+export function iniciarRoboDoArcanos(canal: CanalDeJogos, mesa: string, elemento: Elemento = sortearElemento()): () => void {
   let vivo = true;
   let estado: Estado | null = null;
   let lado: Lado = 1;
@@ -122,15 +122,15 @@ export function iniciarRoboDoArcanos(canal: CanalDeJogos, mesa: string, escolas:
   const jogar = (acao: Acao) => {
     if (!estado) return;
     let r = aplicar(estado, acao);
-    // Jogada recusada (não deveria acontecer): segue o jogo sem travar.
+    // Jogada recusada (não deveria acontecer): passa a vez para não travar.
     if (!r.ok) {
-      acao = estado.fase === 'bloqueio' ? { t: 'bloquear', lado, bloqueios: {} } : { t: 'passar', lado };
-      r = aplicar(estado, acao);
+      r = aplicar(estado, { t: 'passar', lado });
       if (!r.ok) return;
     }
     const seq = estado.seq;
     estado = r.estado;
-    canal.enviar(mesa, 'arc:acao', { acao, seq });
+    // O robô rola os dados: a ação segue com os resultados, como a de qualquer jogador.
+    canal.enviar(mesa, 'arc:acao', { acao: r.acao, seq });
     pensar();
   };
 
@@ -138,9 +138,9 @@ export function iniciarRoboDoArcanos(canal: CanalDeJogos, mesa: string, escolas:
     clearTimeout(timer);
     const e = estado;
     if (!vivo || !e || e.vencedor !== null) return;
-    const minhaVez = (e.fase === 'principal' && e.ativo === lado) || (e.fase === 'bloqueio' && e.ativo !== lado);
-    if (!minhaVez) return;
-    const ms = e.fase === 'bloqueio' ? 1400 : 900 + Math.random() * 900;
+    if (e.ativo !== lado) return;
+    // Espera a mesa terminar de animar a jogada anterior (dados, projéteis, impactos).
+    const ms = 1900 + Math.random() * 1300;
     timer = setTimeout(() => {
       if (!vivo || !estado) return;
       const acao = decidirJogada(estado, lado);
@@ -157,7 +157,7 @@ export function iniciarRoboDoArcanos(canal: CanalDeJogos, mesa: string, escolas:
         const i = ps.findIndex((p) => p.userId === ROBO_DO_ARCANOS.userId);
         if (i < 0) return;
         lado = i as Lado;
-        estado = novaPartida(ps, lado, embaralharBaralho(montarBaralho(ps[lado].escolas), lado));
+        estado = novaPartida(ps, lado, embaralharBaralho(ps[lado].elemento));
         pensar();
         return;
       }
@@ -180,7 +180,7 @@ export function iniciarRoboDoArcanos(canal: CanalDeJogos, mesa: string, escolas:
   });
 
   // Aceita o duelo que a pessoa abriu.
-  const aceitar = () => !estado && vivo && canal.enviar(mesa, 'arc:aceitar', { nome: ROBO_DO_ARCANOS.nome, avatar: null, escolas });
+  const aceitar = () => !estado && vivo && canal.enviar(mesa, 'arc:aceitar', { nome: ROBO_DO_ARCANOS.nome, avatar: null, elemento });
   const t1 = setTimeout(aceitar, 500);
   const t2 = setTimeout(aceitar, 2500);
 
@@ -193,9 +193,6 @@ export function iniciarRoboDoArcanos(canal: CanalDeJogos, mesa: string, escolas:
   };
 }
 
-export function sortearEscolas(): [Escola, Escola] {
-  const todas = Object.keys(ESCOLAS) as Escola[];
-  const a = sorteio(todas);
-  const b = sorteio(todas.filter((x) => x !== a));
-  return [a, b];
+export function sortearElemento(): Elemento {
+  return sorteio(ELEMENTOS_ORDEM);
 }
