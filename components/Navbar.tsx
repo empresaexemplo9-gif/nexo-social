@@ -207,10 +207,16 @@ function ConteudoMenu({
           <>
             <NotificationsBell lateral={lateral} rotulo={lateral ? undefined : 'Notificações'} className="menu-denim" />
             {admin && (
-              <Link href="/admin" onClick={onNavegar} className={item(ativo(pathname, '/admin'))} aria-current={ativo(pathname, '/admin') ? 'page' : undefined} title="Painel">
-                <Icon name="plug" size={19} className="shrink-0" />
-                <span className="rotulo-menu truncate">Painel</span>
-              </Link>
+              <>
+                <Link href="/admin?aba=kits" onClick={onNavegar} className={item(false)} title="Montar e enviar kits">
+                  <Icon name="gift" size={19} className="shrink-0" />
+                  <span className="rotulo-menu truncate">Montar e enviar kits</span>
+                </Link>
+                <Link href="/admin" onClick={onNavegar} className={item(ativo(pathname, '/admin'))} aria-current={ativo(pathname, '/admin') ? 'page' : undefined} title="Painel">
+                  <Icon name="plug" size={19} className="shrink-0" />
+                  <span className="rotulo-menu truncate">Painel</span>
+                </Link>
+              </>
             )}
             <button type="button" onClick={onSair} className={`${item(false)} w-full`} title="Sair">
               <Icon name="arrowRight" size={19} className="shrink-0" />

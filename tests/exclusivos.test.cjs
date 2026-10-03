@@ -188,3 +188,14 @@ test('aba Colecionáveis: no menu, com álbum de adesivos, painel de bottons e p
   // O plano de fundo exclusivo vem depois de tudo no CSS (passa na frente dos muros).
   assert.ok(css.lastIndexOf("html[data-fundo-exclusivo='todas'] .parede-mural::before") > css.lastIndexOf('.tema-mural[data-parede='));
 });
+
+test('o superadministrador acha onde montar e enviar kits: no menu, nos Colecionáveis e na 1ª aba do painel', () => {
+  const navbar = fs.readFileSync('components/Navbar.tsx', 'utf8');
+  assert.match(navbar, /\{admin && \([\s\S]*href="\/admin\?aba=kits"[\s\S]*Montar e enviar kits/);
+  const colecionaveis = fs.readFileSync('components/colecionaveis/Colecionaveis.tsx', 'utf8');
+  assert.match(colecionaveis, /\{admin && \([\s\S]*href="\/admin\?aba=kits"/);
+  const painel = fs.readFileSync('app/admin/page.tsx', 'utf8');
+  assert.match(painel, /const ABAS[^=]*= \[\s*\{ tab: 'exclusivos', rotulo: '[^']*Montar e enviar kits', aba: 'kits' \}/, 'é a primeira aba');
+  assert.match(painel, /useState<Tab>\('exclusivos'\)/, 'o painel abre nela');
+  assert.match(painel, /activeTab === 'exclusivos' && <AdminExclusivos/);
+});
