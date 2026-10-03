@@ -2458,6 +2458,79 @@ html[data-muro='claro'] .tema-mural[data-area='colecionaveis'] {
 }
 
 /* ===========================================================================
+   Missões e trocas (Colecionáveis): o "×2" do repetido, a barra de progresso,
+   a missão pronta para resgatar (pulsa de leve) e as cartas do prêmio, que
+   viram uma a uma.
+   ========================================================================= */
+.item-repetido {
+  position: absolute;
+  right: 0.25rem;
+  top: 0.25rem;
+  z-index: 2;
+  border-radius: 999px;
+  background: #f59e0b;
+  padding: 0.05rem 0.4rem;
+  color: #1c1917;
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.25rem;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+  pointer-events: none;
+}
+.missao-icone {
+  background: rgb(var(--acento-500) / 0.18);
+  color: rgb(var(--acento-400));
+}
+.missao-barra {
+  background: rgb(127 127 127 / 0.22);
+}
+.missao-barra > span {
+  background: linear-gradient(90deg, rgb(var(--acento-500)), rgb(var(--acento-400)));
+  transition: width 400ms ease;
+}
+.missao--pronta {
+  box-shadow: 0 0 0 2px rgb(var(--acento-500)), 0 10px 30px rgb(var(--acento-500) / 0.25);
+  animation: missao-pronta 2.4s ease-in-out infinite;
+}
+/* Brilha em volta (sem mexer o botão de resgatar do lugar). */
+@keyframes missao-pronta {
+  0%, 100% { box-shadow: 0 0 0 2px rgb(var(--acento-500)), 0 8px 24px rgb(var(--acento-500) / 0.18); }
+  50% { box-shadow: 0 0 0 3px rgb(var(--acento-400)), 0 10px 34px rgb(var(--acento-500) / 0.4); }
+}
+.premio-carta {
+  animation: premio-vira 0.7s cubic-bezier(0.2, 0.85, 0.3, 1.2) both;
+  transform-origin: 50% 60%;
+}
+@keyframes premio-vira {
+  0% { opacity: 0; transform: perspective(600px) rotateY(-120deg) scale(0.6); }
+  65% { opacity: 1; transform: perspective(600px) rotateY(12deg) scale(1.06); }
+  100% { opacity: 1; transform: perspective(600px) rotateY(0) scale(1); }
+}
+/* A janela do prêmio tem cores próprias (o tema da área não repinta). */
+.premio-fundo {
+  background: rgb(6 6 10 / 0.93);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.premio-botao {
+  background: #ffffff !important;
+  color: #111114 !important;
+}
+.premio-botao--claro {
+  background: rgb(255 255 255 / 0.12) !important;
+  color: #ffffff !important;
+}
+.premio-botao--claro:hover {
+  background: rgb(255 255 255 / 0.22) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .missao--pronta,
+  .premio-carta {
+    animation: none;
+  }
+}
+
+/* ===========================================================================
    Adesivos e bottons exclusivos no chat (Conversa.tsx): chegam sendo colados
    na conversa e ficam vivos — balançam devagar e um brilho holográfico passa
    só por cima da arte (a máscara é a própria imagem, com o contorno dela).

@@ -26,6 +26,8 @@ export interface ItemExclusivo {
   thumbUrl: string;
   sortOrder: number;
   createdAt?: string;
+  /** Quantos a pessoa tem (2 ou mais: repetido, dá para trocar). */
+  quantidade?: number;
 }
 
 export const ehTipoExclusivo = (v: unknown): v is TipoExclusivo => v === 'sticker' || v === 'wallpaper' || v === 'button';

@@ -9,14 +9,32 @@ import { supabase } from '@/lib/supabase';
 import { isPlatformAdmin } from '@/lib/auth';
 import { APARENCIA_PADRAO, type EscopoDoFundo } from '@/lib/aparencia-tipos';
 import { porTema, type ItemExclusivo, type TipoExclusivo } from '@/lib/exclusivos';
+import Missoes from './Missoes';
+import Trocas from './Trocas';
 
-export type AbaDosColecionaveis = 'adesivos' | 'bottons' | 'fundos';
+export type AbaDosColecionaveis = 'adesivos' | 'bottons' | 'fundos' | 'missoes' | 'trocas';
 
 const ABAS: { id: AbaDosColecionaveis; tipo: TipoExclusivo; rotulo: string; icone: IconName; vazio: string }[] = [
   { id: 'adesivos', tipo: 'sticker', rotulo: 'Adesivos', icone: 'sparkles', vazio: 'Seu álbum ainda está em branco. Os adesivos chegam de presente nos eventos e lançamentos.' },
   { id: 'bottons', tipo: 'button', rotulo: 'Bottons', icone: 'star', vazio: 'Nenhum botton por aqui ainda. Quando ganhar, ele fica preso no seu painel.' },
   { id: 'fundos', tipo: 'wallpaper', rotulo: 'Planos de fundo', icone: 'image', vazio: 'Nenhum plano de fundo exclusivo ainda.' },
 ];
+
+/** Missões (ganhar por sorteio) e trocas de repetidos. */
+const ABAS_DE_JOGO: { id: AbaDosColecionaveis; rotulo: string; icone: IconName }[] = [
+  { id: 'missoes', rotulo: 'Missões', icone: 'trophy' },
+  { id: 'trocas', rotulo: 'Trocas', icone: 'refresh' },
+];
+
+/** "×2" no canto de um item repetido. */
+function Repetido({ item }: { item: ItemExclusivo }) {
+  if (!item.quantidade || item.quantidade < 2) return null;
+  return (
+    <span className="item-repetido" title={`Você tem ${item.quantidade} — dá para trocar`}>
+      ×{item.quantidade}
+    </span>
+  );
+}
 
 const ESCOPOS: { id: EscopoDoFundo; rotulo: string; apoio: string }[] = [
   { id: 'home', rotulo: 'Só na home', apoio: 'O fundo aparece na página inicial.' },
@@ -27,10 +45,11 @@ const ESCOPOS: { id: EscopoDoFundo; rotulo: string; apoio: string }[] = [
 const giro = (i: number) => [-4, 3, -2, 5, -1, 2, -3, 4][i % 8];
 
 /**
- * Colecionáveis: o que o superadministrador enviou para a conta. Os adesivos
- * num álbum (cada tema/banda na sua página), os bottons presos num painel e os
- * planos de fundo — que valem só na home ou em todas as abas, como a pessoa
- * quiser. Nada expira.
+ * Colecionáveis: o que a pessoa ganhou (nos kits do superadministrador ou nas
+ * missões). Os adesivos num álbum (cada tema/banda na sua página), os bottons
+ * presos num painel e os planos de fundo — que valem só na home ou em todas as
+ * abas, como a pessoa quiser. Nada expira. Nas Missões ela ganha itens
+ * sorteados; nas Trocas, troca os repetidos com outras pessoas.
  */
 export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColecionaveis }) {
   const { prefs, ready, save } = usePreferences();
@@ -48,15 +67,19 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
     supabase?.auth.getUser().then(({ data }) => setAdmin(isPlatformAdmin(data.user?.email)));
   }, []);
 
-  useEffect(() => {
+  const carregar = () =>
     fetch('/api/exclusivos', { cache: 'no-store' })
       .then(async (r) => {
         const j = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(j.error || 'Não foi possível carregar seus colecionáveis.');
         setItens(j.items ?? []);
+        setErro('');
       })
       .catch((e) => setErro((e as Error).message))
       .finally(() => setCarregando(false));
+
+  useEffect(() => {
+    void carregar();
   }, []);
 
   useEffect(() => {
@@ -71,8 +94,8 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
     window.history.replaceState(null, '', a === 'adesivos' ? '/colecionaveis' : `/colecionaveis?aba=${a}`);
   };
 
-  const atual = ABAS.find((a) => a.id === aba)!;
-  const temas = useMemo(() => porTema(itens.filter((i) => i.kind === atual.tipo)), [itens, atual.tipo]);
+  const atual = ABAS.find((a) => a.id === aba) ?? null;
+  const temas = useMemo(() => (atual ? porTema(itens.filter((i) => i.kind === atual.tipo)) : []), [itens, atual]);
   const conta = (t: TipoExclusivo) => itens.filter((i) => i.kind === t).length;
   const fundoEmUso = itens.find((i) => i.id === emUso?.id);
 
@@ -91,7 +114,8 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
               <p className="rotulo-hud">Presentes da nexo.social</p>
               <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-zinc-50 md:text-5xl">Colecionáveis</h1>
               <p className="mt-2 max-w-2xl text-sm text-zinc-300">
-                Adesivos, bottons e planos de fundo que você ganhou, cada tema no seu espaço. É seu — não expira.
+                Adesivos, bottons e planos de fundo que você ganhou, cada tema no seu espaço. É seu — não expira. Cumpra missões para
+                ganhar mais (sai por sorteio) e troque os repetidos com quem tem o que falta.
               </p>
             </div>
             {admin && (
@@ -107,12 +131,27 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
                 <span className="opacity-70">{carregando ? '…' : conta(a.tipo)}</span>
               </button>
             ))}
+            {ABAS_DE_JOGO.map((a) => (
+              <button key={a.id} type="button" role="tab" aria-selected={aba === a.id} onClick={() => trocarAba(a.id)} className="q-chip q-aba q-chip--simples">
+                <Icon name={a.icone} size={15} /> {a.rotulo}
+              </button>
+            ))}
           </div>
         </header>
 
-        {carregando && <p className="card-soft p-8 text-center text-sm text-zinc-400">Abrindo sua coleção…</p>}
-        {erro && <p className="card-soft p-5 text-sm text-red-300">{erro}</p>}
-        {!carregando && !erro && !temas.length && aba !== 'fundos' && <p className="card-soft p-8 text-center text-sm text-zinc-400">{atual.vazio}</p>}
+        {aba === 'missoes' && <Missoes onGanhou={() => void carregar()} irParaTrocas={() => trocarAba('trocas')} />}
+        {aba === 'trocas' && <Trocas onMudou={() => void carregar()} irParaMissoes={() => trocarAba('missoes')} />}
+
+        {atual && carregando && <p className="card-soft p-8 text-center text-sm text-zinc-400">Abrindo sua coleção…</p>}
+        {atual && erro && <p className="card-soft p-5 text-sm text-red-300">{erro}</p>}
+        {atual && !carregando && !erro && !temas.length && aba !== 'fundos' && (
+          <p className="card-soft p-8 text-center text-sm text-zinc-400">
+            {atual.vazio}{' '}
+            <button type="button" onClick={() => trocarAba('missoes')} className="font-semibold text-emerald-400 hover:underline">
+              Cumpra missões para ganhar.
+            </button>
+          </p>
+        )}
 
         {/* --- Adesivos: o álbum, uma página por tema ------------------------------------------ */}
         {aba === 'adesivos' &&
@@ -125,7 +164,8 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
                   <ul className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4 md:grid-cols-6">
                     {e.itens.map((item, i) => (
                       <li key={item.id}>
-                        <button type="button" onClick={() => setAberto(item)} className="album-adesivo group block w-full text-center" style={{ '--giro': `${giro(i)}deg` } as React.CSSProperties}>
+                        <button type="button" onClick={() => setAberto(item)} className="album-adesivo group relative block w-full text-center" style={{ '--giro': `${giro(i)}deg` } as React.CSSProperties}>
+                          <Repetido item={item} />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={item.thumbUrl} alt={item.title} loading="lazy" className="mx-auto aspect-square w-full object-contain" />
                           <span className="mt-1 block truncate text-[11px] font-semibold text-zinc-400 group-hover:text-zinc-100">{item.title}</span>
@@ -150,7 +190,8 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
                   <ul className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
                     {e.itens.map((item, i) => (
                       <li key={item.id}>
-                        <button type="button" onClick={() => setAberto(item)} className="botton-preso group block w-full" style={{ '--giro': `${giro(i + 3)}deg` } as React.CSSProperties} aria-label={item.title}>
+                        <button type="button" onClick={() => setAberto(item)} className="botton-preso group relative block w-full" style={{ '--giro': `${giro(i + 3)}deg` } as React.CSSProperties} aria-label={item.title}>
+                          <Repetido item={item} />
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img src={item.thumbUrl} alt="" loading="lazy" className="aspect-square w-full rounded-full object-cover" />
                         </button>
@@ -186,7 +227,14 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
                 </button>
               </div>
             )}
-            {!carregando && !erro && !temas.length && <p className="card-soft p-8 text-center text-sm text-zinc-400">{atual.vazio}</p>}
+            {!carregando && !erro && !temas.length && (
+              <p className="card-soft p-8 text-center text-sm text-zinc-400">
+                {atual?.vazio}{' '}
+                <button type="button" onClick={() => trocarAba('missoes')} className="font-semibold text-emerald-400 hover:underline">
+                  Cumpra missões para ganhar.
+                </button>
+              </p>
+            )}
             {temas.map((t) => (
               <section key={t.tema} className="space-y-3" aria-label={`Planos de fundo de ${t.tema}`}>
                 <h2 className="font-display text-2xl font-bold text-zinc-50">{t.tema}</h2>
@@ -194,7 +242,8 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
                   {t.tipos[0].edicoes.flatMap((e) => e.itens).map((item) => {
                     const ativo = emUso?.id === item.id;
                     return (
-                      <article key={item.id} className={`card-soft overflow-hidden ${ativo ? 'ring-2 ring-emerald-400' : ''}`}>
+                      <article key={item.id} className={`card-soft relative overflow-hidden ${ativo ? 'ring-2 ring-emerald-400' : ''}`}>
+                        <Repetido item={item} />
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={item.thumbUrl} alt={item.title} className="aspect-video w-full object-cover" loading="lazy" />
                         <div className="space-y-2 p-3">

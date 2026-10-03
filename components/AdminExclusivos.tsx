@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { NOME_DO_TIPO, TIPOS_EXCLUSIVOS, fatiar, porTema, type ItemExclusivo, type TipoExclusivo } from '@/lib/exclusivos';
 import { recortarAdesivos, recortarBottons, recortarEmGrade, type Peca } from '@/lib/recorte';
 
-type Item = ItemExclusivo & { active: boolean };
+type Item = ItemExclusivo & { active: boolean; sorteavel?: boolean };
 type Pessoa = { id: string; full_name: string | null; email: string | null };
 type Concessao = { asset_id: string; user_id: string };
 
@@ -357,7 +357,7 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
           </div>
           {gerenciar && (
             <p className="rounded-lg border border-amber-800/50 bg-amber-950/30 px-3 py-2 text-[11px] text-amber-300">
-              Modo de gerenciar: use Ocultar ou Apagar embaixo de cada item. Toque em Pronto para voltar a montar o kit.
+              Modo de gerenciar: embaixo de cada item, tire do sorteio das missões (fica só para os kits), oculte ou apague. Toque em Pronto para voltar a montar o kit.
             </p>
           )}
 
@@ -427,8 +427,12 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
                                       <span className="mt-1 block truncate text-[11px] font-semibold text-zinc-100">{i.title}</span>
                                       <span className="block text-[10px] text-zinc-500">{n ? `${n} ${n === 1 ? 'pessoa tem' : 'pessoas têm'}` : 'ninguém tem'}</span>
                                     </button>
+                                    {i.sorteavel === false && <span className="mt-1 block text-center text-[10px] font-semibold text-amber-300">fora do sorteio</span>}
                                     {gerenciar && (
                                       <span className="mt-1 grid grid-cols-2 gap-1">
+                                        <button type="button" disabled={ocupado} onClick={() => void mudarItem(i, { sorteavel: i.sorteavel === false })} className="col-span-2 rounded-md border border-zinc-700 px-1 py-1 text-[10px] font-semibold text-zinc-200" title={i.sorteavel === false ? 'Volta a sair nas missões' : 'Só sai nos kits que você envia'}>
+                                          {i.sorteavel === false ? 'Pôr no sorteio' : 'Tirar do sorteio'}
+                                        </button>
                                         <button type="button" disabled={ocupado} onClick={() => void mudarItem(i, { active: !i.active })} className="rounded-md border border-zinc-700 px-1 py-1 text-[10px] font-semibold text-zinc-200" title={i.active ? 'Esconder de quem tem (sem tirar)' : 'Mostrar de novo'}>
                                           {i.active ? 'Ocultar' : 'Mostrar'}
                                         </button>
