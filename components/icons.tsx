@@ -90,7 +90,8 @@ export type IconName =
   | 'cameraSwitch'
   | 'reply'
   | 'sun'
-  | 'moon';
+  | 'moon'
+  | 'gift';
 
 interface Props extends React.SVGProps<SVGSVGElement> {
   name: IconName;
@@ -245,6 +246,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
     </>
   ),
   moon: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />,
+  gift: (
+    <>
+      <rect x="3.5" y="8" width="17" height="4" rx="1" />
+      <path d="M5 12v8h14v-8M12 8v12M12 8c-1.5-3.5-5.5-4-5.5-1.5S10 8 12 8Zm0 0c1.5-3.5 5.5-4 5.5-1.5S14 8 12 8Z" />
+    </>
+  ),
   external: (
     <>
       <path d="M14 4h6v6" />

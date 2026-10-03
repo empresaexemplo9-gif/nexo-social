@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
 import { CITIES, TOPICS, cityCoords } from '@/lib/data';
@@ -11,12 +12,51 @@ import AdminExclusivos from '@/components/AdminExclusivos';
 
 type Tab = 'content' | 'event' | 'bom-dia' | 'integrations' | 'moderacao' | 'exclusivos';
 
+/** As abas do painel e o nome de cada uma no endereço (/admin?aba=kits abre direto em Kits). */
+const ABAS: { tab: Tab; rotulo: string; aba: string }[] = [
+  { tab: 'exclusivos', rotulo: '🎁 Montar e enviar kits', aba: 'kits' },
+  { tab: 'content', rotulo: '+ Novo Conteúdo', aba: 'conteudo' },
+  { tab: 'event', rotulo: '+ Novo Evento', aba: 'evento' },
+  { tab: 'bom-dia', rotulo: 'Editar Bom Dia', aba: 'bom-dia' },
+  { tab: 'integrations', rotulo: 'Integrações', aba: 'integracoes' },
+  { tab: 'moderacao', rotulo: 'Moderação', aba: 'moderacao' },
+];
+
+const verificando = (
+  <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-sm text-zinc-400">
+    Verificando permissões…
+  </div>
+);
+
 export default function AdminPage() {
+  // useSearchParams exige Suspense na renderização estática.
+  return (
+    <Suspense fallback={verificando}>
+      <Painel />
+    </Suspense>
+  );
+}
+
+function Painel() {
+  const params = useSearchParams();
   const [authState, setAuthState] = useState<'loading' | 'allowed' | 'denied' | 'demo'>('loading');
   const [currentEmail, setCurrentEmail] = useState<string | null>(null);
 
-  const [activeTab, setActiveTab] = useState<Tab>('content');
+  const [activeTab, setActiveTab] = useState<Tab>('exclusivos');
   const [message, setMessage] = useState('');
+
+  // O atalho do menu (/admin?aba=kits) troca de aba mesmo com o painel já aberto.
+  const pedida = params.get('aba');
+  useEffect(() => {
+    const achada = ABAS.find((a) => a.aba === pedida || a.tab === pedida);
+    if (achada) setActiveTab(achada.tab);
+  }, [pedida]);
+
+  const trocarAba = (tab: Tab) => {
+    setActiveTab(tab);
+    setMessage('');
+    window.history.replaceState(null, '', `/admin?aba=${ABAS.find((a) => a.tab === tab)!.aba}`);
+  };
 
   const [content, setContent] = useState({ title: '', topic: 'tecnologia', subtopic: '', snippet: '', body: '', readTime: '5 min', imageUrl: '' });
   const [event, setEvent] = useState({
@@ -98,13 +138,7 @@ export default function AdminPage() {
     }
   };
 
-  if (authState === 'loading') {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-sm text-zinc-400">
-        Verificando permissões…
-      </div>
-    );
-  }
+  if (authState === 'loading') return verificando;
 
   if (authState === 'denied') {
     return (
@@ -166,19 +200,19 @@ export default function AdminPage() {
         )}
 
         <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
-          {([['content', '+ Novo Conteúdo'], ['event', '+ Novo Evento'], ['bom-dia', 'Editar Bom Dia'], ['exclusivos', 'Exclusivos'], ['integrations', 'Integrações'], ['moderacao', 'Moderação']] as [Tab, string][]).map(
-            ([tab, label]) => (
-              <button
-                key={tab}
-                onClick={() => { setActiveTab(tab); setMessage(''); }}
-                className={"action-collage " + (`rounded-xl px-4 py-2 text-xs font-semibold transition ${
-                  activeTab === tab ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-50'
-                }`)}
-              >
-                {label}
-              </button>
-            ),
-          )}
+          {ABAS.map(({ tab, rotulo }) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => trocarAba(tab)}
+              aria-pressed={activeTab === tab}
+              className={"action-collage " + (`rounded-xl px-4 py-2 text-xs font-semibold transition ${
+                activeTab === tab ? 'bg-emerald-500 text-zinc-950' : 'bg-zinc-900 text-zinc-400 hover:text-zinc-50'
+              }`)}
+            >
+              {rotulo}
+            </button>
+          ))}
         </div>
 
         {/* Conteúdo */}

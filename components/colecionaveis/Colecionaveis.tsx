@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import Icon, { type IconName } from '@/components/icons';
 import { usePreferences } from '@/lib/preferences';
+import { supabase } from '@/lib/supabase';
+import { isPlatformAdmin } from '@/lib/auth';
 import { APARENCIA_PADRAO, type EscopoDoFundo } from '@/lib/aparencia-tipos';
 import { porTema, type ItemExclusivo, type TipoExclusivo } from '@/lib/exclusivos';
 
@@ -38,6 +41,12 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [aberto, setAberto] = useState<ItemExclusivo | null>(null);
+  const [admin, setAdmin] = useState(false);
+
+  // O superadministrador chega daqui também a onde monta e envia os kits.
+  useEffect(() => {
+    supabase?.auth.getUser().then(({ data }) => setAdmin(isPlatformAdmin(data.user?.email)));
+  }, []);
 
   useEffect(() => {
     fetch('/api/exclusivos', { cache: 'no-store' })
@@ -77,12 +86,19 @@ export default function Colecionaveis({ abaInicial }: { abaInicial: AbaDosColeci
       <Navbar />
       <main className="mx-auto w-full max-w-6xl space-y-6 px-4 py-8 sm:px-6 lg:px-10">
         <header className="space-y-4">
-          <div>
-            <p className="rotulo-hud">Presentes da nexo.social</p>
-            <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-zinc-50 md:text-5xl">Colecionáveis</h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-300">
-              Adesivos, bottons e planos de fundo que você ganhou, cada tema no seu espaço. É seu — não expira.
-            </p>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="rotulo-hud">Presentes da nexo.social</p>
+              <h1 className="mt-2 font-display text-4xl font-extrabold tracking-tight text-zinc-50 md:text-5xl">Colecionáveis</h1>
+              <p className="mt-2 max-w-2xl text-sm text-zinc-300">
+                Adesivos, bottons e planos de fundo que você ganhou, cada tema no seu espaço. É seu — não expira.
+              </p>
+            </div>
+            {admin && (
+              <Link href="/admin?aba=kits" className="action-patch action-patch--ink inline-flex shrink-0 items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-zinc-950">
+                <Icon name="gift" size={16} /> Montar e enviar kits
+              </Link>
+            )}
           </div>
           <div role="tablist" aria-label="Colecionáveis" className="flex flex-wrap gap-2">
             {ABAS.map((a) => (
