@@ -89,6 +89,10 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
   const [ocupado, setOcupado] = useState(false);
   const [mensagem, setMensagem] = useState('');
   const [carregado, setCarregado] = useState(false);
+  // Ocultar e apagar ficam num modo à parte: na montagem, um toque só põe ou tira do kit.
+  const [gerenciar, setGerenciar] = useState(false);
+  const painelDoKit = useRef<HTMLElement>(null);
+  const [painelVisivel, setPainelVisivel] = useState(false);
 
   // Enviar itens novos à coleção.
   const [novoTipo, setNovoTipo] = useState<TipoExclusivo>('sticker');
@@ -115,6 +119,15 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
   useEffect(() => {
     void carregar();
   }, [carregar]);
+
+  // No celular o kit fica abaixo da coleção: a barra flutuante some quando ele aparece.
+  useEffect(() => {
+    const el = painelDoKit.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const obs = new IntersectionObserver(([e]) => setPainelVisivel(e.isIntersecting), { threshold: 0.15 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   // As prévias são URLs de objeto: libera ao trocar.
   useEffect(() => () => recortes.forEach((r) => URL.revokeObjectURL(r.previa)), [recortes]);
@@ -331,8 +344,18 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
                 Planos de fundo, adesivos e bottons, cada tema/banda no seu espaço. Toque nos itens para montar o kit; depois escolha quem recebe.
               </p>
             </div>
-            <span className="font-mono text-xs text-zinc-500">{itens.length} itens</span>
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-xs text-zinc-500">{itens.length} itens</span>
+              <button type="button" onClick={() => setGerenciar((v) => !v)} aria-pressed={gerenciar} className={`rounded-lg border px-2.5 py-1 text-[11px] font-semibold ${gerenciar ? 'border-zinc-50 bg-zinc-50 text-zinc-950' : 'border-zinc-700 text-zinc-300 hover:border-zinc-500'}`}>
+                {gerenciar ? 'Pronto' : 'Gerenciar coleção'}
+              </button>
+            </div>
           </div>
+          {gerenciar && (
+            <p className="rounded-lg border border-amber-800/50 bg-amber-950/30 px-3 py-2 text-[11px] text-amber-300">
+              Modo de gerenciar: use Ocultar ou Apagar embaixo de cada item. Toque em Pronto para voltar a montar o kit.
+            </p>
+          )}
 
           <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Tema ou banda">
             <button type="button" role="tab" aria-selected={!tema} onClick={() => setTema('')} className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${!tema ? 'border-emerald-400 bg-emerald-400 text-zinc-950' : 'border-zinc-700 text-zinc-300 hover:border-zinc-500'}`}>
@@ -385,22 +408,31 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
                                 const no = kit.has(i.id);
                                 const n = quemTem.get(i.id)?.size ?? 0;
                                 return (
-                                  <div key={i.id} className={`group relative rounded-xl border p-1.5 transition ${no ? 'border-emerald-400 bg-emerald-950/40' : 'border-zinc-800 bg-zinc-950'} ${i.active ? '' : 'opacity-50'}`}>
-                                    <button type="button" onClick={() => alternar(setKit, [i.id])} aria-pressed={no} className="block w-full text-left" title={no ? 'Tirar do kit' : 'Pôr no kit'}>
+                                  <div key={i.id} className={i.active ? '' : 'opacity-50'}>
+                                    <button
+                                      type="button"
+                                      onClick={() => alternar(setKit, [i.id])}
+                                      aria-pressed={no}
+                                      aria-label={`${i.title}${no ? ' — no kit' : ''}`}
+                                      title={no ? 'Tirar do kit' : 'Pôr no kit'}
+                                      className="kit-peca relative block w-full touch-manipulation select-none rounded-xl border border-zinc-800 bg-zinc-950 p-1.5 text-left"
+                                    >
+                                      <span aria-hidden="true" className="kit-marca">{no ? '✓' : ''}</span>
                                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img src={i.thumbUrl} alt={i.title} loading="lazy" className={`w-full ${k.tipo === 'wallpaper' ? 'aspect-video rounded-lg object-cover' : 'aspect-square object-contain'} ${k.tipo === 'button' ? 'rounded-full' : ''}`} />
+                                      <img src={i.thumbUrl} alt="" loading="lazy" draggable={false} className={`pointer-events-none w-full ${k.tipo === 'wallpaper' ? 'aspect-video rounded-lg object-cover' : 'aspect-square object-contain'} ${k.tipo === 'button' ? 'rounded-full' : ''}`} />
                                       <span className="mt-1 block truncate text-[11px] font-semibold text-zinc-100">{i.title}</span>
                                       <span className="block text-[10px] text-zinc-500">{n ? `${n} ${n === 1 ? 'pessoa tem' : 'pessoas têm'}` : 'ninguém tem'}</span>
                                     </button>
-                                    {no && <span className="pointer-events-none absolute left-2 top-2 rounded-full bg-emerald-400 px-1.5 text-[10px] font-bold text-zinc-950">no kit</span>}
-                                    <span className="absolute right-1 top-1 hidden gap-1 group-focus-within:flex group-hover:flex">
-                                      <button type="button" disabled={ocupado} onClick={() => void mudarItem(i, { active: !i.active })} className="rounded-md bg-black/75 px-1.5 py-0.5 text-[10px] text-zinc-100" title={i.active ? 'Esconder de quem tem (sem tirar)' : 'Mostrar de novo'}>
-                                        {i.active ? 'Ocultar' : 'Mostrar'}
-                                      </button>
-                                      <button type="button" disabled={ocupado} onClick={() => void apagar(i)} className="rounded-md bg-black/75 px-1.5 py-0.5 text-[10px] text-red-200">
-                                        Apagar
-                                      </button>
-                                    </span>
+                                    {gerenciar && (
+                                      <span className="mt-1 grid grid-cols-2 gap-1">
+                                        <button type="button" disabled={ocupado} onClick={() => void mudarItem(i, { active: !i.active })} className="rounded-md border border-zinc-700 px-1 py-1 text-[10px] font-semibold text-zinc-200" title={i.active ? 'Esconder de quem tem (sem tirar)' : 'Mostrar de novo'}>
+                                          {i.active ? 'Ocultar' : 'Mostrar'}
+                                        </button>
+                                        <button type="button" disabled={ocupado} onClick={() => void apagar(i)} className="rounded-md border border-red-900 px-1 py-1 text-[10px] font-semibold text-red-300">
+                                          Apagar
+                                        </button>
+                                      </span>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -416,7 +448,7 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
         </section>
 
         {/* --- O kit e quem recebe ---------------------------------------------------------- */}
-        <aside className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-5 xl:sticky xl:top-4">
+        <aside ref={painelDoKit} id="kit-em-montagem" className="scroll-mt-4 space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-5 xl:sticky xl:top-4">
           <div>
             <div className="flex items-center justify-between gap-2">
               <h3 className="font-bold text-zinc-50">Kit em montagem</h3>
@@ -483,6 +515,20 @@ export default function AdminExclusivos({ demo = false }: { demo?: boolean }) {
           <p className="text-[11px] text-zinc-500">O que a pessoa ganha não expira: fica com ela até você tirar.</p>
         </aside>
       </div>
+
+      {/* No celular e no tablet o kit fica embaixo da coleção: a barra mostra o que já entrou e leva até ele. */}
+      {kit.size > 0 && !painelVisivel && (
+        <div className="kit-barra fixed inset-x-3 z-40 mx-auto max-w-lg xl:hidden">
+          <button
+            type="button"
+            onClick={() => painelDoKit.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            className="flex w-full items-center justify-between gap-3 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-bold text-zinc-950 shadow-2xl"
+          >
+            <span>🎁 {kit.size} {kit.size === 1 ? 'item' : 'itens'} no kit</span>
+            <span>Escolher quem recebe ↓</span>
+          </button>
+        </div>
+      )}
 
       {/* --- Pôr itens novos na coleção ------------------------------------------------------- */}
       <section className="space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">

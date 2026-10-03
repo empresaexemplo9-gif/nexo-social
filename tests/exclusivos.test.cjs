@@ -199,3 +199,28 @@ test('o superadministrador acha onde montar e enviar kits: no menu, nos Colecion
   assert.match(painel, /useState<Tab>\('exclusivos'\)/, 'o painel abre nela');
   assert.match(painel, /activeTab === 'exclusivos' && <AdminExclusivos/);
 });
+
+test('montar o kit: um toque marca o item, sem nada aparecendo por cima (o iPhone engolia o toque)', () => {
+  const painel = fs.readFileSync('components/AdminExclusivos.tsx', 'utf8');
+  assert.ok(!/group-hover|group-focus-within/.test(painel), 'nada revelado ao passar o dedo ou o mouse');
+  assert.match(painel, /className="kit-peca[^"]*"/);
+  assert.match(painel, /onClick=\{\(\) => alternar\(setKit, \[i\.id\]\)\}\s*aria-pressed=\{no\}/);
+  // Ocultar e Apagar só no modo de gerenciar, fora do botão de marcar.
+  assert.match(painel, /\{gerenciar && \(\s*<span className="mt-1 grid grid-cols-2 gap-1">[\s\S]*?Ocultar[\s\S]*?Apagar/);
+  assert.match(painel, /className="kit-barra /, 'no celular, a barra do kit leva até quem recebe');
+  const css = fs.readFileSync('app/globals.css', 'utf8');
+  for (const trecho of [".kit-peca[aria-pressed='true'] {", ".kit-peca[aria-pressed='true'] .kit-marca", '.kit-barra {']) assert.ok(css.includes(trecho), trecho);
+});
+
+test('adesivos e bottons exclusivos ficam animados no chat', () => {
+  const conversa = fs.readFileSync('components/comunidade/chat/Conversa.tsx', 'utf8');
+  const inicio = conversa.indexOf("case 'adesivo':\n      // Animados");
+  assert.ok(inicio > 0);
+  const caso = conversa.slice(inicio, conversa.indexOf('default:', inicio));
+  assert.match(caso, /className="adesivo-vivo adesivo-vivo--botton"/);
+  assert.match(caso, /className="adesivo-vivo" style=\{\{ '--adesivo': `url\("/, 'o brilho usa a própria arte como máscara');
+  const css = fs.readFileSync('app/globals.css', 'utf8');
+  for (const k of ['adesivo-cola', 'adesivo-balanca', 'adesivo-brilho', 'botton-gira']) assert.ok(css.includes(`@keyframes ${k} {`), k);
+  assert.match(css, /animation:\s*adesivo-cola[^;]*both,\s*adesivo-balanca[^;]*infinite;/);
+  assert.match(css, /prefers-reduced-motion: reduce\) \{\s*\.adesivo-vivo,\s*\.adesivo-vivo::after \{\s*animation: none;/, 'respeita quem pediu menos movimento');
+});
