@@ -2458,6 +2458,119 @@ html[data-muro='claro'] .tema-mural[data-area='colecionaveis'] {
 }
 
 /* ===========================================================================
+   Adesivos e bottons exclusivos no chat (Conversa.tsx): chegam sendo colados
+   na conversa e ficam vivos — balançam devagar e um brilho holográfico passa
+   só por cima da arte (a máscara é a própria imagem, com o contorno dela).
+   ========================================================================= */
+.adesivo-vivo {
+  --giro: -2deg;
+  position: relative;
+  display: inline-block;
+  transform-origin: 50% 85%;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.35));
+  animation:
+    adesivo-cola 0.6s cubic-bezier(0.2, 0.9, 0.3, 1.25) both,
+    adesivo-balanca 3.2s ease-in-out 0.6s infinite;
+}
+.adesivo-vivo > img {
+  display: block;
+}
+.adesivo-vivo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 0.75) 44%, rgb(186 230 253 / 0.6) 50%, rgb(244 114 182 / 0.45) 56%, transparent 68%) no-repeat;
+  background-size: 250% 100%;
+  -webkit-mask: var(--adesivo) center / 100% 100% no-repeat;
+  mask: var(--adesivo) center / 100% 100% no-repeat;
+  pointer-events: none;
+  animation: adesivo-brilho 3.6s ease-in-out 0.9s infinite;
+}
+.adesivo-vivo--botton {
+  --giro: 0deg;
+  border-radius: 999px;
+  animation:
+    botton-gira 0.8s cubic-bezier(0.2, 0.8, 0.3, 1.2) both,
+    adesivo-balanca 3.6s ease-in-out 0.8s infinite;
+}
+.adesivo-vivo--botton::after {
+  border-radius: 999px;
+  -webkit-mask: none;
+  mask: none;
+}
+@keyframes adesivo-cola {
+  0% { opacity: 0; transform: translateY(-14px) scale(1.5) rotate(12deg); }
+  55% { opacity: 1; transform: scale(0.94) rotate(-4deg); }
+  80% { transform: scale(1.04) rotate(-1deg); }
+  100% { transform: scale(1) rotate(var(--giro)); }
+}
+@keyframes adesivo-balanca {
+  0%, 100% { transform: translateY(0) rotate(var(--giro)); }
+  50% { transform: translateY(-4px) rotate(calc(var(--giro) + 4deg)) scale(1.02); }
+}
+@keyframes adesivo-brilho {
+  0% { background-position: 160% 0; }
+  45%, 100% { background-position: -60% 0; }
+}
+@keyframes botton-gira {
+  0% { opacity: 0; transform: perspective(400px) rotateY(-180deg) scale(0.6); }
+  70% { opacity: 1; transform: perspective(400px) rotateY(20deg) scale(1.05); }
+  100% { transform: perspective(400px) rotateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adesivo-vivo,
+  .adesivo-vivo::after {
+    animation: none;
+  }
+  .adesivo-vivo {
+    transform: rotate(var(--giro));
+  }
+}
+
+/* ===========================================================================
+   Montar e enviar kits (AdminExclusivos.tsx): cada peça é um botão de marcar —
+   um toque põe ou tira do kit, com o visto bem à mostra. Nada aparece por cima
+   ao passar o dedo (no iPhone isso engolia o primeiro toque).
+   ========================================================================= */
+.kit-peca {
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.kit-peca:active {
+  transform: scale(0.96);
+}
+.kit-peca[aria-pressed='true'] {
+  border-color: #22c55e !important;
+  background-color: rgb(34 197 94 / 0.18) !important;
+  box-shadow: 0 0 0 2px #22c55e;
+}
+.kit-marca {
+  position: absolute;
+  left: 0.45rem;
+  top: 0.45rem;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  border: 2px solid rgb(255 255 255 / 0.9);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.45);
+  color: #052e16;
+  font-size: 0.8rem;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  pointer-events: none;
+}
+.kit-peca[aria-pressed='true'] .kit-marca {
+  border-color: #22c55e;
+  background: #22c55e;
+}
+.kit-barra {
+  bottom: calc(var(--altura-abas, 0px) + 0.75rem);
+}
+
+/* ===========================================================================
    Plano de fundo exclusivo (Meus exclusivos, lib/exclusivos.ts): a imagem vira
    o muro — em todas as abas ou só na home, como a pessoa escolher. O miolo
    escurece menos que o dos murais (a arte aparece), e a tinta do muro continua.

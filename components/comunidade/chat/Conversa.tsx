@@ -518,12 +518,18 @@ function Bolha({ m, emGrupo, mostrarAutor, destacada, onAmpliar, onApagar, onRes
       ) : null;
       break;
     case 'adesivo':
-      // eslint-disable-next-line @next/next/no-img-element
+      // Animados: chegam sendo colados e ficam balançando, com o brilho passando (globals.css, .adesivo-vivo).
       conteudo = m.mediaUrl ? (
         m.meta?.botton ? (
-          <img src={m.mediaUrl} alt="Botton" loading="lazy" onLoad={onCarregou} className="h-28 w-28 rounded-full object-cover shadow-xl" />
+          <span className="adesivo-vivo adesivo-vivo--botton">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={m.mediaUrl} alt="Botton" loading="lazy" onLoad={onCarregou} className="h-28 w-28 rounded-full object-cover shadow-xl" />
+          </span>
         ) : (
-          <img src={m.mediaUrl} alt="Adesivo" loading="lazy" onLoad={onCarregou} className="max-h-40 w-auto max-w-[14rem] -rotate-2 object-contain" />
+          <span className="adesivo-vivo" style={{ '--adesivo': `url("${m.mediaUrl.replace(/"/g, '%22')}")` } as React.CSSProperties}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={m.mediaUrl} alt="Adesivo" loading="lazy" onLoad={onCarregou} className="max-h-40 w-auto max-w-[14rem] object-contain" />
+          </span>
         )
       ) : null;
       break;
