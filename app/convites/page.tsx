@@ -1,26 +1,54 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Navbar from '@/components/Navbar';
-import { inviteEdition, inviteImage, inviteMeta, STICKERS } from '@/lib/invite-art';
+import { inviteEdition, inviteImage, STICKERS } from '@/lib/invite-art';
+import { inviteShareFile, shareInvite } from '@/lib/invite-share';
 
 type Invite = { id: string; link: string; status: 'pending' | 'used' | 'revoked'; created_at: string; used_at: string | null };
 
 const tokenOf = (link: string) => { try { return new URL(link).pathname.split('/').pop() || ''; } catch { return ''; } };
 
 export default function ConvitesPage() {
-  const [credits, setCredits] = useState(0);
+  const [credits, setCredits] = useState<number | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [novo, setNovo] = useState<string | null>(null);
+  const artFiles = useRef(new Map<string, File>());
+  const artLoads = useRef(new Map<string, Promise<File>>());
+
+  const carregarArte = (link: string) => {
+    let pending = artLoads.current.get(link);
+    if (!pending) {
+      pending = inviteShareFile(link).then((file) => {
+        artFiles.current.set(link, file);
+        return file;
+      }).catch((error) => { artLoads.current.delete(link); throw error; });
+      artLoads.current.set(link, pending);
+    }
+    return pending;
+  };
+
+  useEffect(() => {
+    if (typeof navigator.share !== 'function' || typeof navigator.canShare !== 'function') return;
+    const links = new Set(invites.filter((invite) => invite.status === 'pending').map((invite) => invite.link));
+    if (novo) links.add(novo);
+    links.forEach((link) => { void carregarArte(link).catch(() => {}); });
+  }, [invites, novo]);
 
   const load = async () => {
-    const res = await fetch('/api/invites', { cache: 'no-store' });
-    const j = await res.json().catch(() => ({}));
-    if (!res.ok) { setMessage(j.error || 'Não foi possível carregar seus convites.'); return; }
-    setCredits(j.credits ?? 0);
-    setInvites(j.invites ?? []);
+    try {
+      const res = await fetch('/api/invites', { cache: 'no-store' });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || 'Não foi possível carregar seus convites.');
+      setCredits(j.credits ?? 0);
+      setInvites(j.invites ?? []);
+      return true;
+    } catch {
+      setMessage('Não foi possível atualizar seus convites. Tente carregar novamente. Links já criados continuam disponíveis.');
+      return false;
+    }
   };
   useEffect(() => { void load(); }, []);
 
@@ -48,17 +76,34 @@ export default function ConvitesPage() {
     try {
       if (!navigator.clipboard) throw new Error('Copie o link exibido abaixo.');
       await navigator.clipboard.writeText(link);
-      setMessage('Link copiado com a prévia do convite.');
+      setMessage('Link copiado. Para enviar a imagem junto, use Compartilhar ou Baixar arte.');
     } catch { setMessage('Não foi possível copiar automaticamente. Selecione o link abaixo para copiar.'); }
   };
 
   const compartilhar = async (link: string) => {
-    if (!navigator.share) return copiar(link);
-    const token = tokenOf(link);
-    const e = inviteEdition(token);
-    const { title } = inviteMeta(token);
-    try { await navigator.share({ title, text: `Separei um convite do Nexo Social pra você: ${e.theme.nome}, ${e.serialLabel}. Só existe um desse.`, url: link }); }
-    catch (error) { if ((error as Error).name !== 'AbortError') setMessage('Não foi possível compartilhar. Use Copiar link.'); }
+    if (typeof navigator.share !== 'function') return copiar(link);
+    try {
+      if (typeof navigator.canShare === 'function' && !artFiles.current.has(link)) {
+        setMessage('Preparando a arte do convite…');
+        await carregarArte(link);
+        setMessage('Arte pronta. Toque em Compartilhar novamente para enviá-la com o link.');
+        return;
+      }
+      await shareInvite(link, artFiles.current.get(link));
+    } catch (error) { if ((error as Error).name !== 'AbortError') setMessage('Não foi possível compartilhar. Use Baixar arte e Copiar link para enviar o convite.'); }
+  };
+
+  const baixarArte = async (link: string) => {
+    try {
+      const file = await carregarArte(link);
+      const url = URL.createObjectURL(file);
+      const anchor = document.createElement('a');
+      anchor.href = url; anchor.download = file.name;
+      document.body.appendChild(anchor); anchor.click(); anchor.remove();
+      // Dá tempo para o navegador iniciar o download antes de liberar o arquivo.
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      setMessage('Arte baixada. Anexe a imagem no WhatsApp e envie o link do convite junto.');
+    } catch { setMessage('Não foi possível baixar a arte. Tente novamente.'); }
   };
 
   return (
@@ -71,14 +116,15 @@ export default function ConvitesPage() {
         </div>
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
           <div className="flex items-center justify-between gap-4">
-            <div><p className="text-xs uppercase tracking-wider text-zinc-500">Disponíveis</p><p className="text-4xl font-bold text-zinc-50">{credits}</p></div>
-            <button onClick={criar} disabled={busy || credits <= 0}
+            <div><p className="text-xs uppercase tracking-wider text-zinc-500">Disponíveis</p><p className="text-4xl font-bold text-zinc-50">{credits ?? '…'}</p></div>
+            <button onClick={criar} disabled={busy || credits === null || credits <= 0}
               className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-50">
               {busy ? 'Gerando…' : 'Gerar link de convite'}
             </button>
           </div>
-          {credits <= 0 && <p className="mt-4 text-sm text-amber-300">Você usou seus convites. Novos convites só podem ser liberados pelo superadministrador.</p>}
-          {message && <p className="mt-4 text-sm text-zinc-300">{message}</p>}
+          {credits === 0 && <p className="mt-4 text-sm text-amber-300">Você usou seus convites. Novos convites só podem ser liberados pelo superadministrador.</p>}
+          {message && <p role="status" className="mt-4 text-sm text-zinc-300">{message}</p>}
+          <button type="button" onClick={() => { setMessage(''); void load(); }} disabled={busy} className="mt-3 text-sm text-emerald-400">Atualizar convites</button>
         </section>
         {novo && (() => {
           const e = inviteEdition(tokenOf(novo));
@@ -91,6 +137,10 @@ export default function ConvitesPage() {
                   <p className="text-2xl font-bold">{e.theme.nome}</p>
                   <p className="text-sm" style={{ color: e.theme.suave }}>Convite {e.serialLabel} · adesivo {String(e.variant + 1).padStart(3, '0')} de {STICKERS.length}. Ninguém mais recebe um igual.</p>
                 </div>
+              </div>
+              <div className="space-y-3 px-6 pb-6">
+                <a href={novo} className="block break-all text-sm underline">{novo}</a>
+                <div className="flex flex-wrap gap-4"><button onClick={() => compartilhar(novo)} className="text-sm font-semibold">Compartilhar</button><button onClick={() => baixarArte(novo)} className="text-sm font-semibold">Baixar arte</button><button onClick={() => copiar(novo)} className="text-sm font-semibold">Copiar link</button></div>
               </div>
             </section>
           );
@@ -107,9 +157,9 @@ export default function ConvitesPage() {
                 <span className={i.status === 'pending' ? 'text-emerald-400 text-sm' : 'text-zinc-500 text-sm'}>
                   {i.status === 'pending' ? 'Disponível' : i.status === 'used' ? 'Usado' : 'Revogado'}
                 </span>
-                {i.status === 'pending' && <div className="flex gap-4"><button onClick={() => compartilhar(i.link)} className="text-sm font-semibold text-emerald-400">Compartilhar</button><button onClick={() => copiar(i.link)} className="text-sm font-semibold text-emerald-400">Copiar link</button></div>}
+                {i.status === 'pending' && <div className="flex flex-wrap justify-end gap-4"><button onClick={() => compartilhar(i.link)} className="text-sm font-semibold text-emerald-400">Compartilhar</button><button onClick={() => baixarArte(i.link)} className="text-sm font-semibold text-emerald-400">Baixar arte</button><button onClick={() => copiar(i.link)} className="text-sm font-semibold text-emerald-400">Copiar link</button></div>}
               </div>
-              <p className="mt-2 break-all text-xs text-zinc-500">{i.link}</p>
+              <a href={i.link} className="mt-2 block break-all text-xs text-emerald-400 underline">{i.link}</a>
             </div>
             );
           })}

@@ -8,6 +8,7 @@ import { FONT_FILES, TEX_FILES, themeCopy, themeFonts } from '@/lib/invite-theme
 type Props = { params: { token: string } };
 
 export function generateMetadata({ params }: Props): Metadata {
+  params = { token: params.token.toLowerCase() };
   if (!/^[a-f0-9]{64}$/.test(params.token)) return { title: 'Convite — Nexo Social' };
   const { title, description } = inviteMeta(params.token);
   const images = [{ url: `${INVITE_SITE}${inviteImage(params.token)}`, width: 1200, height: 630, alt: title }];
@@ -22,6 +23,7 @@ export function generateMetadata({ params }: Props): Metadata {
 // A página do convite veste a estética do adesivo sorteado: mesmas cores,
 // fontes, textura e texto do cartão.
 export default function Invitation({ params }: Props) {
+  params = { token: params.token.toLowerCase() };
   if (!/^[a-f0-9]{64}$/.test(params.token)) notFound();
   const e = inviteEdition(params.token);
   const t = e.theme;

@@ -1,5 +1,5 @@
 import { STICKERS } from './invite-stickers';
-import { THEMES, type Theme, type ThemeId } from './invite-themes';
+import { THEMES, themeCopy, type Theme, type ThemeId } from './invite-themes';
 export { STICKERS } from './invite-stickers';
 
 function fnv(text: string, seed: number) {
@@ -41,9 +41,10 @@ export const inviteImage = (token: string) => `/convite/arte/${inviteVariant(tok
 // Título e descrição da prévia do link, na voz do tema do convite.
 export function inviteMeta(token: string) {
   const e = inviteEdition(token);
-  const titulo = e.theme.titulo.texto.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+  const copy = themeCopy(e.theme, e.variant);
+  const titulo = copy.titulo.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
   return {
     title: `${titulo} — Convite ${e.serialLabel}`,
-    description: `${e.theme.nome} do Nexo Social. ${e.theme.linha.replace(/\n/g, ' ')} Um convite pessoal, de uso único.`,
+    description: `${e.theme.nome} do Nexo Social. ${copy.linha.replace(/\n/g, ' ')} Um convite pessoal, de uso único.`,
   };
 }
