@@ -40,7 +40,9 @@ export default function LoginPage() {
       const response = await fetch(`/api/invites/validate?token=${encodeURIComponent(token)}`, { cache: 'no-store', signal });
       const result = await response.json();
       if (!response.ok || typeof result.valid !== 'boolean') throw new Error('Validação indisponível');
-      if (!signal?.aborted) setInviteValid(result.valid);
+      if (signal?.aborted) return;
+      setInviteValid(result.valid);
+      if (result.retomada) setMessage('Este convite já começou um cadastro que não foi confirmado. Use o mesmo e-mail e crie uma senha nova para ativar a conta agora.');
     } catch {
       if (!signal?.aborted) setInviteError('Não foi possível validar seu convite agora. Tente novamente.');
     }
@@ -49,7 +51,8 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNext(destinoSeguro(params.get('next')));
-    const token = params.get('convite')?.trim().toLowerCase() || '';
+    // Link colado com algo a mais (pontuação, espaço, maiúsculas): fica só o código.
+    const token = params.get('convite')?.match(/[0-9a-f]{64}/i)?.[0].toLowerCase() || '';
     setInviteToken(token);
 
     const errors: Record<string, string> = {
