@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
   if (convite && (convite[2] || /[A-F]/.test(convite[1]))) {
     return NextResponse.redirect(new URL(`/convite/${convite[1].toLowerCase()}`, request.url), 308);
   }
-  if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
+  if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/i.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
     || INVITE_ASSET.test(path) || MURAL.test(path) || MURAL_DA_COMUNIDADE.test(path)
     || MURO_DA_AREA.test(path) || COLECAO.test(path)) return NextResponse.next();
 

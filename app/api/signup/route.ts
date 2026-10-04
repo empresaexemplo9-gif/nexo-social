@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   const fullName = typeof body?.fullName === 'string' ? body.fullName.trim().slice(0, 150) : '';
   const accountType = body?.accountType === 'organizacao' ? 'organizacao' : 'pessoal';
   const tenantName = accountType === 'organizacao' && typeof body?.tenantName === 'string' ? body.tenantName.trim().slice(0, 150) : fullName;
-  const inviteToken = typeof body?.inviteToken === 'string' ? body.inviteToken.trim() : '';
+  const inviteToken = typeof body?.inviteToken === 'string' ? body.inviteToken.trim().toLowerCase() : '';
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || email.length > 254) return reply({ error: 'E-mail inválido.' }, 400);
   if (!senhaValida(password)) return reply({ error: AVISO_DA_SENHA }, 400);
   if (!fullName || !tenantName) return reply({ error: 'Preencha seu nome e o nome da organização, quando aplicável.' }, 400);
@@ -31,11 +31,12 @@ export async function POST(request: Request) {
 
     const { data: preview, error: previewError } = await anon.rpc('platform_invite_preview', { p_token: inviteToken });
     const valid = Boolean((Array.isArray(preview) ? preview[0] : preview)?.valid);
-    if (previewError || !valid) {
+    if (previewError) return reply({ error: 'Não foi possível validar o convite agora. Tente novamente.' }, 503);
+    if (!valid) {
       // Quem já usou este convite numa conta que nunca foi confirmada (o
       // e-mail de confirmação não chegou ou o link falhou) termina o cadastro
       // aqui, com o mesmo link e o mesmo e-mail.
-      const retomada = previewError ? null : await retomarCadastro(admin, inviteToken, email, password, perfil);
+      const retomada = await retomarCadastro(admin, inviteToken, email, password, perfil);
       if (!retomada) return reply({ error: 'Este convite é inválido ou já foi utilizado.' }, 403);
       await registrarRegras(admin, retomada);
       return reply({ ok: true, confirmacaoPendente: false, retomada: true });
@@ -55,7 +56,9 @@ export async function POST(request: Request) {
 
     const { data: claimed, error: claimError } = await admin.rpc('claim_platform_invite', { p_token: inviteToken, p_user: data.user.id });
     if (claimError || claimed !== true) {
+      // Sem o convite, a conta não fica: a pessoa pode tentar de novo.
       await admin.auth.admin.deleteUser(data.user.id).catch(() => null);
+      if (claimError) return reply({ error: 'Não foi possível concluir o convite agora. Tente novamente.' }, 503);
       return reply({ error: 'Este convite acabou de ser utilizado. Peça um novo convite.' }, 409);
     }
 

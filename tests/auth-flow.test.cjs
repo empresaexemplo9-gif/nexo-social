@@ -8,7 +8,7 @@ const { NextResponse } = require('next/server');
 function load(file, dependencies = {}) {
   const exports = {};
   vm.runInNewContext(ts.transpileModule(fs.readFileSync(file, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText,
-    { exports, URL, console, require: name => { if (!(name in dependencies)) throw Error(name); return dependencies[name]; } });
+    { exports, URL, URLSearchParams, console, require: name => { if (!(name in dependencies)) throw Error(name); return dependencies[name]; } });
   return exports;
 }
 const redirect = load('lib/auth-redirect.ts');
@@ -32,8 +32,8 @@ function callback(options = {}) {
   };
   const admin = {
     from: () => ({ select() { return this; }, eq() { return this; }, async maybeSingle() { return { data: options.hasAccess === false ? null : { user_id: 'u1' }, error: null }; } }),
-    rpc: async () => ({ data: true, error: null }),
-    auth: { admin: { deleteUser: async () => ({}) } },
+    rpc: async (name, args) => { calls.push([name, args]); return { data: options.claimed ?? true, error: options.claimError }; },
+    auth: { admin: { deleteUser: async () => { calls.push(['deleteUser']); return {}; } } },
   };
   return {
     calls,
@@ -65,12 +65,13 @@ function signup(session, validInvite = true, opcoes = {}) {
   const calls = [];
   const claims = [];
   const atualizados = [];
-  const anon = { rpc: async () => ({ data: { valid: validInvite }, error: null }) };
+  const apagados = [];
+  const anon = { rpc: async () => ({ data: { valid: validInvite }, error: opcoes.previewError }) };
   const aceites = [];
   const admin = {
-    rpc: async (nome, args) => { claims.push({ nome, ...args }); return { data: opcoes.claim ?? true, error: null }; },
+    rpc: async (nome, args) => { claims.push({ nome, ...args }); return { data: opcoes.claimed ?? true, error: opcoes.claimError }; },
     auth: { admin: {
-      deleteUser: async () => ({}),
+      deleteUser: async (id) => { apagados.push(id); return {}; },
       createUser: async (data) => {
         calls.push(data);
         if (opcoes.emailExiste) return { data: { user: null }, error: { code: 'email_exists', status: 422, message: 'A user with this email address has already been registered' } };
@@ -89,6 +90,7 @@ function signup(session, validInvite = true, opcoes = {}) {
     claims,
     aceites,
     atualizados,
+    apagados,
     POST: load('app/api/signup/route.ts', {
       'next/server': { NextResponse },
       '@/lib/supabase-server': { createAnonServerClient: () => anon, createAdminClient: () => admin },
@@ -176,4 +178,68 @@ test('o erro de senha fraca do Supabase vira a orientação em português', () =
   assert.equal(erros.describeAuthError({ message: 'Password should contain at least one character of each: abc, ABC, 012, !@#.' }), senha.AVISO_DA_SENHA);
   assert.equal(erros.describeAuthError({ message: 'qualquer coisa', code: 'weak_password' }), senha.AVISO_DA_SENHA);
   assert.equal(erros.describeAuthError({ message: 'Invalid login credentials' }), 'E-mail ou senha incorretos.');
+});
+
+
+test('callback preserves invitation and destination on cancelled or failed OAuth', async () => {
+  for (const query of ['error=access_denied', 'code=abc']) {
+    const app = callback({ exchangeError: { message: 'expired' } });
+    const res = await app.GET(new Request(`https://nexo.test/auth/callback?${query}&convite=${token.toUpperCase()}&next=%2Fagenda`));
+    const location = new URL(res.headers.get('location'));
+    assert.equal(location.searchParams.get('convite'), token);
+    assert.equal(location.searchParams.get('cadastro'), '1');
+    assert.equal(location.searchParams.get('next'), '/agenda');
+  }
+});
+
+test('callback distinguishes service failure from a used invitation and preserves the account', async () => {
+  for (const options of [{ claimError: { message: 'timeout' } }, { claimed: false }]) {
+    const app = callback({ hasAccess: false, ...options });
+    const res = await app.GET(new Request(`https://nexo.test/auth/callback?code=abc&convite=${token.toUpperCase()}`));
+    const location = new URL(res.headers.get('location'));
+    assert.equal(location.searchParams.get('error'), options.claimError ? 'invite_unavailable' : 'invite_invalid');
+    assert.equal(location.searchParams.get('convite'), token);
+    assert.equal(app.calls.some(c => c[0] === 'deleteUser'), false);
+    assert.equal(app.calls.find(c => c[0] === 'claim_platform_invite')[1].p_token, token);
+  }
+});
+
+test('signup reports temporary invite errors as retryable and normalizes the token', async () => {
+  const unavailable = signup(null, false, { previewError: { message: 'timeout' } });
+  assert.equal((await unavailable.POST(request())).status, 503);
+  assert.equal(unavailable.calls.length, 0);
+  // Falha ao gastar o convite: a conta recém-criada sai, e a pessoa tenta de novo.
+  const claimFailure = signup(null, true, { claimError: { message: 'timeout' } });
+  assert.equal((await claimFailure.POST(request())).status, 503);
+  assert.deepEqual(claimFailure.apagados, ['new-user']);
+  const normalized = signup(null);
+  assert.equal((await normalized.POST(request({ ...payload, inviteToken: token.toUpperCase() }))).status, 200);
+  assert.equal(normalized.claims[0].p_token, token);
+});
+
+test('invite validation distinguishes valid, used, malformed and unavailable responses without caching', async () => {
+  for (const scenario of [
+    { data: [{ valid: true }], valid: true }, { data: { valid: false }, valid: false },
+    { error: { message: 'timeout' }, status: 503 }, { throws: true, status: 503 },
+    { data: null, status: 503 }, { missing: true, status: 503 },
+  ]) {
+    const app = load('app/api/invites/validate/route.ts', {
+      'next/server': { NextResponse },
+      '@/lib/supabase-server': { createAnonServerClient: () => scenario.missing ? null : ({
+        rpc: async (_, args) => {
+          assert.equal(args.p_token, token);
+          if (scenario.throws) throw Error('offline');
+          return scenario;
+        },
+      }) },
+    });
+    const res = await app.GET(new Request(`https://nexo.test/api/invites/validate?token=${token.toUpperCase()}`));
+    assert.equal(res.status, scenario.status ?? 200);
+    assert.match(res.headers.get('cache-control'), /no-store/);
+    const result = await res.json();
+    if (scenario.status) { assert.ok(result.error); assert.equal(result.valid, undefined); }
+    else assert.equal(result.valid, scenario.valid);
+    const malformed = await app.GET(new Request('https://nexo.test/api/invites/validate?token=bad'));
+    assert.equal((await malformed.json()).valid, false);
+  }
 });

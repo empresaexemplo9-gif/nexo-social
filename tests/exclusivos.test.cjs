@@ -42,7 +42,7 @@ test('coleção embutida: cada arquivo existe, no lugar do seu tema e tipo', () 
   // Nada solto: todo arquivo de public/colecao está no catálogo.
   const usados = new Set(linhas.flatMap((l) => [l.caminho, l.mini]).filter(Boolean));
   const andar = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? andar(path.join(d, e.name)) : [path.join(d, e.name)]));
-  for (const f of andar('public/colecao')) assert.ok(usados.has(f.slice('public'.length)), `${f} fora do catálogo`);
+  for (const f of andar('public/colecao')) assert.ok(usados.has(f.slice('public'.length).replace(/\\/g, '/')), `${f} fora do catálogo`);
 });
 
 test('coleção embutida: os planos de fundo de cada banda ficam todos (com miniatura)', () => {
@@ -214,7 +214,7 @@ test('montar o kit: um toque marca o item, sem nada aparecendo por cima (o iPhon
 });
 
 test('adesivos e bottons exclusivos ficam animados no chat', () => {
-  const conversa = fs.readFileSync('components/comunidade/chat/Conversa.tsx', 'utf8');
+  const conversa = fs.readFileSync('components/comunidade/chat/Conversa.tsx', 'utf8').replace(/\r\n/g, '\n');
   const inicio = conversa.indexOf("case 'adesivo':\n      // Animados");
   assert.ok(inicio > 0);
   const caso = conversa.slice(inicio, conversa.indexOf('default:', inicio));
