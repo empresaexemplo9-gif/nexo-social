@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Selo } from '@/components/Logo';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
@@ -20,6 +20,7 @@ export default function LoginPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [inviteToken, setInviteToken] = useState('');
   const [inviteValid, setInviteValid] = useState<boolean | null>(null);
+  const [inviteError, setInviteError] = useState('');
   const [next, setNext] = useState<string | null>(null);
   const [accountType, setAccountType] = useState<AccountType>('pessoal');
   const [fullName, setFullName] = useState('');
@@ -32,10 +33,23 @@ export default function LoginPage() {
   const [aceitouRegras, setAceitouRegras] = useState(false);
   const bloqueadoPelasRegras = isRegistering && !aceitouRegras;
 
+  const validarConvite = useCallback(async (token: string, signal?: AbortSignal) => {
+    setInviteValid(null);
+    setInviteError('');
+    try {
+      const response = await fetch(`/api/invites/validate?token=${encodeURIComponent(token)}`, { cache: 'no-store', signal });
+      const result = await response.json();
+      if (!response.ok || typeof result.valid !== 'boolean') throw new Error('Validação indisponível');
+      if (!signal?.aborted) setInviteValid(result.valid);
+    } catch {
+      if (!signal?.aborted) setInviteError('Não foi possível validar seu convite agora. Tente novamente.');
+    }
+  }, []);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNext(destinoSeguro(params.get('next')));
-    const token = params.get('convite')?.trim() || '';
+    const token = params.get('convite')?.trim().toLowerCase() || '';
     setInviteToken(token);
 
     const errors: Record<string, string> = {
@@ -49,16 +63,15 @@ export default function LoginPage() {
     };
     if (params.get('error')) setMessage(errors[params.get('error')!] ?? 'Não foi possível concluir o acesso.');
 
-    if (params.get('cadastro') === '1' && token) {
+    const controller = new AbortController();
+    if (token) {
       setIsRegistering(true);
-      fetch(`/api/invites/validate?token=${encodeURIComponent(token)}`, { cache: 'no-store' })
-        .then((r) => r.json())
-        .then((j) => setInviteValid(Boolean(j.valid)))
-        .catch(() => setInviteValid(false));
+      void validarConvite(token, controller.signal);
     } else {
-      setInviteValid(token ? null : false);
+      setInviteValid(false);
     }
-  }, []);
+    return () => controller.abort();
+  }, [validarConvite]);
 
   const handleGoogle = async () => {
     if (!supabase) { setMessage('Login temporariamente indisponível.'); return; }
@@ -158,10 +171,15 @@ export default function LoginPage() {
           <h2 className="mt-4 text-lg font-semibold text-zinc-50">{isRegistering ? 'Criar conta por convite' : 'Entrar na plataforma'}</h2>
           <p className="mt-1 text-xs text-zinc-400">
             {isRegistering
-              ? inviteValid === null ? 'Validando seu convite…' : inviteValid ? 'Convite válido. Complete seu cadastro.' : 'Este convite não é válido ou já foi utilizado.'
+              ? inviteError ? inviteError : inviteValid === null ? 'Validando seu convite…' : inviteValid ? 'Convite válido. Complete seu cadastro.' : 'Este convite não é válido ou já foi utilizado.'
               : 'Novas contas são criadas somente por convite.'}
           </p>
         </div>
+
+        {isRegistering && inviteError && <button type="button" onClick={() => void validarConvite(inviteToken)}
+          className="w-full rounded-xl border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-300">
+          Tentar validar convite novamente
+        </button>}
 
         {message && <div role="status" aria-live="polite" className="rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-center text-xs">{message}</div>}
 

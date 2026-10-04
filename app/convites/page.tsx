@@ -9,18 +9,24 @@ type Invite = { id: string; link: string; status: 'pending' | 'used' | 'revoked'
 const tokenOf = (link: string) => { try { return new URL(link).pathname.split('/').pop() || ''; } catch { return ''; } };
 
 export default function ConvitesPage() {
-  const [credits, setCredits] = useState(0);
+  const [credits, setCredits] = useState<number | null>(null);
   const [invites, setInvites] = useState<Invite[]>([]);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [novo, setNovo] = useState<string | null>(null);
 
   const load = async () => {
-    const res = await fetch('/api/invites', { cache: 'no-store' });
-    const j = await res.json().catch(() => ({}));
-    if (!res.ok) { setMessage(j.error || 'Não foi possível carregar seus convites.'); return; }
-    setCredits(j.credits ?? 0);
-    setInvites(j.invites ?? []);
+    try {
+      const res = await fetch('/api/invites', { cache: 'no-store' });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || 'Não foi possível carregar seus convites.');
+      setCredits(j.credits ?? 0);
+      setInvites(j.invites ?? []);
+      return true;
+    } catch {
+      setMessage('Não foi possível atualizar seus convites. Tente carregar novamente. Links já criados continuam disponíveis.');
+      return false;
+    }
   };
   useEffect(() => { void load(); }, []);
 
@@ -71,14 +77,15 @@ export default function ConvitesPage() {
         </div>
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
           <div className="flex items-center justify-between gap-4">
-            <div><p className="text-xs uppercase tracking-wider text-zinc-500">Disponíveis</p><p className="text-4xl font-bold text-zinc-50">{credits}</p></div>
-            <button onClick={criar} disabled={busy || credits <= 0}
+            <div><p className="text-xs uppercase tracking-wider text-zinc-500">Disponíveis</p><p className="text-4xl font-bold text-zinc-50">{credits ?? '…'}</p></div>
+            <button onClick={criar} disabled={busy || credits === null || credits <= 0}
               className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 disabled:cursor-not-allowed disabled:opacity-50">
               {busy ? 'Gerando…' : 'Gerar link de convite'}
             </button>
           </div>
-          {credits <= 0 && <p className="mt-4 text-sm text-amber-300">Você usou seus convites. Novos convites só podem ser liberados pelo superadministrador.</p>}
-          {message && <p className="mt-4 text-sm text-zinc-300">{message}</p>}
+          {credits === 0 && <p className="mt-4 text-sm text-amber-300">Você usou seus convites. Novos convites só podem ser liberados pelo superadministrador.</p>}
+          {message && <p role="status" className="mt-4 text-sm text-zinc-300">{message}</p>}
+          <button type="button" onClick={() => { setMessage(''); void load(); }} disabled={busy} className="mt-3 text-sm text-emerald-400">Atualizar convites</button>
         </section>
         {novo && (() => {
           const e = inviteEdition(tokenOf(novo));
@@ -91,6 +98,10 @@ export default function ConvitesPage() {
                   <p className="text-2xl font-bold">{e.theme.nome}</p>
                   <p className="text-sm" style={{ color: e.theme.suave }}>Convite {e.serialLabel} · adesivo {String(e.variant + 1).padStart(3, '0')} de {STICKERS.length}. Ninguém mais recebe um igual.</p>
                 </div>
+              </div>
+              <div className="space-y-3 px-6 pb-6">
+                <a href={novo} className="block break-all text-sm underline">{novo}</a>
+                <div className="flex gap-4"><button onClick={() => compartilhar(novo)} className="text-sm font-semibold">Compartilhar</button><button onClick={() => copiar(novo)} className="text-sm font-semibold">Copiar link</button></div>
               </div>
             </section>
           );
@@ -109,7 +120,7 @@ export default function ConvitesPage() {
                 </span>
                 {i.status === 'pending' && <div className="flex gap-4"><button onClick={() => compartilhar(i.link)} className="text-sm font-semibold text-emerald-400">Compartilhar</button><button onClick={() => copiar(i.link)} className="text-sm font-semibold text-emerald-400">Copiar link</button></div>}
               </div>
-              <p className="mt-2 break-all text-xs text-zinc-500">{i.link}</p>
+              <a href={i.link} className="mt-2 block break-all text-xs text-emerald-400 underline">{i.link}</a>
             </div>
             );
           })}
