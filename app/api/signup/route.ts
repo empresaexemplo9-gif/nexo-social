@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createAdminClient, createAnonServerClient, createServerSupabase } from '@/lib/supabase-server';
+import { createAdminClient, createAnonServerClient } from '@/lib/supabase-server';
 import { tenantSlug } from '@/lib/auth';
-import { safeAuthDestination } from '@/lib/auth-redirect';
 import { describeAuthError } from '@/lib/auth-errors';
 import { AVISO_DA_SENHA, senhaValida } from '@/lib/senha';
 
@@ -27,23 +26,31 @@ export async function POST(request: Request) {
   try {
     const anon = createAnonServerClient();
     const admin = createAdminClient();
-    const sb = createServerSupabase();
-    if (!anon || !admin || !sb) return reply({ error: 'Cadastro temporariamente indisponível.' }, 503);
+    if (!anon || !admin) return reply({ error: 'Cadastro temporariamente indisponível.' }, 503);
+    const perfil = { full_name: fullName, account_type: accountType, tenant_name: tenantName, tenant_slug: tenantSlug(tenantName) };
 
     const { data: preview, error: previewError } = await anon.rpc('platform_invite_preview', { p_token: inviteToken });
     const valid = Boolean((Array.isArray(preview) ? preview[0] : preview)?.valid);
-    if (previewError || !valid) return reply({ error: 'Este convite é inválido ou já foi utilizado.' }, 403);
+    if (previewError || !valid) {
+      // Quem já usou este convite numa conta que nunca foi confirmada (o
+      // e-mail de confirmação não chegou ou o link falhou) termina o cadastro
+      // aqui, com o mesmo link e o mesmo e-mail.
+      const retomada = previewError ? null : await retomarCadastro(admin, inviteToken, email, password, perfil);
+      if (!retomada) return reply({ error: 'Este convite é inválido ou já foi utilizado.' }, 403);
+      await registrarRegras(admin, retomada);
+      return reply({ ok: true, confirmacaoPendente: false, retomada: true });
+    }
 
-    const callback = new URL('/auth/callback', origin);
-    const next = safeAuthDestination(typeof body?.next === 'string' ? body.next : null);
-    if (next) callback.searchParams.set('next', next);
-    callback.searchParams.set('convite', inviteToken);
-
-    const { data, error } = await sb.auth.signUp({ email, password, options: {
-      emailRedirectTo: callback.toString(),
-      data: { full_name: fullName, account_type: accountType, tenant_name: tenantName, tenant_slug: tenantSlug(tenantName) },
-    } });
-    if (error) return reply({ error: describeAuthError(error) }, error.status && error.status >= 400 && error.status < 500 ? error.status : 502);
+    // O convite é pessoal e de uso único: ele já comprova a pessoa. A conta
+    // nasce confirmada e entra na hora — sem depender do e-mail de confirmação
+    // (que pode não chegar, ser aberto em outro aparelho ou "gasto" pelo
+    // leitor de links do e-mail).
+    const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: perfil });
+    if (error) {
+      const jaExiste = error.code === 'email_exists' || /already (been )?registered|already exists/i.test(error.message || '');
+      if (jaExiste) return reply({ error: 'Este e-mail já tem conta na nexo.social. Toque em "Fazer login" para entrar.' }, 409);
+      return reply({ error: describeAuthError(error) }, error.status && error.status >= 400 && error.status < 500 ? error.status : 502);
+    }
     if (!data.user) return reply({ error: 'Não foi possível criar a conta.' }, 502);
 
     const { data: claimed, error: claimError } = await admin.rpc('claim_platform_invite', { p_token: inviteToken, p_user: data.user.id });
@@ -52,15 +59,39 @@ export async function POST(request: Request) {
       return reply({ error: 'Este convite acabou de ser utilizado. Peça um novo convite.' }, 409);
     }
 
-    // O aceite das regras fica registrado (sem a tabela ainda, o aviso aparece no primeiro acesso).
-    try {
-      await admin.from('community_rules_acceptance').upsert({ user_id: data.user.id });
-    } catch {
-      /* segue: o aviso das regras aparece no primeiro acesso */
-    }
-
-    return reply({ ok: true, confirmacaoPendente: !data.session });
+    await registrarRegras(admin, data.user.id);
+    return reply({ ok: true, confirmacaoPendente: false });
   } catch {
     return reply({ error: 'Não foi possível criar a conta agora. Tente novamente em instantes.' }, 502);
   }
+}
+
+type Admin = NonNullable<ReturnType<typeof createAdminClient>>;
+
+/** O aceite das regras fica registrado (sem a tabela ainda, o aviso aparece no primeiro acesso). */
+async function registrarRegras(admin: Admin, userId: string) {
+  try {
+    await admin.from('community_rules_acceptance').upsert({ user_id: userId });
+  } catch {
+    /* segue: o aviso das regras aparece no primeiro acesso */
+  }
+}
+
+/**
+ * Conta criada com este convite e nunca confirmada: se o e-mail é o mesmo,
+ * ativa agora com a senha nova. Exige o link do convite (segredo pessoal) e
+ * o e-mail exato de quem o usou — e só vale para conta ainda não confirmada.
+ */
+async function retomarCadastro(admin: Admin, token: string, email: string, password: string, perfil: Record<string, string>): Promise<string | null> {
+  const { data: convite } = await admin.from('platform_invites').select('status, used_by').eq('token', token).maybeSingle();
+  if (convite?.status !== 'used' || !convite.used_by) return null;
+  const { data, error } = await admin.auth.admin.getUserById(convite.used_by);
+  const u = data?.user;
+  if (error || !u || u.email_confirmed_at || (u.email ?? '').toLowerCase() !== email) return null;
+  const { error: erro } = await admin.auth.admin.updateUserById(u.id, {
+    password,
+    email_confirm: true,
+    user_metadata: { ...(u.user_metadata ?? {}), ...perfil },
+  });
+  return erro ? null : u.id;
 }

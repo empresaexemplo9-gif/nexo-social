@@ -132,3 +132,15 @@ test('invitation preview is public but invite management and unrelated paths rem
   for (const path of ['/convites', '/convite/admin', '/convite/arte/admin', '/convite-assets/adesivos/x.png', '/convite-assets/outro/segredo.json']) assert.equal((await app.run(path)).status, 307);
   assert.equal((await app.run('/api/invites')).status, 503);
 });
+
+test('link do convite colado com algo a mais vai para o endereço limpo (sem página vazia)', async () => {
+  const app = load({ throws: true });
+  const codigo = 'ab'.repeat(32);
+  for (const sujo of [`/convite/${codigo}.`, `/convite/${codigo}%20`, `/convite/${codigo.toUpperCase()}`, `/convite/${codigo})`]) {
+    const res = await app.run(sujo);
+    assert.equal(res.status, 308, sujo);
+    assert.equal(new URL(res.headers.get('location')).pathname, `/convite/${codigo}`, sujo);
+  }
+  assert.equal((await app.run(`/convite/${codigo}`)).headers.get('x-middleware-next'), '1', 'o limpo abre direto');
+  assert.equal(app.calls(), 0, 'nada disso pede login');
+});

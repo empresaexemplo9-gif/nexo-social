@@ -35,7 +35,8 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setNext(destinoSeguro(params.get('next')));
-    const token = params.get('convite')?.trim() || '';
+    // Link colado com algo a mais (pontuação, espaço, maiúsculas): fica só o código.
+    const token = params.get('convite')?.match(/[0-9a-f]{64}/i)?.[0].toLowerCase() || '';
     setInviteToken(token);
 
     const errors: Record<string, string> = {
@@ -53,7 +54,10 @@ export default function LoginPage() {
       setIsRegistering(true);
       fetch(`/api/invites/validate?token=${encodeURIComponent(token)}`, { cache: 'no-store' })
         .then((r) => r.json())
-        .then((j) => setInviteValid(Boolean(j.valid)))
+        .then((j) => {
+          setInviteValid(Boolean(j.valid));
+          if (j.retomada) setMessage('Este convite já começou um cadastro que não foi confirmado. Use o mesmo e-mail e crie uma senha nova para ativar a conta agora.');
+        })
         .catch(() => setInviteValid(false));
     } else {
       setInviteValid(token ? null : false);

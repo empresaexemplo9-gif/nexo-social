@@ -61,24 +61,38 @@ test('new OAuth account requires a valid invitation', async () => {
   assert.equal(new URL(allowed.headers.get('location')).pathname, '/');
 });
 
-function signup(session, validInvite = true) {
+function signup(session, validInvite = true, opcoes = {}) {
   const calls = [];
-  const sb = { auth: { signUp: async data => { calls.push(data); return { data: { session, user: { id: 'new-user' } }, error: null }; } } };
+  const claims = [];
+  const atualizados = [];
   const anon = { rpc: async () => ({ data: { valid: validInvite }, error: null }) };
   const aceites = [];
   const admin = {
-    rpc: async () => ({ data: true, error: null }),
-    auth: { admin: { deleteUser: async () => ({}) } },
-    from: (tabela) => ({ upsert: async (linha) => { aceites.push({ tabela, ...linha }); return { error: null }; } }),
+    rpc: async (nome, args) => { claims.push({ nome, ...args }); return { data: opcoes.claim ?? true, error: null }; },
+    auth: { admin: {
+      deleteUser: async () => ({}),
+      createUser: async (data) => {
+        calls.push(data);
+        if (opcoes.emailExiste) return { data: { user: null }, error: { code: 'email_exists', status: 422, message: 'A user with this email address has already been registered' } };
+        return { data: { user: { id: 'new-user' } }, error: null };
+      },
+      getUserById: async (id) => ({ data: { user: opcoes.usuarioDoConvite && opcoes.usuarioDoConvite.id === id ? opcoes.usuarioDoConvite : null }, error: null }),
+      updateUserById: async (id, dados) => { atualizados.push({ id, ...dados }); return { data: {}, error: null }; },
+    } },
+    from: (tabela) => ({
+      upsert: async (linha) => { aceites.push({ tabela, ...linha }); return { error: null }; },
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: opcoes.convite ?? null, error: null }) }) }),
+    }),
   };
   return {
     calls,
+    claims,
     aceites,
+    atualizados,
     POST: load('app/api/signup/route.ts', {
       'next/server': { NextResponse },
-      '@/lib/supabase-server': { createServerSupabase: () => sb, createAnonServerClient: () => anon, createAdminClient: () => admin },
+      '@/lib/supabase-server': { createAnonServerClient: () => anon, createAdminClient: () => admin },
       '@/lib/auth': { tenantSlug: () => 'empresa' },
-      '@/lib/auth-redirect': redirect,
       '@/lib/auth-errors': { describeAuthError: e => e?.message || 'error' },
       '@/lib/senha': senha,
     }).POST,
@@ -89,14 +103,43 @@ const token = 'b'.repeat(64);
 const payload = { email: ' PERSON@example.com ', password: 'Teste-senha9', fullName: 'Pessoa', accountType: 'organizacao', tenantName: 'Empresa', next: '//evil.test', inviteToken: token, aceitouRegras: true };
 const request = (body = payload, origin = 'https://nexo.test') => new Request('https://nexo.test/api/signup', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
-test('signup validates and consumes an invite', async () => {
+test('signup por convite cria a conta já confirmada e consome o convite', async () => {
   const app = signup(null, true);
   const res = await app.POST(request());
   assert.equal(res.status, 200);
-  assert.equal((await res.json()).confirmacaoPendente, true);
+  const corpo = await res.json();
+  assert.equal(corpo.confirmacaoPendente, false, 'entra na hora, sem e-mail de confirmação');
   assert.equal(app.calls[0].email, 'person@example.com');
-  assert.match(app.calls[0].options.emailRedirectTo, /convite=/);
+  assert.equal(app.calls[0].email_confirm, true);
+  assert.equal(app.calls[0].user_metadata.full_name, 'Pessoa');
+  assert.deepEqual(JSON.parse(JSON.stringify(app.claims)), [{ nome: 'claim_platform_invite', p_token: token, p_user: 'new-user' }]);
   assert.deepEqual(app.aceites, [{ tabela: 'community_rules_acceptance', user_id: 'new-user' }], 'o aceite das regras fica registrado');
+});
+
+test('e-mail que já tem conta não gasta o convite', async () => {
+  const app = signup(null, true, { emailExiste: true });
+  const res = await app.POST(request());
+  assert.equal(res.status, 409);
+  assert.match((await res.json()).error, /já tem conta/);
+  assert.equal(app.claims.length, 0);
+});
+
+test('quem ficou com a conta sem confirmar termina o cadastro com o mesmo convite e e-mail', async () => {
+  const pendente = { id: 'antigo', email: 'person@example.com', email_confirmed_at: null, user_metadata: { full_name: 'Antigo' } };
+  const app = signup(null, false, { convite: { status: 'used', used_by: 'antigo' }, usuarioDoConvite: pendente });
+  const res = await app.POST(request());
+  assert.equal(res.status, 200);
+  assert.equal((await res.json()).retomada, true);
+  assert.equal(app.atualizados[0].id, 'antigo');
+  assert.equal(app.atualizados[0].email_confirm, true);
+  assert.equal(app.atualizados[0].password, payload.password);
+  assert.equal(app.calls.length, 0, 'não cria outra conta');
+
+  const outroEmail = signup(null, false, { convite: { status: 'used', used_by: 'antigo' }, usuarioDoConvite: { ...pendente, email: 'outra@example.com' } });
+  assert.equal((await outroEmail.POST(request())).status, 403, 'outro e-mail não assume a conta');
+  const confirmada = signup(null, false, { convite: { status: 'used', used_by: 'antigo' }, usuarioDoConvite: { ...pendente, email_confirmed_at: '2026-09-30T00:00:00Z' } });
+  assert.equal((await confirmada.POST(request())).status, 403, 'conta já confirmada não é retomada');
+  assert.equal(confirmada.atualizados.length, 0);
 });
 
 test('signup exige aceitar as regras da comunidade', async () => {
