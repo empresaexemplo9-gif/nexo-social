@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient, createAnonServerClient } from '@/lib/supabase-server';
-import { tenantSlug } from '@/lib/auth';
+import { isPlatformAdmin, tenantSlug } from '@/lib/auth';
 import { describeAuthError } from '@/lib/auth-errors';
 import { AVISO_DA_SENHA, senhaValida } from '@/lib/senha';
 
@@ -22,6 +22,10 @@ export async function POST(request: Request) {
   if (!fullName || !tenantName) return reply({ error: 'Preencha seu nome e o nome da organização, quando aplicável.' }, 400);
   if (!/^[0-9a-f]{64}$/i.test(inviteToken)) return reply({ error: 'Você precisa de um convite válido para criar uma conta.' }, 403);
   if (body?.aceitouRegras !== true) return reply({ error: 'Para criar a conta, leia e aceite as regras da comunidade.' }, 400);
+  // O cadastro por convite não confirma o e-mail. E-mail de superadministrador
+  // só entra pelo Google, que comprova a posse do endereço — senão qualquer
+  // pessoa com um convite poderia criar a conta com esse e-mail.
+  if (isPlatformAdmin(email)) return reply({ error: 'Esta conta é criada entrando com o Google. Toque em "Continuar com Google".' }, 403);
 
   try {
     const anon = createAnonServerClient();

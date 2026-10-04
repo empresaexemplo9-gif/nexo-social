@@ -21,7 +21,7 @@ test('redirect validation rejects external URLs', () => {
 
 function callback(options = {}) {
   const calls = [];
-  const user = options.noUser ? null : { id: 'u1', email: 'user@example.com', is_anonymous: false, user_metadata: { full_name: 'Pessoa', account_type: 'organizacao', tenant_name: 'Empresa' } };
+  const user = options.noUser ? null : { id: 'u1', email: options.email ?? 'user@example.com', is_anonymous: false, user_metadata: { full_name: 'Pessoa', account_type: 'organizacao', tenant_name: 'Empresa' } };
   const sb = {
     auth: {
       exchangeCodeForSession: async code => { calls.push(['exchange', code]); return { error: options.exchangeError }; },
@@ -41,7 +41,7 @@ function callback(options = {}) {
       'next/server': { NextResponse },
       '@/lib/supabase-server': { createServerSupabase: () => sb, createAdminClient: () => admin },
       '@/lib/auth-redirect': redirect,
-      '@/lib/auth': { isPlatformAdmin: () => false },
+      '@/lib/auth': { isPlatformAdmin: (email) => email === 'chefe@example.com' },
     }).GET,
   };
 }
@@ -94,7 +94,7 @@ function signup(session, validInvite = true, opcoes = {}) {
     POST: load('app/api/signup/route.ts', {
       'next/server': { NextResponse },
       '@/lib/supabase-server': { createAnonServerClient: () => anon, createAdminClient: () => admin },
-      '@/lib/auth': { tenantSlug: () => 'empresa' },
+      '@/lib/auth': { tenantSlug: () => 'empresa', isPlatformAdmin: (email) => email === 'chefe@example.com' },
       '@/lib/auth-errors': { describeAuthError: e => e?.message || 'error' },
       '@/lib/senha': senha,
     }).POST,
@@ -242,4 +242,32 @@ test('invite validation distinguishes valid, used, malformed and unavailable res
     const malformed = await app.GET(new Request('https://nexo.test/api/invites/validate?token=bad'));
     assert.equal((await malformed.json()).valid, false);
   }
+});
+
+
+test('superadministradores: a lista inteira tem acesso, sem diferenciar maiúsculas', () => {
+  const auth = load('lib/auth.ts', {});
+  for (const email of ['thiagohccarvalho00@gmail.com', 'tefi7009@gmail.com', ' MarceloCFurtadoJr@gmail.com ', 'joaob2581@gmail.com']) {
+    assert.equal(auth.isPlatformAdmin(email), true, email);
+  }
+  for (const email of ['outra@gmail.com', 'tefi7009@gmail.com.evil.com', '', null, undefined]) {
+    assert.equal(auth.isPlatformAdmin(email), false, String(email));
+  }
+  assert.equal(auth.ADMIN_EMAIL, 'thiagohccarvalho00@gmail.com', 'o contato oficial continua o mesmo');
+});
+
+test('e-mail de superadministrador não cria conta pelo convite com senha (só pelo Google)', async () => {
+  const app = signup(null, true);
+  const res = await app.POST(request({ ...payload, email: 'chefe@example.com' }));
+  assert.equal(res.status, 403);
+  assert.match((await res.json()).error, /Google/);
+  assert.equal(app.calls.length, 0, 'nem chega a criar a conta');
+  assert.equal(app.claims.length, 0, 'o convite não é gasto');
+});
+
+test('superadministrador entra pelo Google mesmo sem convite', async () => {
+  const app = callback({ hasAccess: false, email: 'chefe@example.com' });
+  const res = await app.GET(new Request('https://nexo.test/auth/callback?code=abc'));
+  assert.equal(new URL(res.headers.get('location')).pathname, '/admin');
+  assert.equal(app.calls.some((c) => c[0] === 'claim_platform_invite'), false);
 });

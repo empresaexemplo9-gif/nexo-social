@@ -1,17 +1,29 @@
 // Regras de identidade e multi-tenant do nexo-social.
 
 /**
- * E-mail da conta administradora da plataforma (super admin).
- * Somente esta conta tem acesso ao painel global em /admin.
+ * E-mail da conta oficial da plataforma (contato da administração nos termos e
+ * na privacidade). É também um dos superadministradores.
  */
 export const ADMIN_EMAIL = 'thiagohccarvalho00@gmail.com';
+
+/**
+ * Superadministradores: todos têm as mesmas ferramentas (painel global em
+ * /admin, moderação, convites, exclusivos…). A mesma lista está no banco, em
+ * platform_admin_emails() (db/superadmins.sql) — mude as duas juntas.
+ */
+export const SUPERADMINS: readonly string[] = [
+  ADMIN_EMAIL,
+  'tefi7009@gmail.com',
+  'marcelocfurtadojr@gmail.com',
+  'joaob2581@gmail.com',
+];
 
 export type AccountType = 'pessoal' | 'organizacao';
 
 export type Role = 'owner' | 'admin' | 'member';
 
 export function isPlatformAdmin(email: string | null | undefined): boolean {
-  return !!email && email.trim().toLowerCase() === ADMIN_EMAIL;
+  return !!email && SUPERADMINS.includes(email.trim().toLowerCase());
 }
 
 /**

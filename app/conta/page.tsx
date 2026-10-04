@@ -8,7 +8,7 @@ import YoutubeAccount from '@/components/YoutubeAccount';
 import AvisosNoAparelho from '@/components/AvisosNoAparelho';
 import MinhaPagina from '@/components/social/MinhaPagina';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
+import { isPlatformAdmin } from '@/lib/auth';
 import { ensureProfile } from '@/lib/provisioning';
 import { usePreferences } from '@/lib/preferences';
 import { topicLabel } from '@/lib/data';
@@ -125,8 +125,7 @@ export default function ContaPage() {
           {account && !admin && (
             <p className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-3 text-xs leading-relaxed text-zinc-400">
               Sua conta tem acesso completo à plataforma: nichos, agenda e compromissos, biblioteca, esporte e
-              recomendações. Apenas as ferramentas administrativas são exclusivas da conta oficial{' '}
-              <span className="text-zinc-300">{ADMIN_EMAIL}</span>.
+              recomendações. Apenas as ferramentas administrativas são exclusivas dos superadministradores da plataforma.
             </p>
           )}
 
