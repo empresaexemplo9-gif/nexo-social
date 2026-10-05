@@ -4,6 +4,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import Icon from '../icons';
 import Leitor from './Leitor';
 import LivroArquivo from './LivroArquivo';
+import YoutubeMusicQueue from './YoutubeMusicQueue';
 import type { ItemDeMidia } from '@/lib/midia';
 
 /*
@@ -133,15 +134,13 @@ function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => voi
         <div className="min-h-0 flex-1 overflow-y-auto">
           {m.tipo === 'youtube' && (
             <div className={m.vertical ? 'mx-auto aspect-[9/16] max-h-[80vh] bg-black' : 'aspect-video w-full bg-black'}>
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${m.id}?autoplay=1&rel=0&playsinline=1&modestbranding=1${
-                  m.fila?.length ? `&playlist=${m.fila.filter((v) => /^[\w-]{11}$/.test(v)).slice(0, 49).join(',')}` : ''
-                }`}
+              {m.fila ? <YoutubeMusicQueue key={`${m.id}:${m.fila.join(',')}`} ids={[m.id, ...m.fila].filter(v => /^[\w-]{11}$/.test(v))} title={item.titulo} /> : <iframe
+                src={`https://www.youtube-nocookie.com/embed/${m.id}?autoplay=1&rel=0&playsinline=1&modestbranding=1`}
                 title={item.titulo}
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
                 className="h-full w-full"
-              />
+              />}
             </div>
           )}
           {m.tipo === 'archive' && m.formato === 'texto' && <LivroArquivo key={m.id} id={m.id} titulo={item.titulo} />}

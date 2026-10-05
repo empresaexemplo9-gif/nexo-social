@@ -296,7 +296,7 @@ function SpotifyPlaylist() {
 
   const trilha = estado.tipo === 'ok' ? estado.trilha : null;
   const tocando = fila ? fila.faixas[fila.i] : null;
-  const proximaDaFila = fila && fila.i < fila.faixas.length - 1 ? fila.faixas[fila.i + 1] : null;
+  const proximaDaFila = fila?.faixas.length ? fila.faixas[(fila.i + 1) % fila.faixas.length] : null;
   const tocandoId = aqui ? (spotify.reproducao?.faixa.id ?? null) : (tocando?.id ?? null);
 
   /**
@@ -314,7 +314,7 @@ function SpotifyPlaylist() {
   };
   const avancar = () => {
     if (!proximaDaFila) return;
-    setFila((f) => (f ? { ...f, i: f.i + 1 } : f));
+    setFila((f) => (f?.faixas.length ? { ...f, i: (f.i + 1) % f.faixas.length } : f));
     setDuracaoNoPlayer(0);
     setPedidos((n) => n + 1);
   };

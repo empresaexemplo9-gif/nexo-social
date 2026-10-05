@@ -272,9 +272,14 @@ function Item({
 }) {
   const { abrir } = useMidia();
   const [conversa, setConversa] = useState(false);
-  const tocar = () =>
-    item.youtubeId &&
-    abrir({ midia: { tipo: 'youtube', id: item.youtubeId }, titulo: item.titulo, autor: item.subtitulo, fonte: 'YouTube', link: `https://www.youtube.com/watch?v=${item.youtubeId}` });
+  const tocar = () => {
+    if (!item.youtubeId) return;
+    const videos = lista.itensDaLista.filter(i => i.youtubeId);
+    const start = videos.findIndex(i => i.id === item.id);
+    const fila = [...videos.slice(start + 1), ...videos.slice(0, start)].map(i => i.youtubeId!);
+    const musical = lista.tipo === 'musicas' || lista.tipo === 'clipes';
+    abrir({ midia: { tipo: 'youtube', id: item.youtubeId, ...(musical ? { fila } : {}) }, titulo: musical ? lista.titulo : item.titulo, autor: item.subtitulo, fonte: 'YouTube', link: `https://www.youtube.com/watch?v=${item.youtubeId}` });
+  };
 
   return (
     <li className="card-soft p-3.5 sm:p-4">
