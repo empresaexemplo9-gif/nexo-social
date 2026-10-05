@@ -2845,6 +2845,9 @@ html[data-muro='claro'][data-fundo-exclusivo='home'] .tema-mural[data-area='inic
   bottom: calc(var(--altura-abas, 0px) + 12px);
 }
 .player-musica-compacto > div { border-radius: 16px; }
+@media (max-width: 360px) {
+  .barra-topo a[aria-label='nexo.social — início'] > svg { display: none; }
+}
 @media (max-height: 480px) {
   .player-musica-compacto { width: 260px; }
   .player-musica-compacto header { padding-block: 0; }

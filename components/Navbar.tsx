@@ -357,13 +357,13 @@ export default function Navbar() {
         <div className="flex h-14 items-center gap-2 px-3">
           <BotaoMenu onClick={() => setGaveta(true)} aberto={gaveta} rotulo="Abrir o menu" />
           <Marca />
-          <div className="ml-auto flex items-center gap-1">
+          <div className="ml-auto flex shrink-0 items-center gap-1">
             <Link href="/busca" className="menu-denim p-2" aria-label="Buscar">
               <Icon name="search" size={20} />
             </Link>
             {email && <NotificationsBell />}
             {email && (
-              <Link href="/conta" aria-label="Minha conta" className="ml-1 rounded-full">
+              <Link href="/conta" aria-label="Minha conta" className="ml-1 shrink-0 rounded-full">
                 <Avatar nome={perfil?.nome || email} path={perfil?.avatar} tamanho={30} />
               </Link>
             )}
