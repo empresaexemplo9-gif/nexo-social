@@ -247,7 +247,7 @@ BEGIN
       NEW.raw_user_meta_data ->> 'full_name',
       NEW.email,
       'owner',
-      NEW.email = 'thiagohccarvalho00@gmail.com'
+      is_platform_admin_email(NEW.email)
     )
     ON CONFLICT (id) DO NOTHING;
   EXCEPTION WHEN OTHERS THEN
@@ -561,15 +561,31 @@ ALTER TABLE user_preferences ADD COLUMN IF NOT EXISTS reading_goal SMALLINT DEFA
 --    e-mail, quebrando a agenda social entre contas diferentes.
 -- =============================================================================
 
--- E-mail do super admin em um único lugar do schema.
+-- E-mail da conta oficial (contato). Os superadministradores são uma lista:
+-- platform_admin_emails() — a mesma de lib/auth.ts (SUPERADMINS).
 CREATE OR REPLACE FUNCTION platform_admin_email()
 RETURNS TEXT LANGUAGE sql IMMUTABLE SET search_path = public AS $$
   SELECT 'thiagohccarvalho00@gmail.com';
 $$;
 
+CREATE OR REPLACE FUNCTION platform_admin_emails()
+RETURNS TEXT[] LANGUAGE sql IMMUTABLE SET search_path = public AS $$
+  SELECT ARRAY[
+    'thiagohccarvalho00@gmail.com',
+    'tefi7009@gmail.com',
+    'marcelocfurtadojr@gmail.com',
+    'joaob2581@gmail.com'
+  ]::TEXT[];
+$$;
+
+CREATE OR REPLACE FUNCTION is_platform_admin_email(p_email TEXT)
+RETURNS BOOLEAN LANGUAGE sql IMMUTABLE SET search_path = public AS $$
+  SELECT lower(trim(COALESCE(p_email, ''))) = ANY (platform_admin_emails());
+$$;
+
 CREATE OR REPLACE FUNCTION is_platform_admin()
 RETURNS BOOLEAN LANGUAGE sql STABLE SET search_path = public AS $$
-  SELECT lower(COALESCE(auth.jwt() ->> 'email', '')) = platform_admin_email();
+  SELECT is_platform_admin_email(auth.jwt() ->> 'email');
 $$;
 
 -- --- 1) Colunas sensíveis do perfil ------------------------------------------
@@ -603,9 +619,9 @@ CREATE TRIGGER profiles_protect_columns
   BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION protect_profile_columns();
 
--- Nenhum perfil deve carregar a marca de admin além da conta oficial.
-UPDATE profiles SET is_platform_admin = (lower(email) = platform_admin_email())
-WHERE is_platform_admin IS DISTINCT FROM (lower(email) = platform_admin_email());
+-- Só os superadministradores carregam a marca de admin no perfil.
+UPDATE profiles SET is_platform_admin = is_platform_admin_email(email)
+WHERE is_platform_admin IS DISTINCT FROM is_platform_admin_email(email);
 
 -- --- 2) Auto-provisionamento --------------------------------------------------
 CREATE OR REPLACE FUNCTION slugify(p_text TEXT)
@@ -671,7 +687,7 @@ BEGIN
 
   INSERT INTO profiles (id, tenant_id, full_name, email, role, is_platform_admin)
   VALUES (v_uid, v_tenant, NULLIF(trim(p_full_name), ''), v_email, 'owner',
-          lower(COALESCE(v_email, '')) = platform_admin_email())
+          is_platform_admin_email(v_email))
   ON CONFLICT (id) DO UPDATE
     SET tenant_id = COALESCE(profiles.tenant_id, EXCLUDED.tenant_id),
         email     = COALESCE(profiles.email, EXCLUDED.email),

@@ -56,7 +56,9 @@ export async function GET(request: Request) {
 
     // Antes de a migração de convites existir, preserva somente o login de
     // contas já provisionadas. Novas contas continuam dependendo do convite.
-    if (!existingAccess && !accessSchemaPending) {
+    // Superadministrador entra sem convite (o middleware já o deixa passar) —
+    // aqui o e-mail vem verificado pelo provedor (Google).
+    if (!existingAccess && !accessSchemaPending && !isPlatformAdmin(user.email)) {
       if (!/^[0-9a-f]{64}$/i.test(convite)) {
         await sb.auth.signOut();
         return fail('invite_required');

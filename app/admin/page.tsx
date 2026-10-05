@@ -4,7 +4,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { ADMIN_EMAIL, isPlatformAdmin } from '@/lib/auth';
+import { SUPERADMINS, isPlatformAdmin } from '@/lib/auth';
 import { CITIES, TOPICS, cityCoords } from '@/lib/data';
 import AdminIntegrations from '@/components/AdminIntegrations';
 import AdminModeracao from '@/components/AdminModeracao';
@@ -151,7 +151,7 @@ function Painel() {
               ? `A conta ${currentEmail} não tem permissão para o painel administrativo global.`
               : 'Você precisa entrar como administrador da plataforma.'}
           </p>
-          <p className="text-xs text-zinc-500">Painel exclusivo de <span className="font-mono">{ADMIN_EMAIL}</span>.</p>
+          <p className="text-xs text-zinc-500">Painel exclusivo dos superadministradores da plataforma.</p>
           <div className="flex justify-center gap-3 pt-2">
             <Link href="/login" className="rounded-xl action-patch action-patch--ink bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950">Entrar</Link>
             <Link href="/" className="action-collage action-collage--paper rounded-xl border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-50">Voltar</Link>
@@ -191,7 +191,7 @@ function Painel() {
         {authState === 'demo' && (
           <div className="rounded-xl border border-amber-800/50 bg-amber-950/30 p-4 text-xs text-amber-300">
             Supabase não configurado. Os formulários funcionam em modo demonstração; configure as credenciais para persistir os dados e
-            restringir o acesso a <span className="font-mono">{ADMIN_EMAIL}</span>.
+            restringir o acesso aos superadministradores ({SUPERADMINS.length}).
           </div>
         )}
 
