@@ -141,7 +141,7 @@ function Reprodutor({ item, onFechar, compacto, onAlternar }: { item: ItemDeMidi
                 title={item.titulo}
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
-                className="aspect-video min-h-[200px] w-full"
+                className={m.vertical ? 'h-full w-full' : 'aspect-video min-h-[200px] w-full'}
               />}
             </div>
           )}
@@ -172,8 +172,9 @@ function Reprodutor({ item, onFechar, compacto, onAlternar }: { item: ItemDeMidi
 export function MidiaProvider({ children }: { children: React.ReactNode }) {
   const [aberta, setAberta] = useState<ItemDeMidia | null>(null);
   const [compacto, setCompacto] = useState(false);
+  const [pedido, setPedido] = useState(0);
   const fechar = useCallback(() => setAberta(null), []);
-  const abrir = useCallback((item: ItemDeMidia) => { setCompacto(false); setAberta(item); }, []);
+  const abrir = useCallback((item: ItemDeMidia) => { setCompacto(false); setPedido(n => n + 1); setAberta(item); }, []);
 
   // Esc fecha; a página por trás não rola enquanto o reprodutor está aberto.
   useEffect(() => {
@@ -192,7 +193,7 @@ export function MidiaProvider({ children }: { children: React.ReactNode }) {
   return (
     <MidiaCtx.Provider value={valor}>
       {children}
-      {aberta && <Reprodutor item={aberta} onFechar={fechar} compacto={compacto} onAlternar={() => setCompacto(c => !c)} />}
+      {aberta && <Reprodutor key={pedido} item={aberta} onFechar={fechar} compacto={compacto} onAlternar={() => setCompacto(c => !c)} />}
     </MidiaCtx.Provider>
   );
 }

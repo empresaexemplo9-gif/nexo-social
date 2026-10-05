@@ -73,7 +73,7 @@ self.addEventListener('fetch', (event) => {
   // Estáticos com hash: cache primeiro.
   if (url.pathname.startsWith('/_next/static/') || /\.(png|svg|ico|woff2?)$/.test(url.pathname)) {
     event.respondWith(
-      (url.pathname.startsWith('/_next/static/') ? caches.match(req) : caches.open(ESTATICO).then(c => c.match(req))).then(
+      (url.pathname.startsWith('/_next/static/') ? caches.match(req) : caches.open(ESTATICO).then(async c => (await c.match(req)) ?? (await (await caches.open(SHELL)).match(req)))).then(
         (hit) =>
           hit ??
           fetch(req).then((res) => {

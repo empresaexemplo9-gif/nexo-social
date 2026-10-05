@@ -38,8 +38,11 @@ test('recolher, navegar e ampliar mantém a mesma fila; fechar a desmonta', asyn
   assert.equal(mounts, 1); assert.equal(unmounts, 0);
   await act(async () => view.root.findByProps({ 'aria-label': 'Ampliar player' }).props.onClick());
   assert.equal(mounts, 1);
-  await act(async () => actions.fechar());
+  await act(async () => actions.abrir(item));
+  assert.equal(mounts, 2, 'escolher a mesma lista novamente recomeça a reprodução');
   assert.equal(unmounts, 1);
+  await act(async () => actions.fechar());
+  assert.equal(unmounts, 2);
   assert.equal(document.body.style.overflow, '');
   await act(async () => view.unmount());
 });
