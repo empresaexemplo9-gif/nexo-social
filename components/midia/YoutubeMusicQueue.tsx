@@ -30,10 +30,10 @@ export default function YoutubeMusicQueue({ ids, title }: { ids: string[]; title
   return <div>
     <YoutubeMusicPlayer videoId={ids[index]} title={title} request={request} onEnded={next}
       onError={() => setUnavailable(old => ({ ...old, [ids[index]]: true }))} />
-    <div className="flex items-center justify-between gap-3 p-3 text-xs text-zinc-300">
+    <div className="flex items-center justify-between gap-3 bg-zinc-900 p-3 text-xs text-zinc-100">
       <span>{index + 1} de {ids.length} · Reprodução contínua</span>
       <button type="button" disabled={!canContinue} onClick={next} className="min-h-11 shrink-0 px-2 underline disabled:opacity-40">Próxima música</button>
     </div>
-    {failed && <p role="status" className="p-3 text-xs text-zinc-400">{canContinue ? 'Esta música está indisponível. Pulando para a próxima…' : 'Nenhuma música desta lista está disponível para tocar aqui.'}</p>}
+    {failed && <p role="status" className="bg-zinc-900 p-3 text-xs text-zinc-300">{canContinue ? 'Esta música está indisponível. Pulando para a próxima…' : 'Nenhuma música desta lista está disponível para tocar aqui.'}</p>}
   </div>;
 }
