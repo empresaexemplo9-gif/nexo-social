@@ -82,22 +82,23 @@ function AudioCapitulos({ feed }: { feed: string }) {
   );
 }
 
-function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => void }) {
+function Reprodutor({ item, onFechar, compacto, onAlternar }: { item: ItemDeMidia; onFechar: () => void; compacto: boolean; onAlternar: () => void }) {
   const m = item.midia;
   const alto = m.tipo === 'livro' || (m.tipo === 'archive' && m.formato === 'texto');
+  const musica = m.tipo === 'youtube' && !!m.fila;
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
+      role={compacto ? 'region' : 'dialog'}
+      aria-modal={compacto ? undefined : true}
       aria-label={item.titulo}
-      onClick={onFechar}
-      className="fixed inset-0 z-[80] flex items-stretch justify-center bg-zinc-50/55 backdrop-blur-sm sm:items-center sm:p-6"
+      onClick={compacto ? undefined : onFechar}
+      className={compacto ? 'player-musica-compacto fixed z-[70]' : 'player-midia-aberto fixed inset-0 z-[80] flex items-center justify-center bg-zinc-50/55 backdrop-blur-sm sm:p-6'}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className={`widget-entra relative flex w-full max-w-5xl flex-col overflow-hidden bg-zinc-900 shadow-2xl sm:rounded-3xl ${
-          alto ? 'h-full sm:h-[90vh]' : 'max-h-full'
+          alto ? 'h-full sm:h-[90dvh]' : 'max-h-full'
         }`}
       >
         <header className="flex items-center gap-3 border-b border-zinc-800 px-4 py-3">
@@ -121,11 +122,12 @@ function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => voi
               Abrir na fonte <Icon name="external" size={12} />
             </a>
           )}
+          {musica && <button type="button" onClick={onAlternar} aria-label={compacto ? 'Ampliar player' : 'Recolher player'} className="action-collage min-h-11 rounded-lg px-3 text-xs text-zinc-100">{compacto ? 'Ampliar' : 'Recolher'}</button>}
           <button
             type="button"
             onClick={onFechar}
             aria-label="Fechar"
-            className="action-collage action-collage--paper action-collage--seal flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-50"
+            className="action-collage action-collage--paper action-collage--seal flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-50"
           >
             <Icon name="close" size={18} />
           </button>
@@ -133,13 +135,13 @@ function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => voi
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {m.tipo === 'youtube' && (
-            <div className={m.vertical ? 'mx-auto aspect-[9/16] max-h-[80vh] bg-black' : 'aspect-video w-full bg-black'}>
+            <div className={m.vertical ? 'mx-auto aspect-[9/16] max-h-[80dvh] bg-black' : 'w-full bg-black'}>
               {m.fila ? <YoutubeMusicQueue key={`${m.id}:${m.fila.join(',')}`} ids={[m.id, ...m.fila].filter(v => /^[\w-]{11}$/.test(v))} title={item.titulo} /> : <iframe
                 src={`https://www.youtube-nocookie.com/embed/${m.id}?autoplay=1&rel=0&playsinline=1&modestbranding=1`}
                 title={item.titulo}
                 allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
                 allowFullScreen
-                className="h-full w-full"
+                className={m.vertical ? 'h-full w-full' : 'aspect-video min-h-[200px] w-full'}
               />}
             </div>
           )}
@@ -169,11 +171,14 @@ function Reprodutor({ item, onFechar }: { item: ItemDeMidia; onFechar: () => voi
 
 export function MidiaProvider({ children }: { children: React.ReactNode }) {
   const [aberta, setAberta] = useState<ItemDeMidia | null>(null);
+  const [compacto, setCompacto] = useState(false);
+  const [pedido, setPedido] = useState(0);
   const fechar = useCallback(() => setAberta(null), []);
+  const abrir = useCallback((item: ItemDeMidia) => { setCompacto(false); setPedido(n => n + 1); setAberta(item); }, []);
 
   // Esc fecha; a página por trás não rola enquanto o reprodutor está aberto.
   useEffect(() => {
-    if (!aberta) return;
+    if (!aberta || compacto) return;
     const tecla = (e: KeyboardEvent) => e.key === 'Escape' && fechar();
     const antes = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -182,13 +187,13 @@ export function MidiaProvider({ children }: { children: React.ReactNode }) {
       document.body.style.overflow = antes;
       window.removeEventListener('keydown', tecla);
     };
-  }, [aberta, fechar]);
+  }, [aberta, compacto, fechar]);
 
-  const valor = useMemo(() => ({ abrir: setAberta, fechar }), [fechar]);
+  const valor = useMemo(() => ({ abrir, fechar }), [abrir, fechar]);
   return (
     <MidiaCtx.Provider value={valor}>
       {children}
-      {aberta && <Reprodutor item={aberta} onFechar={fechar} />}
+      {aberta && <Reprodutor key={pedido} item={aberta} onFechar={fechar} compacto={compacto} onAlternar={() => setCompacto(c => !c)} />}
     </MidiaCtx.Provider>
   );
 }

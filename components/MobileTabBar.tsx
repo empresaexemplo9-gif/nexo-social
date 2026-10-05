@@ -69,7 +69,7 @@ export default function MobileTabBar() {
     if (!publicPage) ABAS.forEach((a) => router.prefetch(a.href));
   }, [router, publicPage]);
 
-  if (publicPage || !plat || !plat.ehMobile) return null;
+  if (publicPage || !plat) return null;
 
   const ios = plat.sistema === 'ios';
 
@@ -103,7 +103,7 @@ export default function MobileTabBar() {
           {ABAS.map((aba) => {
             const ativo = aba.href === '/' ? pathname === '/' : pathname.startsWith(aba.href);
             return (
-              <li key={aba.href} className="flex-1">
+              <li key={aba.href} className="min-w-0 flex-1">
                 <Link
                   href={aba.href}
                   aria-current={ativo ? 'page' : undefined}
@@ -116,13 +116,13 @@ export default function MobileTabBar() {
                       // A pílula do ativo é convenção do Material (Android).
                       // No iOS o padrão é só a cor mudar.
                       !ios && ativo
-                        ? 'flex h-8 w-14 items-center justify-center rounded-full bg-emerald-500/15'
-                        : 'flex h-8 w-14 items-center justify-center'
+                        ? 'flex h-8 w-full max-w-14 items-center justify-center rounded-full bg-emerald-500/15'
+                        : 'flex h-8 w-full max-w-14 items-center justify-center'
                     }
                   >
                     <Icon name={aba.icon} size={ios ? 23 : 22} />
                   </span>
-                  <span className={ios ? 'text-[10px] font-medium leading-none' : 'text-[10.5px] leading-none'}>
+                  <span className="max-w-full truncate text-[9px] font-medium leading-none sm:text-[10px]">
                     {aba.label}
                   </span>
                 </Link>

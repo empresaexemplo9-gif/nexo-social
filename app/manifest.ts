@@ -18,9 +18,10 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       'Sua agenda pessoal, seus nichos, trilha do Spotify, biblioteca e esporte ao vivo — tudo em um lugar.',
     start_url: '/',
+    id: '/',
     scope: '/',
     display: 'standalone',
-    orientation: 'portrait-primary',
+    orientation: 'any',
     background_color: '#f6f2ea',
     theme_color: '#f6f2ea',
     lang: 'pt-BR',

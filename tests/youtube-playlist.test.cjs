@@ -14,6 +14,7 @@ function setup(opcoes = {}) {
   if (opcoes.yt) window.YT = opcoes.yt;
   const timers = [];
   const preferences = { ready: false, prefs: { musicGenres: ['rock'], musicHits: false, musicMix: 'misturar' } };
+  const opened = [];
   const requests = [];
   const pending = [];
   const intervals = new Set();
@@ -27,6 +28,7 @@ function setup(opcoes = {}) {
     react: React,
     'next/link': ({ children, ...props }) => React.createElement('a', props, children),
     './YoutubeAccount': () => null,
+    './midia/MidiaProvider': { useMidia: () => ({ abrir: item => opened.push(item) }) },
     '@/lib/preferences': { usePreferences: () => preferences },
     '@/lib/taxonomy': { MUSIC_GENRES: [{ id: 'rock', label: 'Rock' }, { id: 'lofi', label: 'Lo-fi & Foco' }] },
     // Sem a API do player (padrão), o vídeo toca e só não segue sozinho.
@@ -56,7 +58,7 @@ function setup(opcoes = {}) {
   dependencies['../YoutubeMusicPlayer'] = dependencies['./YoutubeMusicPlayer'];
   return { Playlist: load(process.env.PLAYLIST_SOURCE || 'components/YoutubePlaylist.tsx').default,
     MusicPlayer: dependencies['./YoutubeMusicPlayer'].default, Queue: load('components/midia/YoutubeMusicQueue.tsx').default,
-    preferences, window, requests, pending, intervals, timers, nodes, createNodeMock };
+    preferences, window, requests, pending, intervals, timers, nodes, createNodeMock, opened };
 }
 
 test('home music mounts after login and refreshes when YouTube is connected in another tab', async () => {
@@ -191,7 +193,7 @@ test('Bom Dia supplies a playable default and refreshes its daily music variatio
   ] }) }));
   const play = view.root.findAllByType('button').find(button => button.props.children === 'Tocar seleção');
   await act(async () => play.props.onClick());
-  assert.match(app.nodes.at(-1).children[0].src, /youtube-nocookie\.com\/embed\/abcdefghijk/);
+  assert.equal(app.opened.at(-1).midia.id, 'abcdefghijk');
   await act(async () => view.update(React.createElement(app.Playlist, { fallbackGenre: 'lofi', variation: 3 })));
   assert.match(app.requests.at(-1).url, /rodada=3/);
   await act(async () => app.pending.shift()({ ok: true, json: async () => ({ videos: [] }) }));
@@ -211,47 +213,18 @@ function youtubeMock(players) {
   } };
 }
 
-test('a trilha mantém um player, toca a escolha, avança sozinha, pula indisponíveis e repete a lista', async () => {
-  const players = [];
-  const app = setup({ api: Promise.resolve(), yt: youtubeMock(players) });
-  app.preferences.ready = true;
+test('a escolha da trilha abre uma fila completa no player persistente da plataforma', async () => {
+  const app = setup(); app.preferences.ready = true;
   let view;
-  const noDom = { createNodeMock: app.createNodeMock };
-  await act(async () => { view = create(React.createElement(app.Playlist), noDom); });
+  await act(async () => { view = create(React.createElement(app.Playlist)); });
   await act(async () => app.pending.shift()({ ok: true, json: async () => ({ videos: [
-    { id: 'aaaaaaaaaaa', title: 'Música A', channel: 'Canal', thumb: null },
-    { id: 'bbbbbbbbbbb', title: 'Música B', channel: 'Canal', thumb: null },
-    { id: 'ccccccccccc', title: 'Música C', channel: 'Canal', thumb: null },
+    { id: 'aaaaaaaaaaa', title: 'Música A', channel: 'Canal' },
+    { id: 'bbbbbbbbbbb', title: 'Música B', channel: 'Canal' },
+    { id: 'ccccccccccc', title: 'Música C', channel: 'Canal' },
   ] }) }));
-  const botao = (rotulo) => view.root.findAllByType('button').find((b) => b.props['aria-label'] === rotulo || b.props.children === rotulo);
-  const tocando = () => players[0].id;
-
-  // Escolher a B toca a B — e o player não recebe a lista (que fazia pular).
-  await act(async () => botao('Tocar Música B').props.onClick());
-  assert.equal(tocando(), 'bbbbbbbbbbb');
-  assert.doesNotMatch(app.nodes.at(-1).children[0].src, /playlist=/);
-  assert.equal(players.length, 1);
-  await act(async () => players[0].events.onReady());
-
-  // Falhou: avisa e pula a B sem pedir outro clique.
-  await act(async () => players[0].events.onError({ data: 150 }));
-  assert.match(view.root.findByProps({ role: 'alert' }).findAllByType('p')[0].props.children, /não permite/);
-  assert.equal(tocando(), 'bbbbbbbbbbb');
-  assert.equal(app.timers.length, 1);
-  await act(async () => app.timers[0]());
-  assert.equal(tocando(), 'ccccccccccc');
-
-  // "Tocar seleção": começa na A e, quando ela termina, segue para a próxima que toca.
-  await act(async () => botao('Tocar seleção').props.onClick());
-  assert.equal(tocando(), 'aaaaaaaaaaa');
-  await act(async () => players[0].events.onStateChange({ data: 1 }));
-  await act(async () => players.at(-1).events.onStateChange({ data: 0 }));
-  assert.equal(tocando(), 'ccccccccccc', 'a B já falhou: a sequência vai direto para a C');
-  await act(async () => players[0].events.onStateChange({ data: 1 }));
-  await act(async () => players[0].events.onStateChange({ data: 0 }));
-  assert.equal(tocando(), 'aaaaaaaaaaa', 'última música volta para a primeira');
-  assert.equal(players.length, 1, 'avanços não recriam o iframe nem o player');
-  assert.deepEqual(players[0].loads, ['ccccccccccc', 'aaaaaaaaaaa', 'ccccccccccc', 'aaaaaaaaaaa']);
+  await act(async () => view.root.findByProps({ 'aria-label': 'Tocar Música B' }).props.onClick());
+  assert.equal(app.opened[0].midia.id, 'bbbbbbbbbbb');
+  assert.deepEqual(Array.from(app.opened[0].midia.fila), ['ccccccccccc', 'aaaaaaaaaaa']);
   await act(async () => view.unmount());
-  assert.equal(players[0].destroyed, true);
+  assert.equal(app.opened.length, 1, 'sair da página não fecha o player da plataforma');
 });
