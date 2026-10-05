@@ -2832,3 +2832,20 @@ html[data-muro='claro'][data-fundo-exclusivo='home'] .tema-mural[data-area='inic
 @media (prefers-reduced-motion: reduce) { .arc-camera, .arc-tremer, .arc-gema, .arc-pronto, .arc-alvo, .arc-onda { animation: none !important; } .arc-camera { transform: rotateX(var(--tilt)); } }
 .arc-pop { animation: arc-pop .45s cubic-bezier(.2, 1.3, .4, 1) both; }
 @keyframes arc-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* O mesmo player permanece visível e montado ao recolher e navegar. */
+.player-midia-aberto {
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.player-musica-compacto {
+  width: min(360px, calc(100vw - 24px));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(var(--altura-abas, 0px) + 12px);
+}
+.player-musica-compacto > div { border-radius: 16px; }
+@media (max-height: 480px) {
+  .player-musica-compacto { width: 260px; }
+  .player-musica-compacto header { padding-block: 0; }
+}

@@ -13,10 +13,10 @@
  */
 
 // Suba a versão quando um arquivo sem hash no nome mudar de conteúdo (ícones,
-// logo.svg): o cache antigo é apagado na ativação e o novo é baixado.
+// logo.svg): o novo cache é baixado; a versão anterior protege outras janelas.
 // v4: selo NEXO • SOCIAL • CULTURA • NOVIDADE e tema claro.
 // v6: avisos no aparelho (push).
-const VERSAO = 'nexo-v6';
+const VERSAO = 'nexo-v7';
 const SHELL = `${VERSAO}-shell`;
 const ESTATICO = `${VERSAO}-estatico`;
 const OFFLINE = '/offline';
@@ -27,8 +27,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(SHELL)
-      .then((c) => c.addAll(PRE_CACHE))
-      .then(() => self.skipWaiting()),
+      .then((c) => c.addAll(PRE_CACHE)),
   );
 });
 
@@ -36,11 +35,19 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((chaves) =>
-        Promise.all(chaves.filter((k) => !k.startsWith(VERSAO)).map((k) => caches.delete(k))),
-      )
+      .then((chaves) => {
+        // Mantém também a versão anterior: outras janelas podem ainda usá-la.
+        const nossas = chaves.filter(k => /^nexo-v\d+-(shell|estatico)$/.test(k));
+        const anteriores = nossas.map(k => k.split('-').slice(0, 2).join('-')).filter(k => k !== VERSAO);
+        const anterior = anteriores.sort((a, b) => Number(b.slice(6)) - Number(a.slice(6)))[0];
+        return Promise.all(nossas.filter(k => !k.startsWith(`${VERSAO}-`) && (!anterior || !k.startsWith(`${anterior}-`))).map(k => caches.delete(k)));
+      })
       .then(() => self.clients.claim()),
   );
+});
+
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('fetch', (event) => {
@@ -58,7 +65,7 @@ self.addEventListener('fetch', (event) => {
   // Navegação: rede primeiro, offline como último recurso.
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req).catch(async () => (await caches.match(OFFLINE)) ?? Response.error()),
+      fetch(req).catch(async () => (await (await caches.open(SHELL)).match(OFFLINE)) ?? Response.error()),
     );
     return;
   }
@@ -66,13 +73,13 @@ self.addEventListener('fetch', (event) => {
   // Estáticos com hash: cache primeiro.
   if (url.pathname.startsWith('/_next/static/') || /\.(png|svg|ico|woff2?)$/.test(url.pathname)) {
     event.respondWith(
-      caches.match(req).then(
+      (url.pathname.startsWith('/_next/static/') ? caches.match(req) : caches.open(ESTATICO).then(c => c.match(req))).then(
         (hit) =>
           hit ??
           fetch(req).then((res) => {
             if (res.ok) {
               const copia = res.clone();
-              caches.open(ESTATICO).then((c) => c.put(req, copia));
+              event.waitUntil(caches.open(ESTATICO).then((c) => c.put(req, copia)));
             }
             return res;
           }),

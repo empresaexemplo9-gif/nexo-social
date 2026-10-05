@@ -18,13 +18,13 @@ const CHAVE_DISPENSADO = 'nexo:instalar:dispensado';
  * a instalação acontece com um clique.
  *
  * iOS: não existe API de instalação — nem no Chrome, que lá roda sobre o
- * WebKit. O único caminho é Compartilhar → Adicionar à Tela de Início, no
- * Safari. Então mostramos o passo a passo em vez de um botão que não faria
- * nada.
+ * WebKit. A instalação usa Compartilhar → Adicionar à Tela de Início.
+ * Mostramos o passo a passo quando não há instalação por código.
  */
 export default function InstallApp({ compacto = false, className = '' }: { compacto?: boolean; className?: string }) {
   const [plat, setPlat] = useState<Plataforma | null>(null);
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [instalando, setInstalando] = useState(false);
   const [passos, setPassos] = useState(false);
   const [dispensado, setDispensado] = useState(true);
 
@@ -59,10 +59,18 @@ export default function InstallApp({ compacto = false, className = '' }: { compa
       setPassos(true);
       return;
     }
-    await prompt.prompt();
-    const { outcome } = await prompt.userChoice;
-    if (outcome === 'accepted') setPrompt(null);
-  }, [prompt]);
+    if (instalando) return;
+    setInstalando(true);
+    setPrompt(null); // Cada evento pode ser usado uma única vez, mesmo após cancelar.
+    try {
+      await prompt.prompt();
+      await prompt.userChoice;
+    } catch {
+      setPassos(true);
+    } finally {
+      setInstalando(false);
+    }
+  }, [prompt, instalando]);
 
   const dispensar = () => {
     setDispensado(true);
@@ -84,6 +92,7 @@ export default function InstallApp({ compacto = false, className = '' }: { compa
       <>
         <button
           onClick={instalar}
+          disabled={instalando}
           className={`${className || 'action-collage action-collage--paper text-zinc-100 transition hover:border-emerald-600 hover:text-emerald-300'} inline-flex items-center gap-1.5 rounded-xl border border-zinc-700 px-3 py-1.5 text-xs font-semibold`}
         >
           <Icon name="download" size={13} /> Baixar app
@@ -117,6 +126,7 @@ export default function InstallApp({ compacto = false, className = '' }: { compa
           </button>
           <button
             onClick={instalar}
+            disabled={instalando}
             className="inline-flex items-center gap-2 rounded-2xl action-patch action-patch--cobalt bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-400"
           >
             <Icon name="download" size={15} /> {ios ? 'Como instalar' : rotulo}
@@ -135,13 +145,13 @@ function PassosIOS({ plat, onClose }: { plat: Plataforma; onClose: () => void })
   const passos = ios
     ? plat.ehSafariIOS
       ? [
-          'Toque no botão Compartilhar, na barra de baixo (o quadrado com a seta para cima).',
+          'Toque no botão Compartilhar (o quadrado com a seta para cima), na barra ou no menu do navegador.',
           'Role a lista e toque em "Adicionar à Tela de Início".',
-          'Confirme em "Adicionar", no canto superior direito.',
+          'Mantenha "Abrir como App" ligado, se aparecer, e confirme em "Adicionar".',
         ]
       : [
-          'No iPhone e no iPad, só o Safari instala aplicativos — mesmo o Chrome usa o motor da Apple e não tem essa opção.',
-          'Abra nexo-social.drap.app.br no Safari.',
+          'Abra o menu Compartilhar do navegador e procure "Adicionar à Tela de Início".',
+          'Se essa opção não aparecer, abra esta mesma página no Safari.',
           'Toque em Compartilhar → "Adicionar à Tela de Início".',
         ]
     : [
@@ -154,11 +164,12 @@ function PassosIOS({ plat, onClose }: { plat: Plataforma; onClose: () => void })
     <div
       role="dialog"
       aria-modal="true"
+      aria-label={ios ? "Adicionar à Tela de Início" : "Instalar o app"}
       className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 p-4 sm:items-center"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-zinc-800 bg-zinc-900 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-lg font-semibold text-zinc-50">
