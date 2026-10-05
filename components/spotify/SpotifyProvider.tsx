@@ -392,6 +392,14 @@ export function SpotifyProvider({ children }: { children: React.ReactNode }) {
           setAviso({ texto: 'O Spotify não conseguiu tocar agora. Tente de novo.', erro: true });
           return false;
         }
+        // O Spotify avança dentro da fila; repetir o contexto evita parar no fim.
+        try {
+          const repeat = await fetch(`${API}/me/player/repeat?state=context&device_id=${encodeURIComponent(id)}`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${t}` },
+          });
+          if (!repeat.ok) throw new Error('Repetição indisponível');
+        } catch { setAviso({ texto: 'A música está tocando, mas não foi possível ativar a repetição da playlist.', erro: true }); }
         return true;
       } catch {
         setAviso({ texto: 'Sem conexão com o Spotify agora.', erro: true });

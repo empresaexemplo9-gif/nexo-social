@@ -16,6 +16,7 @@ import React, { useEffect, useRef, useState } from 'react';
  */
 
 interface EstadoDoEmbed {
+  playingURI?: string;
   isPaused: boolean;
   isBuffering: boolean;
   /** ms */
@@ -111,13 +112,14 @@ export default function PlayerEmbutido({ pedido, titulo, onDuracao, onFim }: Pro
 
   // Pedido de tocar ainda não atendido (o embed pode não ter carregado).
   const querTocar = useRef(false);
-  const ultimo = useRef({ tocando: false, posicao: 0, duracao: 0 });
+  const ultimo = useRef({ tocando: false, posicao: 0, duracao: 0, uri: '' });
 
   const altura = alturaDe(pedido.uri);
 
   // Cria o controle uma vez; depois só trocamos o conteúdo com loadUri.
   useEffect(() => {
     let vivo = true;
+    let repetir: ReturnType<typeof setTimeout> | undefined;
     const el = caixa.current;
     if (!el) return;
     // O controle substitui este nó pelo iframe; fica fora do React.
@@ -139,7 +141,8 @@ export default function PlayerEmbutido({ pedido, titulo, onDuracao, onFim }: Pro
             if (querTocar.current) c.play();
           });
           c.addListener('playback_update', ({ data }) => {
-            if (!data) return;
+            if (!vivo || !data) return;
+            clearTimeout(repetir);
             if (!data.isPaused && data.position > 0) querTocar.current = false;
             const antes = ultimo.current;
             if (data.duration !== antes.duracao && data.duration > 0) atual.current.onDuracao?.(data.duration);
@@ -149,9 +152,21 @@ export default function PlayerEmbutido({ pedido, titulo, onDuracao, onFim }: Pro
               antes.tocando &&
               data.isPaused &&
               data.duration > 0 &&
-              (data.position >= data.duration - 1500 || (data.position === 0 && antes.posicao >= antes.duracao - 2500));
-            ultimo.current = { tocando: !data.isPaused, posicao: data.position, duracao: data.duration };
+              !data.isBuffering &&
+              (!data.playingURI || !antes.uri || data.playingURI === antes.uri) &&
+              (data.position >= data.duration || (data.position === 0 && antes.posicao >= antes.duracao - 1000));
+            ultimo.current = { tocando: !data.isPaused, posicao: data.position, duracao: data.duration, uri: data.playingURI || '' };
             if (acabou && atual.current.pedido.uri.startsWith('spotify:track:')) atual.current.onFim?.();
+            // A coleção avança pelo Spotify. Só recomeça se continuar parada
+            // depois do fim, sem uma próxima faixa entrando ou pause manual.
+            if (acabou && atual.current.pedido.uri.startsWith('spotify:playlist:')) {
+              const pedido = atual.current.pedido;
+              repetir = setTimeout(() => {
+                if (!vivo || atual.current.pedido.n !== pedido.n) return;
+                c.loadUri(pedido.uri);
+                c.play();
+              }, 2000);
+            }
           });
         });
       })
@@ -161,6 +176,7 @@ export default function PlayerEmbutido({ pedido, titulo, onDuracao, onFim }: Pro
 
     return () => {
       vivo = false;
+      clearTimeout(repetir);
       controle.current?.destroy();
       controle.current = null;
       el.replaceChildren();
@@ -171,7 +187,7 @@ export default function PlayerEmbutido({ pedido, titulo, onDuracao, onFim }: Pro
   useEffect(() => {
     const c = controle.current;
     if (!c) return; // ainda criando: a criação usa o pedido mais recente
-    ultimo.current = { tocando: false, posicao: 0, duracao: 0 };
+    ultimo.current = { tocando: false, posicao: 0, duracao: 0, uri: '' };
     querTocar.current = pedido.tocar;
     c.loadUri(pedido.uri);
     caixa.current?.querySelector('iframe')?.setAttribute('height', String(alturaDe(pedido.uri)));

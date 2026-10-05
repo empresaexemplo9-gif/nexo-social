@@ -5,7 +5,8 @@ import Link from 'next/link';
 import YoutubeAccount from './YoutubeAccount';
 import { usePreferences } from '@/lib/preferences';
 import { MUSIC_GENRES } from '@/lib/taxonomy';
-import { carregarApiDoYoutube } from '@/lib/youtube-iframe';
+import YoutubeMusicPlayer from './YoutubeMusicPlayer';
+import { nextPlayable } from '@/lib/music-queue';
 
 interface Video { id: string; title: string; channel: string; thumb: string | null }
 
@@ -26,12 +27,10 @@ export default function YoutubePlaylist({ variation = 0, fallbackGenre = '' }: {
   const [retry, setRetry] = useState(0);
   const [videos, setVideos] = useState<Video[]>([]);
   const [index, setIndex] = useState<number | null>(null);
-  // Como a música começou: escolhida na lista, ou a sequência seguiu sozinha.
-  const [origem, setOrigem] = useState<'escolha' | 'sequencia'>('escolha');
+  const [request, setRequest] = useState(0);
   const [falhas, setFalhas] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const moldura = useRef<HTMLIFrameElement>(null);
   const estado = useRef({ videos, index, falhas });
   estado.current = { videos, index, falhas };
 
@@ -64,57 +63,28 @@ export default function YoutubePlaylist({ variation = 0, fallbackGenre = '' }: {
 
   /** Toca exatamente a música escolhida (sem pular para outra). */
   const tocar = useCallback((i: number, como: 'escolha' | 'sequencia') => {
-    setOrigem(como);
+    if (como === 'escolha') setFalhas(f => { const next = { ...f }; delete next[estado.current.videos[i]?.id]; return next; });
     setIndex(i);
+    setRequest(n => n + 1);
   }, []);
 
-  /** A próxima da sequência que ainda não falhou (null: acabou). */
+  /** Segue a lista e recomeça quando todas as músicas disponíveis tocaram. */
   const proximaDe = useCallback((i: number) => {
     const { videos: lista, falhas: ruins } = estado.current;
-    for (let k = i + 1; k < lista.length; k++) if (!ruins[lista[k].id]) return k;
-    return null;
+    return nextPlayable(lista.map(v => v.id), i, ruins);
   }, []);
 
   // O player avisa quando a música termina (segue a sequência) e quando falha.
   const atual = index === null ? null : videos[index] ?? null;
-  useEffect(() => {
-    if (!atual || !moldura.current) return;
-    let vivo = true;
-    const iframe = moldura.current;
-    try {
-      carregarApiDoYoutube().then(() => {
-        if (!vivo || !iframe.isConnected || !window.YT?.Player) return;
-        new window.YT.Player(iframe, {
-          events: {
-            onStateChange: (e: { data: number }) => {
-              if (!vivo || e.data !== 0) return;
-              const i = estado.current.index;
-              const k = i === null ? null : proximaDe(i);
-              if (k !== null) tocar(k, 'sequencia');
-            },
-            onError: (e: { data: number }) => {
-              if (!vivo) return;
-              setFalhas(f => ({ ...f, [atual.id]: MOTIVO[e.data] ?? 'Este vídeo não pode ser reproduzido aqui agora.' }));
-            },
-          },
-        });
-      }).catch(() => undefined);
-    } catch {
-      // Sem a API, o vídeo toca normalmente; só não segue sozinho.
-    }
-    return () => { vivo = false; };
-  }, [atual?.id, index, proximaDe, tocar]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Na sequência automática, um vídeo que não toca é pulado (com aviso).
-  // Na música escolhida, fica o aviso e a pessoa decide.
+  // Vídeos indisponíveis são pulados; se todos falharem, a sequência para.
   const falhaAtual = atual ? falhas[atual.id] : undefined;
   useEffect(() => {
-    if (!falhaAtual || origem !== 'sequencia' || index === null) return;
+    if (!falhaAtual || index === null) return;
     const k = proximaDe(index);
     if (k === null) return;
     const t = setTimeout(() => tocar(k, 'sequencia'), 2500);
     return () => clearTimeout(t);
-  }, [falhaAtual, origem, index, proximaDe, tocar]);
+  }, [falhaAtual, index, proximaDe, tocar]);
 
   if (!ready) return <p>Montando sua trilha…</p>;
   if (!genre && !videos.length) return <div className="card-soft space-y-3 p-6">
@@ -123,8 +93,6 @@ export default function YoutubePlaylist({ variation = 0, fallbackGenre = '' }: {
     <Link className="inline-block underline" href="/questionario#q-musica">Escolher meus estilos</Link>
   </div>;
 
-  const origemDoSite = typeof window !== 'undefined' && window.location ? window.location.origin : '';
-  const embedParams = new URLSearchParams({ autoplay: '1', playsinline: '1', rel: '0', enablejsapi: '1', ...(origemDoSite ? { origin: origemDoSite } : {}) });
   const proxima = index === null ? null : proximaDe(index);
   const anterior = index === null ? null : (() => { for (let k = index - 1; k >= 0; k--) if (!falhas[videos[k].id]) return k; return null; })();
 
@@ -132,7 +100,7 @@ export default function YoutubePlaylist({ variation = 0, fallbackGenre = '' }: {
     <YoutubeAccount />
     <div>
       <p className="rotulo-hud">Sua trilha no YouTube</p>
-      <p className="mt-1 text-xs text-zinc-400">Escolha uma música para assistir e ouvir aqui. Quando ela acabar, a trilha segue para a próxima da lista.</p>
+      <p className="mt-1 text-xs text-zinc-400">Escolha uma música para ouvir aqui. A próxima toca automaticamente e, no fim da lista, a trilha recomeça.</p>
     </div>
     <div className="flex flex-wrap gap-2">
       {genres.map(g => <button key={g.id} type="button" aria-pressed={genre?.id === g.id}
@@ -144,15 +112,16 @@ export default function YoutubePlaylist({ variation = 0, fallbackGenre = '' }: {
     {loading && <p role="status" className="p-6">Buscando músicas no YouTube…</p>}
     {error && <div role="alert" className="card-soft space-y-3 p-5"><p>{error}</p><button type="button" onClick={() => setRetry(r => r + 1)} className="action-collage rounded-lg border px-3 py-2">Tentar novamente</button></div>}
     {atual && <div className="overflow-hidden rounded-2xl border border-zinc-700">
-      <iframe ref={moldura} key={`${atual.id}:${index}:${round}`} src={`https://www.youtube-nocookie.com/embed/${atual.id}?${embedParams}`}
-        title={`Tocando: ${atual.title}`} className="aspect-video min-h-[200px] w-full" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />
+      <YoutubeMusicPlayer videoId={atual.id} title={`Tocando: ${atual.title}`} request={request}
+        onEnded={() => { const i = estado.current.index; const k = i === null ? null : proximaDe(i); if (k !== null) tocar(k, 'sequencia'); }}
+        onError={code => setFalhas(f => ({ ...f, [atual.id]: MOTIVO[code] ?? 'Este vídeo não pode ser reproduzido aqui agora.' }))} />
       {falhaAtual && <div role="alert" className="space-y-2 border-t border-zinc-700 p-3 text-xs">
         <p className="font-semibold text-zinc-100">{falhaAtual}</p>
-        {origem === 'sequencia' && proxima !== null
+        {proxima !== null
           ? <p className="text-zinc-400">Pulando para a próxima da trilha…</p>
           : <div className="flex flex-wrap gap-2">
             <a href={`https://www.youtube.com/watch?v=${atual.id}`} target="_blank" rel="noopener noreferrer" className="action-collage rounded-lg border px-3 py-1.5">Abrir no YouTube</a>
-            {proxima !== null && <button type="button" onClick={() => tocar(proxima, 'escolha')} className="action-collage rounded-lg border px-3 py-1.5">Tocar a próxima</button>}
+            <p className="text-zinc-400">Nenhuma música desta seleção está disponível para tocar aqui. Tente outras descobertas.</p>
           </div>}
       </div>}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 text-xs">
@@ -165,7 +134,7 @@ export default function YoutubePlaylist({ variation = 0, fallbackGenre = '' }: {
       </div>
     </div>}
     {!loading && !error && videos.length > 0 && <>
-      <button type="button" onClick={() => tocar(0, 'sequencia')} className="action-collage rounded-lg bg-emerald-400 px-4 py-2 text-sm text-zinc-950">Tocar seleção</button>
+      <button type="button" onClick={() => { const k = proximaDe(-1); if (k !== null) tocar(k, 'sequencia'); }} className="action-collage rounded-lg bg-emerald-400 px-4 py-2 text-sm text-zinc-950">Tocar seleção</button>
       <ul className="grid gap-3 sm:grid-cols-2">
         {videos.map((v, i) => <li key={v.id} className={`rounded-xl border p-3 ${index === i ? 'border-emerald-400' : 'border-zinc-700'}`}>
           <button type="button" onClick={() => tocar(i, 'escolha')} className="flex w-full items-center gap-3 text-left" aria-label={`Tocar ${v.title}`} aria-current={index === i ? 'true' : undefined}>

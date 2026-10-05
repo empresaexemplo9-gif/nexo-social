@@ -268,7 +268,7 @@ test('mensagem na roda: precisa estar nela e aberta; palavra proibida bane', asy
 
 test('a lista toca inteira no reprodutor, e tudo novo passa pelas regras da comunidade', () => {
   const provider = fs.readFileSync('components/midia/MidiaProvider.tsx', 'utf8');
-  assert.match(provider, /&playlist=\$\{m\.fila/);
+  assert.match(provider, /<YoutubeMusicQueue/);
   const sql = fs.readFileSync('db/listas-rodas.sql', 'utf8');
   for (const t of ['listas', 'lista_itens', 'lista_comentarios', 'rodas', 'roda_mensagens']) {
     assert.ok(sql.includes(`moderacao_ligar('${t}', ARRAY[`), t);
