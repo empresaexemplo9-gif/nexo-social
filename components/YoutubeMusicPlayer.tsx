@@ -105,7 +105,7 @@ export default function YoutubeMusicPlayer({ videoId, title, request, onEnded, o
     }
   }, [videoId, request, title, apiFailed]);
 
-  return <div>
+  return <div className="bg-zinc-900 text-zinc-100">
     <div ref={container} data-youtube-music-player className="h-full w-full" />
     {blocked && <button type="button" onClick={() => player.current?.playVideo()} className="action-collage m-3 rounded-lg border px-3 py-2 text-sm">Continuar reprodução</button>}
     {apiFailed && <p role="status" className="p-3 text-xs text-zinc-400">Não foi possível conectar a reprodução automática. Reabra o player para tentar novamente.</p>}
