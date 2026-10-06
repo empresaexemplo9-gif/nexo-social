@@ -117,7 +117,7 @@ test('sessenta miniaturas têm volume, identidade própria e liberação dos mat
  const modelos=modelosCom();
  for(const c of cards.CARTAS_NOVAS.filter(c=>c.tipo==='personagem')){
   const g=modelos.criarMiniatura(c,mascara()),size=new T.Box3().setFromObject(g).getSize(new T.Vector3());
-  assert.equal(g.userData.personagem,c.id);assert.ok(size.x>.5&&size.y>2&&size.z>.3);assert.equal(g.children.length,6);
+  assert.equal(g.userData.personagem,c.id);assert.ok(size.x>.5&&size.y>2&&size.z>.3);assert.equal(g.children.length,9);
   let liberados=0;const mats=new Set(g.children.map(o=>o.material));mats.forEach(mat=>mat.addEventListener('dispose',()=>liberados++));modelos.liberarMiniatura(g);assert.equal(liberados,mats.size);assert.equal(g.children.length,0);
  }
 });
@@ -166,4 +166,17 @@ test('a câmera superior projeta os pés no centro da carta após rolagem e muda
   for(const [x,y] of [[w*.2,100],[w*.7,h*.8]]){const p=c.posicaoNoTabuleiro(x,y,h),v=new T.Vector3(p.x,p.y,p.z).project(camera);assert.ok(Math.abs((v.x+1)*w/2-x)<1e-7);assert.ok(Math.abs((1-v.y)*h/2-y)<1e-7);}
   const escala=c.escalaNoTabuleiro(80,100,{largura:1.46,altura:2.8,profundidade:.6});assert.ok(escala>0&&Number.isFinite(escala));
  }
+});
+
+test('contornos suavizados continuam fechados e com normais finitas',()=>{
+ const gs=relevo.esculpirMiniatura(mascara(),{x:.2,y:0,largura:.2,altura:.5}),extremos=new Set();
+ for(const g of [gs.frente,gs.verso]){const p=g.getAttribute('position');for(let i=0;i<p.count;i++)extremos.add([p.getX(i),p.getY(i),p.getZ(i)].join(','));}
+ const bordas=gs.bordas.getAttribute('position');for(let i=0;i<bordas.count;i++)assert.ok(extremos.has([bordas.getX(i),bordas.getY(i),bordas.getZ(i)].join(',')));
+ for(const g of Object.values(gs)){for(const v of g.getAttribute('normal').array)assert.ok(Number.isFinite(v));g.dispose();}
+});
+
+test('miniaturas usam iluminação física e liberam as instâncias das runas',()=>{
+ const modelos=modelosCom(),c=cards.CARTAS_NOVAS.find(c=>c.tipo==='personagem'),g=modelos.criarMiniatura(c,mascara(),'detalhe');
+ const frente=g.children.find(p=>p.material.userData.recorte);assert.ok(frente.material instanceof T.MeshStandardMaterial);assert.equal(frente.material.alphaToCoverage,true);assert.equal(g.userData.qualidade,'detalhe');
+ const runas=g.children.find(p=>p instanceof T.InstancedMesh);assert.equal(runas.count,12);let descartada=false;runas.addEventListener('dispose',()=>descartada=true);modelos.liberarMiniatura(g);assert.equal(descartada,true);
 });

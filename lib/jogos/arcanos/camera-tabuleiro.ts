@@ -5,5 +5,5 @@ export function posicaoNoTabuleiro(x:number,y:number,altura:number){
 }
 export function escalaNoTabuleiro(largura:number,altura:number,tamanho:{largura:number;altura:number;profundidade:number}){
   const projetada=tamanho.altura*Math.cos(ELEVACAO_TABULEIRO)+tamanho.profundidade*Math.sin(ELEVACAO_TABULEIRO);
-  return Math.min(largura*.84/Math.max(tamanho.largura,tamanho.profundidade),altura*.94/projetada);
+  return Math.min(largura*.95/Math.max(tamanho.largura,tamanho.profundidade),altura*.94/projetada);
 }

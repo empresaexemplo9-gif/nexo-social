@@ -34,8 +34,8 @@ export default function MiniaturasDoTabuleiro(props: Props) {
       const pmrem = new T.PMREMGenerator(renderer), sala = new ambiente.RoomEnvironment();
       const reflexos = pmrem.fromScene(sala); mundo.environment = reflexos.texture;
       sala.dispose(); pmrem.dispose(); mundo.environmentIntensity = .5;
-      mundo.add(new T.HemisphereLight(0xe0efff, 0x544238, .85));
-      const sol = new T.DirectionalLight(0xffe9cb, 2.2); sol.position.set(-200, 600, 500); mundo.add(sol);
+      mundo.add(new T.HemisphereLight(0xe0efff, 0x303849, 1.1));
+      const sol = new T.DirectionalLight(0xffebd5, 2.5); sol.position.set(-200, 600, 500); mundo.add(sol);
       const contraluz = new T.DirectionalLight(0x9bcaff, 1.5); contraluz.position.set(500, 200, -300); mundo.add(contraluz);
       const pecas = new Map<string, THREE.Group>();
       let quadro = 0, altura = 1, largura = 1, dados = ultimas.current, ultimaPintura = 0;
