@@ -34,7 +34,7 @@ type Partida =
   | { jogo: 'trilha'; mesa: string; local: true; robos: number }
   | { jogo: 'trilha'; mesa: string; local: false; papel: 'host' | 'jogador' | 'espectador'; hostNome?: string }
   | { jogo: 'arcanos'; mesa: string; local: true; elemento: Elemento }
-  | { jogo: 'arcanos'; mesa: string; local: false; papel: 'host' | 'desafiante' | 'espectador'; elemento?: Elemento; hostNome?: string };
+  | { jogo: 'arcanos'; mesa: string; local: false; papel: 'host' | 'desafiante' | 'espectador'; elemento?: Elemento; hostNome?: string; hostId?: string };
 
 /** O ambiente de cada jogo: o palco inteiro muda quando o jogo muda. */
 const AMBIENTE: Record<JogoId, { fundo: string; textura: string; linha: string; destaque: string; sobreDestaque: string; fonte: string; arte: string }> = {
@@ -181,7 +181,7 @@ export default function PalcoDeJogos({
   const entrarNaMesa = (m: MesaAnunciada) => {
     if (m.jogo === 'trilha') setPartida({ jogo: 'trilha', mesa: m.id, local: false, papel: m.estado === 'aberta' ? 'jogador' : 'espectador', hostNome: m.hostNome });
     else if (m.estado === 'aberta' && m.host !== eu.userId) setEscolhendo({ para: 'aceitar', mesa: m });
-    else setPartida({ jogo: 'arcanos', mesa: m.id, local: false, papel: 'espectador', hostNome: m.hostNome });
+    else setPartida({ jogo: 'arcanos', mesa: m.id, local: false, papel: 'espectador', hostNome: m.hostNome, hostId: m.host });
   };
 
   const aoVivo = canal?.estado === 'ok';
@@ -280,6 +280,7 @@ export default function PalcoDeJogos({
             papel={partida.local ? 'host' : partida.papel}
             eu={eu}
             elemento={partida.elemento}
+            hostId={partida.local ? undefined : partida.hostId}
             hostNome={partida.local ? undefined : partida.hostNome}
             local={partida.local}
             aoSair={aoSair}
@@ -333,13 +334,14 @@ export default function PalcoDeJogos({
 
       {escolhendo && (
         <EscolherElemento
+          indisponiveis={escolhendo.para==='aceitar' ? (canal?.mesas.find(m=>m.id===escolhendo.mesa.id)?.elementos ?? escolhendo.mesa.elementos ?? []) : []}
           titulo={escolhendo.para === 'robo' ? 'Duelo contra o computador' : escolhendo.para === 'criar' ? 'Abrir um duelo no grupo' : `Aceitar o duelo de ${escolhendo.mesa.hostNome.split(' ')[0]}`}
           botao={escolhendo.para === 'robo' ? 'Duelar' : escolhendo.para === 'criar' ? 'Abrir mesa' : 'Aceitar'}
           onCancelar={() => setEscolhendo(null)}
           onEscolher={(elemento) => {
             if (escolhendo.para === 'robo') setPartida({ jogo: 'arcanos', mesa: novoId(), local: true, elemento });
             else if (escolhendo.para === 'criar') setPartida({ jogo: 'arcanos', mesa: novoId(), local: false, papel: 'host', elemento });
-            else setPartida({ jogo: 'arcanos', mesa: escolhendo.mesa.id, local: false, papel: 'desafiante', elemento, hostNome: escolhendo.mesa.hostNome });
+            else setPartida({ jogo: 'arcanos', mesa: escolhendo.mesa.id, local: false, papel: 'desafiante', elemento, hostNome: escolhendo.mesa.hostNome, hostId: escolhendo.mesa.host });
             setEscolhendo(null);
           }}
         />
@@ -601,7 +603,7 @@ function ModoEmGrupo({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold">Mesa de {m.hostNome.split(' ')[0]}</span>
                 <span className="block truncate text-[11px] text-white/60">
-                  {m.estado === 'aberta' ? (arcano ? 'procurando desafiante' : 'aberta para entrar') : 'jogando agora'}
+                  {m.estado === 'aberta' ? (arcano ? `aguardando jogadores · ${m.jogadores.length}/${m.capacidade??6}` : 'aberta para entrar') : 'jogando agora'}
                   {m.detalhe ? ` · ${m.detalhe}` : ''}
                 </span>
               </span>

@@ -71,7 +71,7 @@ test('dois ataques básicos de personagens diferentes; tanks protegem; fonte ren
 });
 test('todos os confrontos terminam, sem descompasso entre os aparelhos ou vantagem extrema de elemento',()=>{
  const report={};for(const el of els)report[el]={vitorias:0,partidas:0};let games=0,maxTurn=0;
- for(const a of els)for(const b of els)for(let run=0;run<4;run++){
+ for(const a of els)for(const b of els.filter(el=>el!==a))for(let run=0;run<4;run++){
   const p=ps(a,b);let e0=m.novaPartidaGrimorios(p,0,m.embaralharNovo(a)),e1=m.novaPartidaGrimorios(p,1,m.embaralharNovo(b));let steps=0;
   while(e0.vencedor===null&&steps++<2200){const lado=e0.pendente?m.outroNovo(e0.pendente.lado):e0.ativo;const acao=robo.decidirGrimorios(lado===0?e0:e1,lado);assert.ok(acao,`${a}/${b}: falta jogada`);e0=ok(m.aplicarNova(e0,acao));e1=ok(m.aplicarNova(e1,acao));assert.equal(JSON.stringify(m.publicoNovo(e0)),JSON.stringify(m.publicoNovo(e1)),`${a}/${b}: estados diferentes`);for(const j of e0.jogadores)for(const p of j.campo){assert.ok(p.vida>0&&p.vida<=p.maxima);assert.ok(p.escudo>=0&&p.escudo<=6);}}
   assert.notEqual(e0.vencedor,null,`${a}/${b}: partida não terminou`);maxTurn=Math.max(maxTurn,e0.turno);games++;

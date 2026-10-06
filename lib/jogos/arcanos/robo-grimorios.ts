@@ -1,5 +1,5 @@
 import { cartaNova, type CartaNova } from './grimorios';
-import { alvosNovos, alvosAtaqueNovo, combatente, manaLivreNova, outroNovo, podeAtaqueNovo, podeCartaNova, type AcaoNova, type Combatente, type EstadoNovo, type LadoNovo } from './motor-grimorios';
+import { alvosNovos, alvosAtaqueNovo, aliadosNovos, combatente, defensorNovo, manaLivreNova, podeReagirNovo, podeAtaqueNovo, podeCartaNova, type AcaoNova, type Combatente, type EstadoNovo, type LadoNovo } from './motor-grimorios';
 
 function valorCarta(c: CartaNova, p?: Combatente) {
   return c.efeitos.reduce((n,f)=> {
@@ -16,15 +16,16 @@ function valorCarta(c: CartaNova, p?: Combatente) {
 export function decidirGrimorios(e: EstadoNovo, lado: LadoNovo): AcaoNova | null {
   if(e.vencedor!==null) return null;
   const j=e.jogadores[lado];
+  if(!j?.campo.length) return null;
   if(e.pendente) {
-    if(e.pendente.lado===lado) return null;
+    if(!podeReagirNovo(e,lado)) return null;
     const ids=[...(e.pendente.alvo?[e.pendente.alvo]:[]),...e.pendente.alvosGrupo];
-    const ameaçados=ids.map((id)=>combatente(e,id)).filter((p):p is Combatente=>!!p&&p.dono===lado&&p.escudo<e.pendente!.dano).sort((a,b)=>a.vida-b.vida);
+    const ameaçados=ids.map((id)=>combatente(e,id)).filter((p):p is Combatente=>!!p&&aliadosNovos(e,lado,p.dono)&&p.escudo<e.pendente!.dano).sort((a,b)=>a.vida-b.vida);
     for(const p of ameaçados) {
       const cartas=(j.mao??[]).map(cartaNova).filter((c)=>c.reacao&&podeCartaNova(e,lado,c.id)===null).sort((a,b)=>a.custo-b.custo);
       if(cartas[0]) return {t:'jogar',lado,carta:cartas[0].id,alvo:p.id};
     }
-    return {t:'resolver',lado};
+    return defensorNovo(e)===lado ? {t:'resolver',lado} : null;
   }
   if(e.ativo!==lado) return null;
   if(!j.comprou) {

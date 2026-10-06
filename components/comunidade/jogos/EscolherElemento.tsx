@@ -10,7 +10,7 @@ const OURO = '#e0b84a';
 const MESA_BG = 'radial-gradient(ellipse at 50% 38%, #2a2038 0%, #150f20 55%, #07040b 100%)';
 
 /** Escolher o elemento do duelo (ao abrir ou aceitar uma mesa): vale o grimório e a reserva de mana dele. */
-export default function EscolherElemento({ titulo, botao, onEscolher, onCancelar }: { titulo: string; botao: string; onEscolher: (e: Elemento) => void; onCancelar: () => void }) {
+export default function EscolherElemento({ titulo, botao, onEscolher, onCancelar, indisponiveis=[] }: { titulo: string; botao: string; onEscolher: (e: Elemento) => void; onCancelar: () => void; indisponiveis?: Elemento[] }) {
   const [sel, setSel] = useState<Elemento | null>(null);
   return (
     <div className="fixed inset-0 z-[75] flex items-end justify-center bg-black/75 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-label={titulo}>
@@ -33,9 +33,10 @@ export default function EscolherElemento({ titulo, botao, onEscolher, onCancelar
               <button
                 key={id}
                 type="button"
+                disabled={indisponiveis.includes(id)}
                 onClick={() => setSel(id)}
                 aria-pressed={ativa}
-                className="flex items-center gap-3 rounded-2xl p-3 text-left transition"
+                className="flex items-center gap-3 rounded-2xl p-3 text-left transition disabled:opacity-30"
                 style={{
                   background: `linear-gradient(135deg, ${e.escura}, ${e.cor}${ativa ? 'ee' : '55'})`,
                   boxShadow: ativa ? `0 0 0 2px #fff, 0 0 22px ${e.brilho}` : `0 0 0 1px ${METAL[id].borda}88`,
@@ -46,7 +47,7 @@ export default function EscolherElemento({ titulo, botao, onEscolher, onCancelar
                   <Glifo el={id} className="h-7 w-7" style={{ color: e.clara, filter: `drop-shadow(0 0 5px ${e.brilho})` }} />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="fonte-arcana block text-lg font-black text-white">{e.nome}</span>
+                  <span className="fonte-arcana block text-lg font-black text-white">{e.nome}{indisponiveis.includes(id)?' · escolhido':''}</span>
                   <span className="fonte-pergaminho block text-xs italic text-white/85">“{e.lema}”</span>
                   <span className="mt-0.5 block text-[11px] leading-snug text-white/75">{e.estilo}</span>
                 </span>
@@ -56,8 +57,8 @@ export default function EscolherElemento({ titulo, botao, onEscolher, onCancelar
         </div>
         <button
           type="button"
-          disabled={!sel}
-          onClick={() => sel && onEscolher(sel)}
+          disabled={!sel || indisponiveis.includes(sel)}
+          onClick={() => sel && !indisponiveis.includes(sel) && onEscolher(sel)}
           className="fonte-arcana mt-4 w-full rounded-2xl py-3 text-base font-black uppercase tracking-widest text-[#1c1208] transition disabled:opacity-40"
           style={{ background: `linear-gradient(180deg, #f5d77a, ${OURO})`, boxShadow: '0 4px 14px rgba(0,0,0,.5)' }}
         >

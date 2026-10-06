@@ -20,6 +20,9 @@ export interface MesaAnunciada {
   jogadores: string[];
   /** Linha curta para o lobby ("Chama + Sombra", "10 rodadas"). */
   detalhe?: string;
+  elementos?: import('./arcanos/cartas').Elemento[];
+  modo?: import('./arcanos/motor-grimorios').ModoNovo;
+  capacidade?: number;
 }
 
 export interface Presente {

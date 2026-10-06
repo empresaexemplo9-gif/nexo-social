@@ -27,6 +27,7 @@ const Campo = load('components/comunidade/jogos/CampoDeBatalha.tsx', {
   '@/lib/jogos/arcanos/motor-grimorios': motor,
   './CartasGrimorios': { ArteGrimorio: ({ c }) => React.createElement('img', { alt: c.nome }) },
   './CampoDeBatalha.module.css': { __esModule: true, default: css },
+  './MiniaturasDoTabuleiro': { __esModule: true, default: () => null },
 }).default;
 const ps = [{ userId: 'ana', nome: 'Ana', elemento: 'fogo' }, { userId: 'bia', nome: 'Bia', elemento: 'agua' }];
 const props = e => ({ estado: e, segundos: 99, selecionada: null, onJogar() {}, onSelecionar() {}, onAlvo() {}, onInspecionar() {}, onAviso() {}, onCartas() {}, onRegras() {}, onSair() {} });
@@ -52,8 +53,23 @@ test('a baixa mantém sua posição no campo e impede as cartas do conjurador mo
   await act(async () => { view = create(React.createElement(Campo, props(ended.estado))); });
   try {
     assert.equal(view.root.findAll(n => n.type === 'article' && n.props['data-unidade']).length, 20);
+    assert.equal(view.root.findAll(n => n.type === 'span' && n.props['data-miniatura-personagem']).length, 19);
     assert.equal(view.root.findAll(n => n.type === 'button' && n.props['aria-label'] === 'Alena, eliminado').length, 1);
     assert.equal(view.root.find(n => n.type === 'button' && n.props['aria-label'] === 'Usar Brasa Restauradora').props.disabled, true);
+  } finally { await act(async () => view.unmount()); }
+});
+
+test('sessenta posições no modo de trios, com mão e decks separados do tabuleiro', async () => {
+  const jogadores = legacy.ELEMENTOS_ORDEM.map((elemento,i) => ({userId:'p'+i,nome:'Jogador '+i,elemento}));
+  const e = motor.novaPartidaGrimorios(jogadores, 0, undefined, 'trios');
+  let view;
+  await act(async () => { view = create(React.createElement(Campo, props(e))); });
+  try {
+    assert.equal(view.root.findAll(n => n.type === 'article' && n.props['data-unidade']).length, 60);
+    assert.equal(view.root.findAll(n => n.type === 'span' && n.props['data-miniatura-personagem']).length, 60);
+    assert.equal(view.root.findAll(n => n.props['data-zona'] === 'mao').length, 1);
+    assert.equal(view.root.findAll(n => n.props['data-zona'] === 'decks').length, 1);
+    assert.equal(view.root.findAll(n => n.props['data-zona'] === 'tabuleiro').length, 1);
   } finally { await act(async () => view.unmount()); }
 });
 
