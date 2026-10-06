@@ -32,6 +32,7 @@ const COLECAO = /^\/colecao\/[a-z0-9-]+\/(fundos|adesivos|bottons)\/[a-z0-9-]+\.
 const ARCANOS_ART = /^\/jogos\/arcanos\/grimorios\/(fogo|agua|terra|ar|luz|escuridao)\/[a-zA-Z0-9_-]+\.png$/;
 
 const ARCANOS_CAMPO = /^\/jogos\/arcanos\/campos\/(fogo|agua|terra|ar|luz|escuridao)\.png$/;
+const ARCANOS_MINIATURAS = /^\/jogos\/arcanos\/miniaturas\/(fogo|agua-[12]|terra|ar|luz|escuridao)\.png$/;
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -43,7 +44,7 @@ export async function middleware(request: NextRequest) {
   }
   if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/i.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
     || INVITE_ASSET.test(path) || MURAL.test(path) || MURAL_DA_COMUNIDADE.test(path)
-    || MURO_DA_AREA.test(path) || COLECAO.test(path) || ARCANOS_ART.test(path) || ARCANOS_CAMPO.test(path)) return NextResponse.next();
+    || MURO_DA_AREA.test(path) || COLECAO.test(path) || ARCANOS_ART.test(path) || ARCANOS_CAMPO.test(path) || ARCANOS_MINIATURAS.test(path)) return NextResponse.next();
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });

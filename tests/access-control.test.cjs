@@ -144,3 +144,8 @@ test('link do convite colado com algo a mais vai para o endereço limpo (sem pá
   assert.equal((await app.run(`/convite/${codigo}`)).headers.get('x-middleware-next'), '1', 'o limpo abre direto');
   assert.equal(app.calls(), 0, 'nada disso pede login');
 });
+
+test('as sete artes de miniaturas são públicas e a exceção não abre arquivos ou rotas arbitrárias',async()=>{
+ const app=load({throws:true});for(const nome of ['fogo','agua-1','agua-2','terra','ar','luz','escuridao']){const res=await app.run('/jogos/arcanos/miniaturas/'+nome+'.png');assert.equal(res.headers.get('x-middleware-next'),'1');}assert.equal(app.calls(),0);
+ for(const path of ['/jogos/arcanos/miniaturas/agua-3.png','/jogos/arcanos/miniaturas/segredo.json','/jogos/arcanos/miniaturas/ar.png/editar'])assert.equal((await app.run(path)).status,307);
+});

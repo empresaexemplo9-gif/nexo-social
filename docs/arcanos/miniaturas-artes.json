@@ -1,0 +1,7 @@
+{
+  "modo": "builtin imagegen; edição dos cards existentes; fundo transparente",
+  "formato": "5x2 para fogo, ar, terra, luz, escuridao; 5x1 em dois arquivos para agua",
+  "briefing_resumido": "Miniaturas de corpo inteiro fotorrealistas. Preservar rosto, idade, pele humana, cabelo, traje ornamentado e equipamentos exclusivos de cada card. Fundo transparente sem cenário, texto ou pedestal. Cada figura em seu quadro. Pernas e botas completadas de forma consistente com o traje original.",
+  "referencias": "Originais em public/jogos/arcanos/grimorios, fogo também nas imagens anexadas pelo usuário. Ordem de personagens definida em lib/jogos/arcanos/miniaturas-atlas.ts.",
+  "implementacao": "Malha volumétrica em relevo derivada do canal alfa. Frente pintada e verso metálico; não constitui modelo anatômico completo em 360 graus."
+}

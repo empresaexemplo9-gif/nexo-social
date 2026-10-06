@@ -5,6 +5,7 @@ import type * as THREE from 'three';
 import { cartaNova } from '@/lib/jogos/arcanos/grimorios';
 import type { Combatente } from '@/lib/jogos/arcanos/motor-grimorios';
 import styles from './CampoDeBatalha.module.css';
+import {ELEVACAO_TABULEIRO,posicaoNoTabuleiro,escalaNoTabuleiro} from '@/lib/jogos/arcanos/camera-tabuleiro';
 
 type Props = { campo: Combatente[]; palco: React.RefObject<HTMLDivElement>; angulo: number; animacoes: boolean };
 type Cena = { atualizar: (props: Props) => void; encerrar: () => void };
@@ -17,20 +18,25 @@ export default function MiniaturasDoTabuleiro(props: Props) {
   useEffect(() => {
     let encerrada = false;
     const iniciar = async () => {
-      const [T, modelos] = await Promise.all([import('three'), import('@/lib/jogos/arcanos/miniaturas')]);
+      const [T, modelos, ambiente] = await Promise.all([import('three'), import('@/lib/jogos/arcanos/miniaturas'), import('three/addons/environments/RoomEnvironment.js')]);
       const area = ultimas.current.palco.current, tela = canvas.current;
       if (encerrada || !area || !tela) return;
       let renderer: THREE.WebGLRenderer;
       try { renderer = new T.WebGLRenderer({ canvas: tela, alpha: true, antialias: true, powerPreference: 'low-power' }); }
       catch { setModo('sem-3d'); return; }
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.outputColorSpace = T.SRGBColorSpace;
+      renderer.toneMapping = T.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
       renderer.autoClear = false;
-      const mundo = new T.Scene(), camera = new T.OrthographicCamera(0, 1, 1, 0, .1, 2000);
-      camera.position.z = 800;
-      mundo.add(new T.HemisphereLight(0xe0efff, 0x544238, 2.5));
-      const sol = new T.DirectionalLight(0xffe9cb, 3.5); sol.position.set(-200, 600, 500); mundo.add(sol);
-      const contraluz = new T.DirectionalLight(0x9bcaff, 2); contraluz.position.set(500, 200, -300); mundo.add(contraluz);
+      const mundo = new T.Scene(), camera = new T.OrthographicCamera(-.5, .5, .5, -.5, .1, 6000);
+      tela.dataset.camera='superior';tela.dataset.elevacao='55';
+      const pmrem = new T.PMREMGenerator(renderer), sala = new ambiente.RoomEnvironment();
+      const reflexos = pmrem.fromScene(sala); mundo.environment = reflexos.texture;
+      sala.dispose(); pmrem.dispose(); mundo.environmentIntensity = .5;
+      mundo.add(new T.HemisphereLight(0xe0efff, 0x544238, .85));
+      const sol = new T.DirectionalLight(0xffe9cb, 2.2); sol.position.set(-200, 600, 500); mundo.add(sol);
+      const contraluz = new T.DirectionalLight(0x9bcaff, 1.5); contraluz.position.set(500, 200, -300); mundo.add(contraluz);
       const pecas = new Map<string, THREE.Group>();
       let quadro = 0, altura = 1, largura = 1, dados = ultimas.current, ultimaPintura = 0;
       const movimento = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -39,18 +45,21 @@ export default function MiniaturasDoTabuleiro(props: Props) {
         if (!caixa.width || !caixa.height) return;
         if (largura !== caixa.width || altura !== caixa.height) {
           largura = caixa.width; altura = caixa.height;
-          renderer.setSize(largura, altura, false); camera.right = largura; camera.top = altura; camera.updateProjectionMatrix();
+          renderer.setSize(largura, altura, false); camera.left=-largura/2;camera.right=largura/2;camera.top=altura/2;camera.bottom=-altura/2;
+          camera.position.set(largura/2,1800*Math.sin(ELEVACAO_TABULEIRO),1800*Math.cos(ELEVACAO_TABULEIRO));camera.lookAt(largura/2,0,0);camera.updateProjectionMatrix();
         }
         const bases = new Map(Array.from(area.querySelectorAll<HTMLElement>('[data-miniatura-base]')).map(el => [el.dataset.miniaturaBase!, el]));
         const campo = area.querySelector('[data-area-formacoes]')?.getBoundingClientRect();
         if (campo) { renderer.setScissor(campo.left-caixa.left, altura-(campo.bottom-caixa.top), campo.width, campo.height); renderer.setScissorTest(true); }
         for (const [id, peca] of Array.from(pecas)) {
-          const base = bases.get(id)?.getBoundingClientRect();
-          if (!base || !base.width || !base.height) { peca.visible = false; continue; }
-          peca.visible = true;
-          peca.position.set(base.left + base.width / 2 - caixa.left, altura - (base.bottom - caixa.top), 0);
-          peca.scale.setScalar(Math.min(base.width * .53, base.height / 2.95));
-          peca.rotation.set(.25, dados.angulo, 0);
+          const el=bases.get(id),base = el?.getBoundingClientRect(),carta=el?.parentElement?.querySelector('[data-miniatura-carta]')?.getBoundingClientRect();
+          if (!base || !base.width || !base.height || (campo && (base.bottom < campo.top || base.top > campo.bottom || base.right < campo.left || base.left > campo.right))) { peca.visible = false; continue; }
+          peca.visible = !!peca.userData.texturizada;
+          const ponto=posicaoNoTabuleiro(base.left+base.width/2-caixa.left,carta?carta.top+carta.height/2-caixa.top:base.bottom-caixa.top,altura);
+          peca.position.set(ponto.x,ponto.y,ponto.z);
+          const tamanho = peca.userData.dimensoes;
+          peca.scale.setScalar(escalaNoTabuleiro(base.width,base.height,tamanho));
+          peca.rotation.set(0, dados.angulo, 0);
         }
       };
       const desenhar = () => {
@@ -74,8 +83,16 @@ export default function MiniaturasDoTabuleiro(props: Props) {
         for (const [id, peca] of Array.from(pecas)) if (!vivos.has(id)) { mundo.remove(peca); modelos.liberarMiniatura(peca); pecas.delete(id); }
         for (const unidade of p.campo) if (unidade.vida > 0 && !pecas.has(unidade.id)) {
           const peca = modelos.criarMiniatura(cartaNova(unidade.carta)); mundo.add(peca); pecas.set(unidade.id, peca);
+          void modelos.texturizarMiniatura(peca, cartaNova(unidade.carta)).then(() => {
+            if (!encerrada && !peca.userData.descartada) {
+              tela.dataset.pecasTexturizadas = String(Array.from(pecas.values()).filter(p => p.userData.texturizada).length);
+              posicionar();
+              pedirQuadro();
+            }
+          });
         }
         tela.dataset.pecasVivas = String(pecas.size);
+        tela.dataset.pecasTexturizadas = String(Array.from(pecas.values()).filter(p => p.userData.texturizada).length);
         posicionar(); pedirQuadro();
       };
       const redimensionar = () => { posicionar(); pedirQuadro(); };
@@ -90,7 +107,7 @@ export default function MiniaturasDoTabuleiro(props: Props) {
         area.removeEventListener('scroll', redimensionar, true);
         tela.removeEventListener('webglcontextlost', contextoPerdido); tela.removeEventListener('webglcontextrestored', contextoRestaurado);
         document.removeEventListener('visibilitychange', pedirQuadro); movimento.removeEventListener('change', pedirQuadro);
-        pecas.forEach(modelos.liberarMiniatura); pecas.clear(); mundo.clear(); renderer.dispose(); renderer.forceContextLoss();
+        pecas.forEach(modelos.liberarMiniatura); pecas.clear(); mundo.clear(); reflexos.dispose(); renderer.dispose(); renderer.forceContextLoss();
       } };
       setModo('webgl'); atualizar(ultimas.current);
     };

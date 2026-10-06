@@ -106,11 +106,64 @@ test('sala reserva elementos concorrentes, transmite só jogadas públicas e sin
  }finally{salas.forEach(s=>s.fechar());}
 });
 
-test('sessenta miniaturas têm geometria 3D, escala válida, identidade própria e liberação dos materiais',()=>{
- const T=require('three');const modelos=load('lib/jogos/arcanos/miniaturas.ts',{three:T,'three/addons/utils/BufferGeometryUtils.js':require('three/addons/utils/BufferGeometryUtils.js')});
+
+const T=require('three');
+const artes=load('lib/jogos/arcanos/miniaturas-atlas.ts');
+const relevo=load('lib/jogos/arcanos/relevo-alpha.ts',{three:T});
+function modelosCom(t=T){return load('lib/jogos/arcanos/miniaturas.ts',{three:t,'./miniaturas-atlas':artes,'./relevo-alpha':relevo});}
+function mascara(){const largura=24,altura=32,alpha=new Uint8Array(largura*altura).fill(255);for(let y=12;y<20;y++)for(let x=9;x<15;x++)alpha[y*largura+x]=0;return{largura,altura,alpha,proporcao:.55};}
+
+test('sessenta miniaturas têm volume, identidade própria e liberação dos materiais',()=>{
+ const modelos=modelosCom();
  for(const c of cards.CARTAS_NOVAS.filter(c=>c.tipo==='personagem')){
-  const g=modelos.criarMiniatura(c),box=new T.Box3().setFromObject(g),size=box.getSize(new T.Vector3());
-  assert.equal(g.userData.personagem,c.id);assert.ok(size.x>.5&&size.y>2&&size.z>.3);assert.ok(g.children.length>4&&g.children.length<20);
+  const g=modelos.criarMiniatura(c,mascara()),size=new T.Box3().setFromObject(g).getSize(new T.Vector3());
+  assert.equal(g.userData.personagem,c.id);assert.ok(size.x>.5&&size.y>2&&size.z>.3);assert.equal(g.children.length,6);
   let liberados=0;const mats=new Set(g.children.map(o=>o.material));mats.forEach(mat=>mat.addEventListener('dispose',()=>liberados++));modelos.liberarMiniatura(g);assert.equal(liberados,mats.size);assert.equal(g.children.length,0);
+ }
+});
+
+test('cada personagem ocupa um quadro exclusivo da arte derivada e preserva seu card original',()=>{
+ const modelos=modelosCom(),quadros=new Set();
+ for(const c of cards.CARTAS_NOVAS.filter(c=>c.tipo==='personagem')){
+  const arte=artes.arteDaMiniatura(c),chave=arte.src+':'+arte.posicao;assert.ok(!quadros.has(chave),c.id);quadros.add(chave);
+  assert.ok(fs.existsSync('public'+arte.src),c.id);
+  const g=modelos.criarMiniatura(c,mascara()),r=modelos.regiaoDaArte(arte),frente=g.children.find(p=>p.material.userData.recorte),uv=frente.geometry.getAttribute('uv');
+  assert.equal(g.userData.arte,c.arte.src);assert.equal(g.userData.arteMiniatura,arte.src);
+  for(let i=0;i<uv.count;i++){assert.ok(uv.getX(i)>=r.x-1e-6&&uv.getX(i)<=r.x+r.largura+1e-6,c.id);assert.ok(uv.getY(i)>=r.y-1e-6&&uv.getY(i)<=r.y+r.altura+1e-6,c.id);}
+  modelos.liberarMiniatura(g);
+ }assert.equal(quadros.size,60);
+});
+
+test('o relevo preserva vazios entre membros e fecha o contorno com frente e verso',()=>{
+ const gs=relevo.esculpirMiniatura(mascara(),{x:0,y:0,largura:1,altura:1});
+ const mesh=new T.Mesh(gs.frente,new T.MeshBasicMaterial());mesh.updateMatrixWorld();
+ const ray=new T.Raycaster(new T.Vector3(0,1.44,10),new T.Vector3(0,0,-1));assert.equal(ray.intersectObject(mesh).length,0);
+ ray.set(new T.Vector3(-.5,1.44,10),new T.Vector3(0,0,-1));assert.ok(ray.intersectObject(mesh).length>0);
+ assert.equal(gs.frente.index.count,gs.verso.index.count);assert.ok(gs.bordas.getAttribute('position').count>0);
+ Object.values(gs).forEach(g=>{for(const v of g.getAttribute('position').array)assert.ok(Number.isFinite(v));g.dispose();});mesh.material.dispose();
+});
+
+test('atlas compartilhado só é liberado após a última miniatura, inclusive morte durante a carga',async()=>{
+ let carregadas=0,liberadas=0,terminar;const textura=new T.Texture();textura.addEventListener('dispose',()=>liberadas++);
+ const modelos=modelosCom({...T,TextureLoader:class{loadAsync(){carregadas++;return new Promise(r=>terminar=()=>r(textura));}}});
+ const cs=cards.CARTAS_NOVAS.filter(c=>c.tipo==='personagem'&&c.elemento==='fogo'),[c1,c2]=cs;
+ const a=modelos.criarMiniatura(c1,mascara()),b=modelos.criarMiniatura(c2,mascara()),pa=modelos.texturizarMiniatura(a,c1),pb=modelos.texturizarMiniatura(b,c2);
+ assert.equal(carregadas,1);modelos.liberarMiniatura(a);terminar();await Promise.all([pa,pb]);
+ assert.equal(a.userData.texturizada,false);assert.equal(b.userData.texturizada,true);assert.equal(liberadas,0);
+ assert.equal(b.children.find(p=>p.material.userData.recorte).material.map,textura);
+ modelos.liberarMiniatura(b);await Promise.resolve();assert.equal(liberadas,1);
+});
+
+test('fragmentos isolados do atlas não viram miniaturas nem deslocam os pés',()=>{
+ const m=mascara();m.alpha.fill(0);for(let y=3;y<26;y++)for(let x=6;x<18;x++)m.alpha[y*m.largura+x]=255;m.alpha[31*m.largura]=255;
+ const limpa=relevo.isolarPersonagem(m);assert.equal(limpa.alpha[31*m.largura],0);assert.equal(limpa.alpha[8*m.largura+9],255);assert.equal(m.alpha[31*m.largura],255);
+});
+
+test('a câmera superior projeta os pés no centro da carta após rolagem e mudança de tamanho',()=>{
+ const c=load('lib/jogos/arcanos/camera-tabuleiro.ts');
+ for(const [w,h] of [[1400,1000],[390,820],[800,1600]]){
+  const camera=new T.OrthographicCamera(-w/2,w/2,h/2,-h/2,.1,6000);camera.position.set(w/2,1800*Math.sin(c.ELEVACAO_TABULEIRO),1800*Math.cos(c.ELEVACAO_TABULEIRO));camera.lookAt(w/2,0,0);camera.updateMatrixWorld();
+  for(const [x,y] of [[w*.2,100],[w*.7,h*.8]]){const p=c.posicaoNoTabuleiro(x,y,h),v=new T.Vector3(p.x,p.y,p.z).project(camera);assert.ok(Math.abs((v.x+1)*w/2-x)<1e-7);assert.ok(Math.abs((1-v.y)*h/2-y)<1e-7);}
+  const escala=c.escalaNoTabuleiro(80,100,{largura:1.46,altura:2.8,profundidade:.6});assert.ok(escala>0&&Number.isFinite(escala));
  }
 });
