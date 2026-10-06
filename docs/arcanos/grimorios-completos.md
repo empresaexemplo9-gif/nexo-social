@@ -2,7 +2,7 @@
 
 Valores recalculados em 06/10/2026. Cada elemento possui 10 personagens únicos, 48 cartas de magia/feitiço e 24 cartas de mana (16 de uma carga e 8 de duas). Todos os personagens começam vivos no campo.
 
-Os nomes e artes recuperados de Água foram preservados. As seis identidades conhecidas de Fogo e suas artes foram preservadas; os nomes que não constavam do resumo foram criados nesta etapa. Terra, Ar, Luz e Escuridão são novos conjuntos autorizados nesta conversa. Não são apresentados como arquivos recuperados da aba perdida.
+Os nomes recuperados de Água foram preservados. A pedido do usuário, os dez personagens de Água foram recriados como humanos, com artes coerentes nas suas magias e feitiços; os arquivos das artes anteriores foram mantidos. As seis identidades conhecidas de Fogo e suas artes foram preservadas; os nomes que não constavam do resumo foram criados nesta etapa. Terra, Ar, Luz e Escuridão são novos conjuntos autorizados nesta conversa. Não são apresentados como arquivos recuperados da aba perdida. Velira, a arqueira de Ar, recebeu uma arte corrigida a partir da referência enviada pelo usuário.
 
 
 ## Grimório de Fogo — Ordem da Forja Rubra

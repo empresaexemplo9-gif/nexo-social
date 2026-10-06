@@ -1309,8 +1309,11 @@
         "texto": "Uma vez por turno de qualquer jogador, ao receber escudo, concede 1 de escudo em si.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-thalgor.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/thalgor-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1336,8 +1339,11 @@
         "texto": "Uma vez por turno de qualquer jogador, após sobreviver a um golpe, se seu escudo absorveu parte do golpe, restaura 1 de vida em si. Cura não supera a vida máxima.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-neruma.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/neruma-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1363,8 +1369,11 @@
         "texto": "Uma vez por turno de qualquer jogador, ao declarar um feitiço, se o alvo tinha escudo na declaração, adiciona 1 ao dano declarado.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-lysara.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/lysara-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1390,8 +1399,11 @@
         "texto": "Uma vez por turno de qualquer jogador, após resolver um feitiço, se a carta custava pelo menos 4, concede 1 de escudo em si.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-orveth.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/orveth-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1417,8 +1429,11 @@
         "texto": "Uma vez por turno de qualquer jogador, ao conjurar cura, se o alvo estava ferido, concede 1 de escudo no alvo.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-maelia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/maelia-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1444,8 +1459,11 @@
         "texto": "Uma vez por turno de qualquer jogador, após conjurar uma magia, se a carta foi usada como reação, concede 1 de escudo no alvo.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-iren.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/iren-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1471,8 +1489,11 @@
         "texto": "Uma vez por turno de qualquer jogador, após causar dano à vida com um ataque ou feitiço, concede 1 de escudo em si.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-varessa.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/varessa-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1498,8 +1519,11 @@
         "texto": "Uma vez por turno de qualquer jogador, ao declarar um feitiço, se tinha escudo na declaração, adiciona 1 ao dano declarado.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-darian.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/darian-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1525,8 +1549,11 @@
         "texto": "Uma vez por turno de qualquer jogador, ao declarar um feitiço, se o alvo não tinha escudo na declaração, adiciona 1 ao dano declarado.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-nymera.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/nymera-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1552,8 +1579,11 @@
         "texto": "Uma vez por turno de qualquer jogador, ao declarar um feitiço, se o alvo estava com metade ou menos da vida, adiciona 1 ao dano declarado.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-taeron.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/taeron-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
         }
       },
       {
@@ -1575,8 +1605,11 @@
         ],
         "texto": "Concede 3 de escudo em si.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-thalgor-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/thalgor-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -1598,8 +1631,11 @@
         ],
         "texto": "Causa 4 de dano no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-thalgor-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/thalgor-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -1626,8 +1662,11 @@
         ],
         "texto": "Concede 2 de escudo em si. Restaura 1 de vida em si.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-neruma-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/neruma-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -1654,8 +1693,11 @@
         ],
         "texto": "Causa 2 de dano no alvo. Aplica Enraizamento no alvo por 1 turno.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-neruma-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/neruma-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -1677,8 +1719,11 @@
         ],
         "texto": "Seu próximo feitiço neste turno recebe +2 de dano.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-lysara-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/lysara-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -1700,8 +1745,11 @@
         ],
         "texto": "Causa 4 de dano no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-lysara-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/lysara-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -1728,8 +1776,11 @@
         ],
         "texto": "Concede 2 de escudo em si. Concede Evasão em si: -2 ao próximo golpe antes do escudo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-orveth-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/orveth-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -1756,8 +1807,11 @@
         ],
         "texto": "Causa 2 de dano no alvo. Aplica Atordoamento no alvo por 1 turno.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-orveth-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/orveth-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -1779,8 +1833,11 @@
         ],
         "texto": "Reação: Concede 3 de escudo no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-maelia-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/maelia-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -1807,8 +1864,11 @@
         ],
         "texto": "Causa 2 de dano no alvo. Restaura 1 de vida em si.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-maelia-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/maelia-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -1830,8 +1890,11 @@
         ],
         "texto": "Reação: Concede 4 de escudo no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-iren-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/iren-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -1858,8 +1921,11 @@
         ],
         "texto": "Causa 2 de dano no alvo. Aplica Desorientação no alvo: -2 ao próximo feitiço de dano.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-iren-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/iren-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -1886,8 +1952,11 @@
         ],
         "texto": "Concede 1 de escudo em si. Seu próximo feitiço neste turno recebe +1 de dano.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-varessa-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/varessa-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -1909,8 +1978,11 @@
         ],
         "texto": "Causa 4 de dano no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-varessa-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/varessa-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -1932,8 +2004,11 @@
         ],
         "texto": "Concede 3 de escudo em si.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-darian-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/darian-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -1960,8 +2035,11 @@
         ],
         "texto": "Remove até 2 pontos de escudo no alvo antes dos demais efeitos. Causa 3 de dano no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-darian-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/darian-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -1988,8 +2066,11 @@
         ],
         "texto": "Concede 1 de escudo em si. Concede Evasão em si: -2 ao próximo golpe antes do escudo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-nymera-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/nymera-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -2016,8 +2097,11 @@
         ],
         "texto": "Causa 3 de dano no alvo. Aplica Congelamento no alvo por 1 turno.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-nymera-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/nymera-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -2039,8 +2123,11 @@
         ],
         "texto": "Seu próximo feitiço neste turno recebe +2 de dano.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-taeron-magia.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/taeron-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1
         }
       },
       {
@@ -2067,8 +2154,11 @@
         ],
         "texto": "Causa 4 de dano no alvo. Aplica Vulnerabilidade no alvo: +1 ao próximo golpe recebido.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-taeron-feitico.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/taeron-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1
         }
       },
       {
@@ -2095,8 +2185,11 @@
         ],
         "texto": "Restaura 2 de vida no alvo. Aplica Regeneração no alvo: cura 1 no início dos próximos 2 turnos.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-01.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/maelia-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 3,
+          "proporcao": 1
         }
       },
       {
@@ -2118,8 +2211,11 @@
         ],
         "texto": "Reação: Concede 3 de escudo no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-02.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/iren-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 3,
+          "proporcao": 1
         }
       },
       {
@@ -2146,8 +2242,11 @@
         ],
         "texto": "Purifica no alvo, removendo efeitos negativos. Não ressuscita. Restaura 3 de vida no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-03.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/maelia-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 4,
+          "proporcao": 1
         }
       },
       {
@@ -2169,8 +2268,11 @@
         ],
         "texto": "Reação: Concede 5 de escudo no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-04.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/iren-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 4,
+          "proporcao": 1
         }
       },
       {
@@ -2198,8 +2300,11 @@
         ],
         "texto": "Concede 1 de escudo em até 3 aliados vivos, priorizando os mais feridos. Concede Evasão em si: -2 ao próximo golpe antes do escudo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-05.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/lysara-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 3,
+          "proporcao": 1
         }
       },
       {
@@ -2226,8 +2331,11 @@
         ],
         "texto": "Concede 2 de escudo em si. Concede Determinação em si: bloqueia o próximo atordoamento, congelamento ou enraizamento.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-06.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/orveth-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 3,
+          "proporcao": 1
         }
       },
       {
@@ -2249,8 +2357,11 @@
         ],
         "texto": "Causa 3 de dano no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-07.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/lysara-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 4,
+          "proporcao": 1
         }
       },
       {
@@ -2278,8 +2389,11 @@
         ],
         "texto": "Causa 1 de dano em até 3 inimigos vivos, priorizando os mais feridos. Aplica Desorientação no alvo: -2 ao próximo feitiço de dano.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-08.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/orveth-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 4,
+          "proporcao": 1
         }
       },
       {
@@ -2301,8 +2415,11 @@
         ],
         "texto": "Causa 3 de dano no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-09.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/varessa-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 3,
+          "proporcao": 1
         }
       },
       {
@@ -2329,8 +2446,11 @@
         ],
         "texto": "Causa 2 de dano no alvo. Aplica Congelamento no alvo por 1 turno.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-10.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/nymera-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 3,
+          "proporcao": 1
         }
       },
       {
@@ -2357,8 +2477,11 @@
         ],
         "texto": "Causa 2 de dano no alvo. Aplica Atordoamento no alvo por 1 turno.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-11.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/darian-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 3,
+          "proporcao": 1
         }
       },
       {
@@ -2380,8 +2503,11 @@
         ],
         "texto": "Causa 5 de dano no alvo.",
         "arte": {
-          "src": "/jogos/arcanos/grimorios/agua/agua-base-12.png",
-          "proporcao": 0.666667
+          "src": "/jogos/arcanos/grimorios/agua/taeron-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 3,
+          "proporcao": 1
         }
       },
       {
@@ -3966,11 +4092,8 @@
         "texto": "Uma vez por turno de qualquer jogador, ao declarar um feitiço, se estava com vida cheia, adiciona 1 ao dano declarado.",
         "efeitos": [],
         "arte": {
-          "src": "/jogos/arcanos/grimorios/ar/campeoes.png",
-          "colunas": 5,
-          "linhas": 4,
-          "posicao": 8,
-          "proporcao": 0.999643
+          "src": "/jogos/arcanos/grimorios/ar/velira-corrigida.png",
+          "proporcao": 1
         }
       },
       {

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import ArcanosGrimorios, { CardGrimorio, GaleriaGrimorios, RegrasGrimorios } from './ArcanosGrimorios';
 import { ELEMENTOS, ELEMENTOS_ORDEM, type Elemento } from '@/lib/jogos/arcanos/cartas';
 import { personagensDoGrimorio } from '@/lib/jogos/arcanos/grimorios';
@@ -32,7 +33,7 @@ export default function ArcanosSolo() {
         <div className="flex flex-wrap gap-3"><button className={BTN} onClick={() => setCatalogo(true)}>Consultar todas as cartas</button><button className={BTN} onClick={() => setRegras(true)}>Ler as regras</button></div>
         <fieldset><legend className="mb-4 text-lg font-semibold">Escolha seu grimório</legend><div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">{ELEMENTOS_ORDEM.map(el => <label key={el} className="cursor-pointer rounded-xl border p-2" style={{ borderColor: el === elemento ? ELEMENTOS[el].clara : '#ffffff30' }}><div className="mb-2 flex items-center gap-2"><input type="radio" name="elemento" checked={elemento === el} onChange={() => setElemento(el)} /><span>{ELEMENTOS[el].nome}</span></div><CardGrimorio c={personagensDoGrimorio(el)[0]} compacto /></label>)}</div></fieldset>
         <p className="text-sm text-[#d4d4d8]">Cada grimório: 10 personagens em campo · 48 magias/feitiços · 24 cartas de mana.</p>
-        <button className="rounded-xl bg-[#fcd34d] px-6 py-4 font-bold text-[#09090b] hover:bg-[#fde68a]" onClick={() => { setPartida(n => n + 1); setJogando(true); }}>Jogar contra o computador</button>
+        <div className="relative isolate overflow-hidden rounded-2xl border border-amber-100/25 p-6 sm:p-8"><Image src={`/jogos/arcanos/campos/${elemento}.png`} alt={`Campo de batalha do grimório de ${ELEMENTOS[elemento].nome}`} fill sizes="(max-width:640px) 100vw, 1200px" unoptimized className="-z-20 object-cover object-center" /><div className="absolute inset-0 -z-10 bg-gradient-to-r from-black/90 via-black/65 to-black/25" /><p className="mb-2 text-xs uppercase tracking-widest text-[#fde68a]">Seu campo de batalha · {ELEMENTOS[elemento].nome}</p><h2 className="font-display text-2xl font-bold">Seu exército está pronto</h2><p className="my-3 max-w-md text-sm text-[#e4e4e7]">Vinte posições, fontes de mana e efeitos de conjuração. Escolha sua estratégia e entre na arena.</p><button className="rounded-xl bg-[#fcd34d] px-6 py-4 font-bold text-[#09090b] hover:bg-[#fde68a]" onClick={() => { setPartida(n => n + 1); setJogando(true); }}>Jogar contra o computador</button></div>
       </div>}
     {catalogo && <GaleriaGrimorios aoFechar={() => setCatalogo(false)} />}
     {regras && <div role="dialog" aria-modal="true" aria-label="Regras dos grimórios" className="fixed inset-0 z-[100] overflow-auto bg-[#090b14] p-5"><div className="mx-auto max-w-4xl"><div className="mb-6 flex items-center justify-between"><h2 className="text-2xl font-bold">Regras dos grimórios</h2><button className={BTN} onClick={() => setRegras(false)}>Fechar regras</button></div><RegrasGrimorios /></div></div>}
