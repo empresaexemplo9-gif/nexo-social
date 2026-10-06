@@ -7,7 +7,8 @@ import Icon from '../../icons';
 import Avatar from '../../Avatar';
 import Arte from './Arte';
 import EscolherElemento from './EscolherElemento';
-import { CartaGrande } from './CartaArcana';
+import { CardGrimorio } from './ArcanosGrimorios';
+import { personagensDoGrimorio } from '@/lib/jogos/arcanos/grimorios';
 import { RegrasDaTrilha, RegrasDoArcanos } from './Regras';
 import { CATEGORIAS_DO_QUIZ } from '@/lib/jogos/perguntas';
 import { ELEMENTOS, ELEMENTOS_ORDEM, type Elemento } from '@/lib/jogos/arcanos/cartas';
@@ -15,7 +16,7 @@ import { novoId, type JogoId, type MesaAnunciada } from '@/lib/jogos/canal';
 import {
   criarSalaLocal,
   iniciarRoboDaTrilha,
-  iniciarRoboDoArcanos,
+  iniciarRoboDosGrimorios,
   ROBO_DO_ARCANOS,
   ROBOS_DA_TRILHA,
   sortearElemento,
@@ -62,10 +63,10 @@ const AMBIENTE: Record<JogoId, { fundo: string; textura: string; linha: string; 
 
 const NOMES: Record<JogoId, { nome: string; tipo: string }> = {
   trilha: { nome: 'Trilha do Saber', tipo: 'Tabuleiro · conhecimentos e curiosidades' },
-  arcanos: { nome: 'Arcanos', tipo: 'Cartas e dados · estratégia' },
+  arcanos: { nome: 'Arcanos', tipo: 'Seis grimórios · estratégia' },
 };
 
-const VITRINE_DE_CARTAS = ['fo17', 'ag12', 'te17', 'ar07', 'lu16', 'es17'];
+const VITRINE_DE_CARTAS = ELEMENTOS_ORDEM.map(e => personagensDoGrimorio(e)[0]);
 
 function Carregando() {
   return (
@@ -146,7 +147,7 @@ export default function PalcoDeJogos({
     const paradas =
       partida.jogo === 'trilha'
         ? ROBOS_DA_TRILHA.slice(0, partida.robos).map((r) => iniciarRoboDaTrilha(sala.get(r.userId)!, partida.mesa, r))
-        : [iniciarRoboDoArcanos(sala.get(ROBO_DO_ARCANOS.userId)!, partida.mesa, sortearElemento())];
+        : [iniciarRoboDosGrimorios(sala.get(ROBO_DO_ARCANOS.userId)!, partida.mesa, sortearElemento())];
     return () => paradas.forEach((p) => p());
   }, [sala]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -486,12 +487,12 @@ function LobbyDoArcanos({ onRobo, onRegras, grupo }: { onRobo: () => void; onReg
         </div>
       </div>
       <p className="fonte-pergaminho mt-3 max-w-2xl text-base leading-relaxed text-[#fdf6e3]/90">
-        Duelo de magia em um tabuleiro 3D: escolha um dos seis elementos ({ELEMENTOS_ORDEM.map((e) => ELEMENTOS[e].nome).join(', ')}), jogue a sua mana, lance feitiços, invoque personagens e role os dados — de 3 a 20 lados — para causar dano, curar, proteger e amplificar. Quem zerar os 20 pontos de vida do outro vence.
+        Escolha um dos seis grimórios, proteja seus personagens e combine suas habilidades exclusivas. Ataques e escudos chegam a 6 pontos. Vence quem elimina todos os personagens adversários e mantém pelo menos um vivo.
       </p>
 
       <div className="-mx-4 mt-5 flex gap-3 overflow-x-auto px-4 pb-2 sm:-mx-7 sm:px-7" aria-label="Algumas cartas">
-        {VITRINE_DE_CARTAS.map((id) => (
-          <CartaGrande key={id} id={id} largura={140} />
+        {VITRINE_DE_CARTAS.map((c) => (
+          <div key={c.id} className="w-[180px] shrink-0"><CardGrimorio c={c} compacto /></div>
         ))}
       </div>
 

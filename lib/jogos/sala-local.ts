@@ -5,6 +5,8 @@
 import { aplicar, embaralharBaralho, novaPartida, type Acao, type Estado, type Lado, type Participante } from './arcanos/motor';
 import { ELEMENTOS_ORDEM, type Elemento } from './arcanos/cartas';
 import { decidirJogada } from './arcanos/robo';
+import { aplicarNova, embaralharNovo, novaPartidaGrimorios, outroNovo, type AcaoNova, type EstadoNovo, type ParticipanteNovo, type LadoNovo } from './arcanos/motor-grimorios';
+import { decidirGrimorios } from './arcanos/robo-grimorios';
 import { PERGUNTAS } from './perguntas';
 import type { EstadoTrilha } from './trilha';
 import type { MesaAnunciada, Mensagem, Presente } from './canal';
@@ -195,4 +197,44 @@ export function iniciarRoboDoArcanos(canal: CanalDeJogos, mesa: string, elemento
 
 export function sortearElemento(): Elemento {
   return sorteio(ELEMENTOS_ORDEM);
+}
+
+
+/** Mesma sala e presença da plataforma; protocolo separado das partidas antigas. */
+export function iniciarRoboDosGrimorios(canal: CanalDeJogos, mesa: string, elemento: Elemento = sortearElemento()): () => void {
+  let vivo=true, estado: EstadoNovo|null=null, lado: LadoNovo=1;
+  let timer: ReturnType<typeof setTimeout>|undefined;
+  const pendentes=new Map<number,AcaoNova>();
+  const pensar=()=> {
+    clearTimeout(timer);
+    if(!vivo||!estado||estado.vencedor!==null) return;
+    if(estado.pendente ? estado.pendente.lado===lado : estado.ativo!==lado) return;
+    timer=setTimeout(()=> {
+      if(!estado||!vivo) return;
+      const acao=decidirGrimorios(estado,lado); if(!acao) return;
+      const seq=estado.seq, r=aplicarNova(estado,acao);
+      if(r.ok) {estado=r.estado;canal.enviar(mesa,'arc2:acao',{acao,seq});pensar();}
+    },600);
+  };
+  const parar=canal.ouvir((m)=> {
+    if(!vivo||m.mesa!==mesa) return;
+    if(m.tipo==='arc2:inicio'&&!estado) {
+      const ps=m.participantes as [ParticipanteNovo,ParticipanteNovo];
+      if(!Array.isArray(ps)||ps.length!==2) return;
+      const i=ps.findIndex((p)=>p.userId===ROBO_DO_ARCANOS.userId);if(i<0)return;
+      lado=i as LadoNovo;estado=novaPartidaGrimorios(ps,lado,embaralharNovo(ps[lado].elemento));pensar();
+    } else if(m.tipo==='arc2:acao'&&estado) {
+      const acao=m.acao as AcaoNova, seq=Number(m.seq);
+      if(!Number.isInteger(seq)||seq<estado.seq||seq>estado.seq+30||!acao||acao.lado!==outroNovo(lado)||m.de!==estado.jogadores[acao.lado].userId)return;
+      pendentes.set(seq,acao);
+      while(estado&&pendentes.has(estado.seq)) {
+        const a=pendentes.get(estado.seq)!;pendentes.delete(estado.seq);
+        const r=aplicarNova(estado,a);if(!r.ok)break;estado=r.estado;
+      }
+      pensar();
+    }
+  });
+  const aceitar=()=> !estado&&vivo&&canal.enviar(mesa,'arc2:aceitar',{nome:ROBO_DO_ARCANOS.nome,elemento});
+  const t1=setTimeout(aceitar,400),t2=setTimeout(aceitar,2500);
+  return ()=>{vivo=false;clearTimeout(timer);clearTimeout(t1);clearTimeout(t2);parar();};
 }

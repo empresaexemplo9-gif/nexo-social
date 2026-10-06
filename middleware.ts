@@ -6,7 +6,7 @@ import { resolveSupabaseUrl, PUBLISHABLE_ANON_KEY } from '@/lib/supabase-config'
 const publicPaths = new Set([
   '/sobre', '/login', '/auth/callback', '/privacidade', '/termos', '/offline', '/api/signup', '/api/invites/validate',
   // Quem foi banido pelas regras da comunidade cai aqui (e a página encerra a sessão).
-  '/banido',
+  '/banido', '/jogos/arcanos',
   // Chamada pelo banco a cada minuto; vale só com o segredo do despacho.
   '/api/push/despachar',
   '/manifest.webmanifest', '/sw.js',
@@ -29,6 +29,8 @@ const MURO_DA_AREA = /^\/bg\/paredes\/[a-z]+(-cel)?\.webp$/;
 // bucket `exclusivos`, a imagem é pública; quem pode usar, o banco decide.
 const COLECAO = /^\/colecao\/[a-z0-9-]+\/(fundos|adesivos|bottons)\/[a-z0-9-]+\.webp$/;
 
+const ARCANOS_ART = /^\/jogos\/arcanos\/grimorios\/(fogo|agua|terra|ar|luz|escuridao)\/[a-zA-Z0-9_-]+\.png$/;
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   // Link do convite colado com algo a mais (ponto final, espaço, maiúsculas):
@@ -39,7 +41,7 @@ export async function middleware(request: NextRequest) {
   }
   if (publicPaths.has(path) || /^\/convite\/[a-f0-9]{64}$/i.test(path) || /^\/convite\/arte\/(0|[1-9][0-9]{0,2})$/.test(path)
     || INVITE_ASSET.test(path) || MURAL.test(path) || MURAL_DA_COMUNIDADE.test(path)
-    || MURO_DA_AREA.test(path) || COLECAO.test(path)) return NextResponse.next();
+    || MURO_DA_AREA.test(path) || COLECAO.test(path) || ARCANOS_ART.test(path)) return NextResponse.next();
 
   const isApi = path === '/api' || path.startsWith('/api/');
   let response = NextResponse.next({ request });

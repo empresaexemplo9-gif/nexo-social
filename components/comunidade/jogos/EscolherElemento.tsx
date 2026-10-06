@@ -19,7 +19,7 @@ export default function EscolherElemento({ titulo, botao, onEscolher, onCancelar
           <div>
             <p className="fonte-arcana text-xs font-bold uppercase tracking-[0.3em]" style={{ color: OURO }}>Arcanos</p>
             <h2 className="fonte-arcana mt-1 text-2xl font-black text-[#fdf6e3]">{titulo}</h2>
-            <p className="fonte-pergaminho mt-1 text-sm text-[#fef3c7]/80">Escolha o seu elemento: você leva o grimório de 30 cartas e a reserva de 20 de mana dele.</p>
+            <p className="fonte-pergaminho mt-1 text-sm text-[#fef3c7]/80">Escolha seu elemento: 10 personagens já em campo, 48 magias/feitiços e 24 cartas de mana.</p>
           </div>
           <button type="button" onClick={onCancelar} aria-label="Fechar" className="rounded-full p-2 text-[#fef3c7]/70 hover:bg-white/10 hover:text-[#fdf6e3]">
             <Icon name="close" size={18} />
