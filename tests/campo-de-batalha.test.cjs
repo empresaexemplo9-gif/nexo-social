@@ -21,11 +21,15 @@ const legacy = load('lib/jogos/arcanos/cartas.ts', {});
 const cards = load('lib/jogos/arcanos/grimorios.ts', { './grimorios.json': JSON.parse(fs.readFileSync('lib/jogos/arcanos/grimorios.json', 'utf8')) });
 const motor = load('lib/jogos/arcanos/motor-grimorios.ts', { './cartas': legacy, './grimorios': cards });
 const css = new Proxy({}, { get: (_, n) => String(n) });
+const cartasVisuais = load('components/comunidade/jogos/CartasGrimorios.tsx', {
+  react: React, 'next/image': props => React.createElement('img', { src: props.src, alt: props.alt }),
+  '@/lib/jogos/arcanos/cartas': legacy, '@/lib/jogos/arcanos/grimorios': cards,
+});
 const Campo = load('components/comunidade/jogos/CampoDeBatalha.tsx', {
   react: React, 'next/image': props => React.createElement('img', { src: props.src, alt: props.alt }),
   '@/lib/jogos/arcanos/cartas': legacy, '@/lib/jogos/arcanos/grimorios': cards,
   '@/lib/jogos/arcanos/motor-grimorios': motor,
-  './CartasGrimorios': { ArteGrimorio: ({ c }) => React.createElement('img', { alt: c.nome }) },
+  './CartasGrimorios': cartasVisuais,
   './CampoDeBatalha.module.css': { __esModule: true, default: css },
   './MiniaturasDoTabuleiro': { __esModule: true, default: () => null },
 }).default;
