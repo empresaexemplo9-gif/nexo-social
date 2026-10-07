@@ -2,7 +2,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs'),vm=require('node:vm'),ts=require('typescript');
 function load(path,deps={}){
- const exports={}; const code=ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,esModuleInterop:true}}).outputText;
+ const exports={}; const code=ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020,jsx:ts.JsxEmit.React,esModuleInterop:true}}).outputText;
  vm.runInNewContext(code,{exports,require:n=>{if(n in deps)return deps[n];throw Error(n);},structuredClone,globalThis:{crypto:globalThis.crypto},Uint32Array,setTimeout,clearTimeout,setInterval,clearInterval,console},{filename:path}); return exports;
 }
 const legacy=load('lib/jogos/arcanos/cartas.ts');
@@ -179,4 +179,20 @@ test('miniaturas usam iluminação física e liberam as instâncias das runas',(
  const modelos=modelosCom(),c=cards.CARTAS_NOVAS.find(c=>c.tipo==='personagem'),g=modelos.criarMiniatura(c,mascara(),'detalhe');
  const frente=g.children.find(p=>p.material.userData.recorte);assert.ok(frente.material instanceof T.MeshStandardMaterial);assert.equal(frente.material.alphaToCoverage,true);assert.equal(g.userData.qualidade,'detalhe');
  const runas=g.children.find(p=>p instanceof T.InstancedMesh);assert.equal(runas.count,12);let descartada=false;runas.addEventListener('dispose',()=>descartada=true);modelos.liberarMiniatura(g);assert.equal(descartada,true);
+});
+
+test('perspectiva mantém o próprio exército abaixo de todos os outros para os seis assentos',()=>{
+ const React=require('react'),render=require('react-dom/server').renderToStaticMarkup;
+ const estilos=new Proxy({},{get:(_,k)=>String(k)});
+ const campo=load('components/comunidade/jogos/CampoDeBatalha.tsx',{
+  react:{...React,useLayoutEffect:React.useEffect},'next/image':()=>null,
+  '@/lib/jogos/arcanos/cartas':legacy,'@/lib/jogos/arcanos/grimorios':cards,'@/lib/jogos/arcanos/motor-grimorios':m,
+  './CartasGrimorios':{ArteGrimorio:()=>null},'./CampoDeBatalha.module.css':estilos,'./MiniaturasDoTabuleiro':()=>null
+ }).default;
+ for(const modo of ['livre','trios','duplas'])for(let eu=0;eu<6;eu++){
+  const e=preparar(modo);e.eu=eu;const html=render(React.createElement(campo,{estado:e,selecionada:null,segundos:100}));
+  const proprio=html.indexOf('aria-label="Sua formação · parte inferior"');assert.ok(proprio>0);
+  assert.ok(html.indexOf('data-posicao="superior"')<proprio);assert.ok(html.slice(proprio).includes('data-exercito="p'+eu+'"'));
+  assert.equal((html.match(/data-posicao="superior"/g)||[]).length,5);assert.equal((html.match(/hidden=""/g)||[]).length,4);
+ }
 });

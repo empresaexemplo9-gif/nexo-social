@@ -7,7 +7,7 @@ import type { Combatente } from '@/lib/jogos/arcanos/motor-grimorios';
 import styles from './CampoDeBatalha.module.css';
 import {ELEVACAO_TABULEIRO,posicaoNoTabuleiro,escalaNoTabuleiro} from '@/lib/jogos/arcanos/camera-tabuleiro';
 
-type Props = { campo: Combatente[]; palco: React.RefObject<HTMLDivElement>; angulo: number; animacoes: boolean };
+type Props = { campo: Combatente[]; palco: React.RefObject<HTMLDivElement>; angulo: number; animacoes: boolean; lado: number; exercitoVisivel: string };
 type Cena = { atualizar: (props: Props) => void; encerrar: () => void };
 
 /** Uma única cena WebGL para todas as peças; os botões das cartas seguem acessíveis. */
@@ -114,7 +114,7 @@ export default function MiniaturasDoTabuleiro(props: Props) {
     void iniciar().catch(() => !encerrada && setModo('sem-3d'));
     return () => { encerrada = true; cena.current?.encerrar(); cena.current = null; };
   }, []);
-  useEffect(() => { cena.current?.atualizar(props); }, [props.campo, props.angulo, props.animacoes]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { cena.current?.atualizar(props); }, [props.campo, props.angulo, props.animacoes, props.lado, props.exercitoVisivel]); // eslint-disable-line react-hooks/exhaustive-deps
   return <>
     <canvas ref={canvas} className={styles.miniaturas} data-renderizacao={modo} aria-hidden="true" />
     {modo !== 'webgl' && <span className={styles.aviso3d} role="status">{modo === 'carregando' ? 'Preparando miniaturas 3D…' : '3D indisponível neste aparelho. As cartas continuam jogáveis.'}</span>}

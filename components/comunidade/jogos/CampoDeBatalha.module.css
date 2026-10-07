@@ -40,3 +40,17 @@
 @media(min-width:1450px){.baseMiniatura,.eliminada .baseMiniatura{height:142px}.retrato,.retrato>div{height:106px!important}}
 @media(max-width:1050px){.baseMiniatura,.eliminada .baseMiniatura{height:112px}.retrato,.retrato>div{height:84px!important}.formacao{gap:8px}.ladoRival,.ladoProprio{padding:8px}}
 @media(max-width:720px){.outrosExercitos{padding:5px;max-height:none}.baseMiniatura,.eliminada .baseMiniatura{height:78px}.retrato,.retrato>div{height:64px!important}.retrato{margin-top:-28px}.formacao{gap:5px}.ladoRival,.ladoProprio{padding:7px 5px}.linha{margin:13px 0}.nome{font-size:9px;margin-top:-5px}.numeros{font-size:9px}}
+/* A perspectiva do jogador é fixa: adversário acima, próprio exército abaixo. */
+.outrosExercitos{display:flex;flex-direction:column;gap:0;overflow:visible;max-height:none;scroll-snap-type:none;padding:10px}
+.faixaSuperior{min-width:0;width:100%}.faixaSuperior [hidden]{display:none!important}
+.ladoRival,.ladoProprio{flex:none;width:100%;box-sizing:border-box;padding:10px 16px}
+.ladoRival{background:linear-gradient(#4a252522,#241c2633);border-color:#b9877644}
+.ladoProprio{background:linear-gradient(#1c4a4a33,#11383e55);border:2px solid #6ba4a477}
+.divisoriaCampo{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 0;color:#b5beb9;font-size:9px;letter-spacing:.1em}
+.divisoriaCampo i{height:1px;width:85%;background:linear-gradient(90deg,transparent,#d9c68d88,transparent)}
+.divisoriaCampo strong{color:#aee2dd;font-size:11px}
+.navegarExercitos button[aria-pressed=true]{background:#46616966;border-color:#c4caa9;box-shadow:0 0 0 1px #c4caa955}
+/* Quatro fileiras cabem no campo: as duas frentes se encontram no centro. */
+.baseMiniatura,.eliminada .baseMiniatura{height:clamp(36px,5vh,58px)}.retrato,.retrato>div{height:44px!important}.retrato{margin-top:-30px}.linha{margin:7px 0}.formacao{gap:12px}.ladoRival,.ladoProprio{padding:6px 12px}.divisoriaCampo{padding:7px 0;gap:3px}.tabuleiroCabecalho{padding-bottom:7px;margin-bottom:5px}.centro{min-height:58px;margin:5px 0;padding:6px 9px}.navegarExercitos{margin:5px 0}.outrosExercitos{padding:7px}.nome{font-size:10px;line-height:13px;margin-top:-4px}.numeros{font-size:9px;line-height:13px}.exercito{height:30px}.relacao{font-size:7px;margin:2px 0}.manasEmCampo{padding:5px 0;margin-top:5px}
+@media(max-width:1050px){.formacao{gap:7px}}
+@media(max-width:720px){.baseMiniatura,.eliminada .baseMiniatura{height:42px}.retrato,.retrato>div{height:40px!important}.retrato{margin-top:-26px}.ladoRival,.ladoProprio{padding:6px 4px}.rotuloLinha{display:none}.outrosExercitos{padding:4px}.formacao{gap:4px}.nome{font-size:8px}.numeros{font-size:8px}.divisoriaCampo span{display:none}}
