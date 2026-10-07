@@ -159,7 +159,7 @@ test('fragmentos isolados do atlas não viram miniaturas nem deslocam os pés',(
  const limpa=relevo.isolarPersonagem(m);assert.equal(limpa.alpha[31*m.largura],0);assert.equal(limpa.alpha[8*m.largura+9],255);assert.equal(m.alpha[31*m.largura],255);
 });
 
-test('a câmera superior projeta os pés no centro da carta após rolagem e mudança de tamanho',()=>{
+test('a câmera superior projeta os pés na borda da carta após rolagem e mudança de tamanho',()=>{
  const c=load('lib/jogos/arcanos/camera-tabuleiro.ts');
  for(const [w,h] of [[1400,1000],[390,820],[800,1600]]){
   const camera=new T.OrthographicCamera(-w/2,w/2,h/2,-h/2,.1,6000);camera.position.set(w/2,1800*Math.sin(c.ELEVACAO_TABULEIRO),1800*Math.cos(c.ELEVACAO_TABULEIRO));camera.lookAt(w/2,0,0);camera.updateMatrixWorld();
@@ -184,14 +184,17 @@ test('miniaturas usam iluminação física e liberam as instâncias das runas',(
 test('perspectiva mantém o próprio exército abaixo de todos os outros para os seis assentos',()=>{
  const React=require('react'),render=require('react-dom/server').renderToStaticMarkup;
  const estilos=new Proxy({},{get:(_,k)=>String(k)});
+ const cartasVisuais=load('components/comunidade/jogos/CartasGrimorios.tsx',{react:React,'next/image':()=>null,'@/lib/jogos/arcanos/cartas':legacy,'@/lib/jogos/arcanos/grimorios':cards});
  const campo=load('components/comunidade/jogos/CampoDeBatalha.tsx',{
   react:{...React,useLayoutEffect:React.useEffect},'next/image':()=>null,
   '@/lib/jogos/arcanos/cartas':legacy,'@/lib/jogos/arcanos/grimorios':cards,'@/lib/jogos/arcanos/motor-grimorios':m,
-  './CartasGrimorios':{ArteGrimorio:()=>null},'./CampoDeBatalha.module.css':estilos,'./MiniaturasDoTabuleiro':()=>null
+  './CartasGrimorios':cartasVisuais,'./CampoDeBatalha.module.css':estilos,'./MiniaturasDoTabuleiro':()=>null
  }).default;
  for(const modo of ['livre','trios','duplas'])for(let eu=0;eu<6;eu++){
   const e=preparar(modo);e.eu=eu;const html=render(React.createElement(campo,{estado:e,selecionada:null,segundos:100}));
   const proprio=html.indexOf('aria-label="Sua formação · parte inferior"');assert.ok(proprio>0);
+  assert.equal((html.match(/data-carta-completa=/g)||[]).length,60);
+  const personagem=cards.cartaNova(e.jogadores[eu].campo[0].carta);assert.ok(html.includes(personagem.especial.nome));assert.ok(html.includes(personagem.texto));
   assert.ok(html.indexOf('data-posicao="superior"')<proprio);assert.ok(html.slice(proprio).includes('data-exercito="p'+eu+'"'));
   assert.equal((html.match(/data-posicao="superior"/g)||[]).length,5);assert.equal((html.match(/hidden=""/g)||[]).length,4);
  }

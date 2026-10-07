@@ -50,7 +50,15 @@
 .divisoriaCampo i{height:1px;width:85%;background:linear-gradient(90deg,transparent,#d9c68d88,transparent)}
 .divisoriaCampo strong{color:#aee2dd;font-size:11px}
 .navegarExercitos button[aria-pressed=true]{background:#46616966;border-color:#c4caa9;box-shadow:0 0 0 1px #c4caa955}
-/* Quatro fileiras cabem no campo: as duas frentes se encontram no centro. */
-.baseMiniatura,.eliminada .baseMiniatura{height:clamp(36px,5vh,58px)}.retrato,.retrato>div{height:44px!important}.retrato{margin-top:-30px}.linha{margin:7px 0}.formacao{gap:12px}.ladoRival,.ladoProprio{padding:6px 12px}.divisoriaCampo{padding:7px 0;gap:3px}.tabuleiroCabecalho{padding-bottom:7px;margin-bottom:5px}.centro{min-height:58px;margin:5px 0;padding:6px 9px}.navegarExercitos{margin:5px 0}.outrosExercitos{padding:7px}.nome{font-size:10px;line-height:13px;margin-top:-4px}.numeros{font-size:9px;line-height:13px}.exercito{height:30px}.relacao{font-size:7px;margin:2px 0}.manasEmCampo{padding:5px 0;margin-top:5px}
-@media(max-width:1050px){.formacao{gap:7px}}
-@media(max-width:720px){.baseMiniatura,.eliminada .baseMiniatura{height:42px}.retrato,.retrato>div{height:40px!important}.retrato{margin-top:-26px}.ladoRival,.ladoProprio{padding:6px 4px}.rotuloLinha{display:none}.outrosExercitos{padding:4px}.formacao{gap:4px}.nome{font-size:8px}.numeros{font-size:8px}.divisoriaCampo span{display:none}}
+/* A miniatura ocupa seu próprio espaço; a carta conserva toda a arte e o texto. */
+.baseMiniatura,.eliminada .baseMiniatura{height:clamp(130px,10vw,156px);flex-shrink:0}
+.formacao{gap:14px;align-items:stretch;max-width:1000px}.linha{margin:16px 0}.ladoRival,.ladoProprio{padding:10px 12px}
+.unidade{display:flex;flex-direction:column}.ficha{display:flex;flex-direction:column;flex:1}.cartaNoCampo{flex:1;display:flex}.cartaNoCampo>article{width:100%}
+.cartaNoCampo{position:relative;transform:none;border-radius:12px;box-shadow:0 4px 0 #9c8054,0 7px 14px #0009;overflow:visible}
+.cartaNoCampo img{filter:none}.ficha{cursor:default}.selecionarUnidade{position:absolute;inset:0;width:100%;height:100%;z-index:4;background:transparent;border:0;border-radius:12px;cursor:pointer}
+.indicadoresUnidade{position:relative;z-index:3;display:flex;align-items:center;gap:5px;min-height:22px;padding:3px;color:#bce8f5;font-size:10px}.disponivel{margin-left:auto;color:#baf3ac;font-size:9px}
+.numeros{font-size:11px;line-height:18px;padding-right:25px;z-index:3}.barraVida{z-index:3}.info{top:auto;bottom:5px;right:2px;z-index:5}.status{bottom:45px;z-index:5}.eliminada .baseMiniatura{visibility:hidden}
+.alvo .cartaNoCampo{outline:2px solid #83ffcc;box-shadow:0 0 20px #73ffd466}.escolhida .cartaNoCampo,.conjurando .cartaNoCampo{outline:2px solid #ffe4a1;box-shadow:0 0 25px #ffc55555}.sobAtaque .cartaNoCampo{outline:2px solid #fa9787}.congelada .cartaNoCampo{outline:2px solid #a5eeff}
+.divisoriaCampo{padding:12px 0;gap:3px}.tabuleiroCabecalho{padding-bottom:7px;margin-bottom:5px}.centro{min-height:58px;margin:5px 0;padding:6px 9px}.navegarExercitos{margin:5px 0}.outrosExercitos{padding:7px}.exercito{height:30px}.relacao{font-size:8px;margin:3px 0}.manasEmCampo{padding:5px 0;margin-top:5px}
+@media(max-width:1050px){.formacao{gap:8px}.baseMiniatura,.eliminada .baseMiniatura{height:120px}}
+@media(max-width:720px){.formacao{min-width:540px;gap:8px}.linha{overflow-x:auto;padding:5px 3px 10px;scrollbar-width:thin}.baseMiniatura,.eliminada .baseMiniatura{height:112px}.ladoRival,.ladoProprio{padding:6px 4px}.rotuloLinha{display:none}.outrosExercitos{padding:4px}.divisoriaCampo span{display:none}.numeros{font-size:9px}.disponivel{font-size:8px}}

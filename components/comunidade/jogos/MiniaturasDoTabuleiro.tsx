@@ -30,7 +30,7 @@ export default function MiniaturasDoTabuleiro(props: Props) {
       renderer.toneMappingExposure = 1.15;
       renderer.autoClear = false;
       const mundo = new T.Scene(), camera = new T.OrthographicCamera(-.5, .5, .5, -.5, .1, 6000);
-      tela.dataset.camera='superior';tela.dataset.elevacao='55';
+      tela.dataset.camera='superior';tela.dataset.elevacao='55';tela.dataset.ancoragem='acima-da-carta';
       const pmrem = new T.PMREMGenerator(renderer), sala = new ambiente.RoomEnvironment();
       const reflexos = pmrem.fromScene(sala); mundo.environment = reflexos.texture;
       sala.dispose(); pmrem.dispose(); mundo.environmentIntensity = .5;
@@ -55,10 +55,13 @@ export default function MiniaturasDoTabuleiro(props: Props) {
           const el=bases.get(id),base = el?.getBoundingClientRect(),carta=el?.parentElement?.querySelector('[data-miniatura-carta]')?.getBoundingClientRect();
           if (!base || !base.width || !base.height || (campo && (base.bottom < campo.top || base.top > campo.bottom || base.right < campo.left || base.left > campo.right))) { peca.visible = false; continue; }
           peca.visible = !!peca.userData.texturizada;
-          const ponto=posicaoNoTabuleiro(base.left+base.width/2-caixa.left,carta?carta.top+carta.height/2-caixa.top:base.bottom-caixa.top,altura);
-          peca.position.set(ponto.x,ponto.y,ponto.z);
           const tamanho = peca.userData.dimensoes;
-          peca.scale.setScalar(escalaNoTabuleiro(base.width,base.height,tamanho));
+          const escala=escalaNoTabuleiro(base.width,base.height,tamanho);
+          // O pedestal inteiro fica acima do cabeçalho, com oito pixels de folga.
+          const margem=tamanho.profundidade*.5*Math.sin(ELEVACAO_TABULEIRO)*escala+8;
+          const ponto=posicaoNoTabuleiro(base.left+base.width/2-caixa.left,(carta?carta.top:base.bottom)-margem-caixa.top,altura);
+          peca.position.set(ponto.x,ponto.y,ponto.z);
+          peca.scale.setScalar(escala);
           peca.rotation.set(0, dados.angulo, 0);
         }
       };

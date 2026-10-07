@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { ELEMENTOS, ELEMENTOS_ORDEM, type Elemento } from '@/lib/jogos/arcanos/cartas';
 import { cartaNova, personagensDoGrimorio, GLOSSARIO_NOVO, type CartaNova } from '@/lib/jogos/arcanos/grimorios';
 import { alvosAtaqueNovo, alvosNovos, combatente, manaLivreNova, aliadosNovos, defensorNovo, podeReagirNovo, MODOS_NOVOS, podeAtaqueNovo, podeCartaNova, type AcaoNova, type Combatente, type EstadoNovo, type JogadorNovo, type LadoNovo } from '@/lib/jogos/arcanos/motor-grimorios';
-import { ArteGrimorio } from './CartasGrimorios';
+import { ArteGrimorio, CardGrimorio } from './CartasGrimorios';
 import styles from './CampoDeBatalha.module.css';
 import MiniaturasDoTabuleiro from './MiniaturasDoTabuleiro';
 
@@ -74,13 +74,15 @@ const Unidade = memo(function Unidade({ carta, pessoa, id, alvo, escolhida, conj
   const congelado = pessoa?.efeitos.some(x => x.tipo === 'congelamento');
   const queimando = pessoa?.efeitos.some(x => x.tipo === 'queimadura');
   return <article ref={node => registrar(id, node)} className={`${styles.unidade} ${!vivo ? styles.eliminada : ''} ${alvo ? styles.alvo : ''} ${escolhida ? styles.escolhida : ''} ${conjurando ? styles.conjurando : ''} ${sobAtaque ? styles.sobAtaque : ''} ${congelado ? styles.congelada : ''} ${queimando ? styles.queimando : ''}`} style={TINTA(carta.elemento)} data-unidade={id}>
-    <button className={styles.ficha} onClick={() => vivo ? onClick(id) : onInspecionar(carta)} aria-label={`${nome}, ${vivo ? `vida ${pessoa.vida}, escudo ${pessoa.escudo}${alvo ? ', escolher alvo' : ''}` : 'eliminado'}`} aria-pressed={escolhida}>
-      <span className={styles.baseMiniatura} data-miniatura-base={vivo ? id : undefined} data-miniatura-personagem={vivo ? carta.id : undefined} aria-hidden="true" /><div className={styles.retrato} data-miniatura-carta="true"><ArteGrimorio c={carta} altura={64} /><span className={styles.funcao} title={FUNCOES[carta.funcao!]}>{SIMBOLOS[carta.funcao!]}</span>{!!pessoa?.escudo && <span className={styles.escudo} title={`${pessoa.escudo} pontos de escudo`}>⛨ {pessoa.escudo}</span>}{podeAtacar && <span className={styles.pronto} title="Pode atacar" aria-label="Pode atacar" />}</div>
-      <strong className={styles.nome}>{nome}</strong>
+    <div className={styles.ficha}>
+      <span className={styles.baseMiniatura} data-miniatura-base={vivo ? id : undefined} data-miniatura-personagem={vivo ? carta.id : undefined} aria-hidden="true" />
+      <div className={styles.cartaNoCampo} data-miniatura-carta="true"><CardGrimorio c={carta} tabuleiro /></div>
+      <button className={styles.selecionarUnidade} onClick={() => vivo ? onClick(id) : onInspecionar(carta)} aria-label={`${nome}, ${vivo ? `vida ${pessoa.vida}, escudo ${pessoa.escudo}${alvo ? ', escolher alvo' : ''}` : 'eliminado'}`} aria-pressed={escolhida} />
+      <div className={styles.indicadoresUnidade}><span title={FUNCOES[carta.funcao!]}>{SIMBOLOS[carta.funcao!]}</span>{!!pessoa?.escudo && <span>⛨ {pessoa.escudo}</span>}{podeAtacar && <span className={styles.disponivel}>Pode atacar</span>}</div>
       <div className={styles.numeros}><span>♥ {pessoa?.vida ?? 0}<small>/{carta.vida}</small></span><span>⚔ {carta.ataque}{pessoa?.atacou ? ' ✓' : ''}</span></div>
       <div className={styles.barraVida}><i style={{ width: `${(pessoa?.vida ?? 0) / carta.vida! * 100}%` }} /></div>
       {!vivo && <span className={styles.morto}>Eliminado</span>}
-    </button>
+    </div>
     <button className={styles.info} onClick={() => onInspecionar(carta)} aria-label={`Ver carta de ${nome}`}>i</button>
     {pessoa && <div className={styles.status}>{pessoa.efeitos.slice(0, 3).map(x => <span key={x.tipo} title={GLOSSARIO_NOVO[x.tipo]}>{ROTULOS[x.tipo] ?? x.tipo}</span>)}</div>}
     <div className={styles.pulsos} aria-live="off">{pulsos.map((v, i) => <span key={v.chave} className={styles[v.tipo]} style={{ '--nivel': i } as React.CSSProperties}>{v.texto}</span>)}</div>

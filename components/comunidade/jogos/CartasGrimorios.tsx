@@ -13,16 +13,16 @@ export function ArteGrimorio({c,altura,prioridade=false}:{c:CartaNova;altura?:nu
     <Image src={a.src} alt={c.nome} width={1024} height={1536} priority={prioridade} loading={prioridade?undefined:'lazy'} unoptimized sizes="(max-width:640px) 180px, 280px" style={{position:'absolute',maxWidth:'none',width:`${cols*100}%`,height:`${rows*100}%`,left:`-${pos%cols*100}%`,top:`-${Math.floor(pos/cols)*100}%`,objectFit:'fill'}} />
   </div></div>;
 }
-export function CardGrimorio({c,compacto=false}:{c:CartaNova;compacto?:boolean}) {
+export function CardGrimorio({c,compacto=false,tabuleiro=false}:{c:CartaNova;compacto?:boolean;tabuleiro?:boolean}) {
   const cor=ELEMENTOS[c.elemento];
-  return <article className="overflow-hidden rounded-xl border text-left shadow-lg" style={{borderColor:cor.clara+'88',background:`linear-gradient(155deg,${cor.escura},#0b0b13)`}}>
-    <div className="flex items-center justify-between gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-wide" style={{color:cor.clara}}><span>{NOMES[c.tipo]}{c.funcao?` · ${NOMES[c.funcao]}`:''}</span><span>{c.tipo==='mana'?`${c.cargas} mana`:c.tipo==='personagem'?`${c.ataque} ATQ · ${c.vida} VIDA`:`${c.custo} mana`}</span></div>
-    <ArteGrimorio c={c} altura={compacto?115:250} />
-    <div className="space-y-2 p-3"><h3 className="font-display text-sm font-bold text-white">{c.nome}</h3>
+  return <article data-carta-completa={tabuleiro?c.id:undefined} className="overflow-hidden rounded-xl border text-left shadow-lg" style={{borderColor:cor.clara+'88',background:`linear-gradient(155deg,${cor.escura},#0b0b13)`}}>
+    <div className={tabuleiro?'flex flex-col gap-1 px-2 py-1 text-[8px] font-bold uppercase tracking-wide':'flex items-center justify-between gap-2 px-3 py-2 text-[11px] font-bold uppercase tracking-wide'} style={{color:cor.clara}}><span>{NOMES[c.tipo]}{c.funcao?` · ${NOMES[c.funcao]}`:''}</span><span>{c.tipo==='mana'?`${c.cargas} mana`:c.tipo==='personagem'?`${c.ataque} ATQ · ${c.vida} VIDA`:`${c.custo} mana`}</span></div>
+    <ArteGrimorio c={c} altura={tabuleiro?undefined:compacto?115:250} />
+    <div className={tabuleiro?'space-y-1 p-2':'space-y-2 p-3'}><h3 className={tabuleiro?'font-display text-[10px] leading-tight font-bold text-white':'font-display text-sm font-bold text-white'}>{c.nome}</h3>
       {c.conjurador&&<p className="text-[11px]" style={{color:cor.clara}}>Conjurador: {cartaNova(c.conjurador).nome.split(',')[0]}</p>}
-      {c.especial&&<p className="text-xs font-bold text-[#fde68a]">{c.especial.nome}</p>}
-      <p className="text-xs leading-relaxed text-[#e4e4e7]">{c.texto}</p>
-      {!compacto&&<p className="text-[11px] text-[#a1a1aa]">{c.copias} cópia(s){c.reacao?' · Pode reagir antes do dano':''}</p>}
+      {c.especial&&<p className={tabuleiro?'text-[8px] leading-3 font-bold text-[#fde68a]':'text-xs font-bold text-[#fde68a]'}>{c.especial.nome}</p>}
+      <p className={tabuleiro?'text-[8px] leading-3 text-[#e4e4e7]':'text-xs leading-relaxed text-[#e4e4e7]'}>{c.texto}</p>
+      {!compacto&&<p className={tabuleiro?'text-[8px] text-[#a1a1aa]':'text-[11px] text-[#a1a1aa]'}>{c.copias} cópia(s){c.reacao?' · Pode reagir antes do dano':''}</p>}
     </div>
   </article>;
 }
