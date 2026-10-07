@@ -188,12 +188,13 @@ test('perspectiva mantém o próprio exército abaixo de todos os outros para os
  const campo=load('components/comunidade/jogos/CampoDeBatalha.tsx',{
   react:{...React,useLayoutEffect:React.useEffect},'next/image':()=>null,
   '@/lib/jogos/arcanos/cartas':legacy,'@/lib/jogos/arcanos/grimorios':cards,'@/lib/jogos/arcanos/motor-grimorios':m,
-  './CartasGrimorios':cartasVisuais,'./CampoDeBatalha.module.css':estilos,'./MiniaturasDoTabuleiro':()=>null
+  './CartasGrimorios':cartasVisuais,'./CampoDeBatalha.module.css':estilos
  }).default;
  for(const modo of ['livre','trios','duplas'])for(let eu=0;eu<6;eu++){
   const e=preparar(modo);e.eu=eu;const html=render(React.createElement(campo,{estado:e,selecionada:null,segundos:100}));
   const proprio=html.indexOf('aria-label="Sua formação · parte inferior"');assert.ok(proprio>0);
   assert.equal((html.match(/data-carta-completa=/g)||[]).length,60);
+  assert.ok(!html.includes('<canvas'));assert.ok(!html.includes('Girar miniaturas'));
   const personagem=cards.cartaNova(e.jogadores[eu].campo[0].carta);assert.ok(html.includes(personagem.especial.nome));assert.ok(html.includes(personagem.texto));
   assert.ok(html.indexOf('data-posicao="superior"')<proprio);assert.ok(html.slice(proprio).includes('data-exercito="p'+eu+'"'));
   assert.equal((html.match(/data-posicao="superior"/g)||[]).length,5);assert.equal((html.match(/hidden=""/g)||[]).length,4);

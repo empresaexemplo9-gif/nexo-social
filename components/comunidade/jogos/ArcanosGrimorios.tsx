@@ -2,7 +2,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import CampoDeBatalha from './CampoDeBatalha';
-import MiniaturaEmDetalhe from './MiniaturaEmDetalhe';
 import { CardGrimorio, GaleriaGrimorios, RegrasGrimorios } from './CartasGrimorios';
 export { ArteGrimorio, CardGrimorio, GaleriaGrimorios, RegrasGrimorios } from './CartasGrimorios';
 import { type Elemento } from '@/lib/jogos/arcanos/cartas';
@@ -55,6 +54,6 @@ export default function ArcanosGrimorios({canal,mesa,papel,eu,elemento,hostNome,
     {e?<CampoDeBatalha estado={e} selecionada={selecionada} segundos={segundos} onJogar={jogar} onSelecionar={setSelecionada} onAlvo={alvoEscolhido} onInspecionar={setZoom} onAviso={setAviso} onCartas={()=>setCatalogo(true)} onRegras={()=>setRegras(true)} onSair={sair} onRevanche={aoRevanche}/>:<div className="min-h-[500px] bg-cover bg-center p-6" style={{backgroundImage:'linear-gradient(#07101999,#071019dd),url(/jogos/arcanos/campos/'+(elemento??'fogo')+'.png)'}}><header className="flex justify-between gap-3"><h1 className="font-display text-xl">Arcanos · Campo de batalha</h1><div className="flex gap-2"><button className={BTN} onClick={()=>setCatalogo(true)}>Cartas</button><button className={BTN} onClick={()=>setRegras(true)}>Regras</button><button className={BTN} onClick={sair}>Sair</button></div></header><LobbyDosGrimorios lobby={lobby} eu={eu.userId} host={papel==='host'} local={local} espectador={papel==='espectador'} onElemento={el=>controle.current?.escolher(el)} onEquipe={n=>controle.current?.equipe(n)} onModo={m=>controle.current?.configurar(m,6)} onIniciar={()=>controle.current?.iniciar()}/></div>}
     {aviso&&<p role="status" className="fixed bottom-3 left-3 right-3 z-[80] mx-auto max-w-2xl rounded-xl border border-amber-300/40 bg-[#302515] px-4 py-3 text-sm text-[#fef3c7] shadow-xl">{aviso}</p>}
     {catalogo&&<GaleriaGrimorios aoFechar={()=>setCatalogo(false)}/>}
-    {(zoom||regras)&&<div className="fixed inset-0 z-[110] flex items-start justify-center overflow-auto bg-black/90 p-5" role="dialog" aria-modal="true" aria-label={zoom?.nome??'Regras dos grimórios'}><div className={zoom?.tipo==='personagem'?'w-full max-w-3xl':zoom?'w-full max-w-sm':'w-full max-w-3xl'}><button className={BTN+' mb-3'} onClick={()=>{setZoom(null);setRegras(false);}}>Fechar</button>{zoom?<div className={zoom.tipo==='personagem'?'grid gap-5 sm:grid-cols-2':''}><CardGrimorio c={zoom}/>{zoom.tipo==='personagem'&&<MiniaturaEmDetalhe carta={zoom}/>}</div>:<RegrasGrimorios/>}</div></div>}
+    {(zoom||regras)&&<div className="fixed inset-0 z-[110] flex items-start justify-center overflow-auto bg-black/90 p-5" role="dialog" aria-modal="true" aria-label={zoom?.nome??'Regras dos grimórios'}><div className={zoom?'w-full max-w-sm':'w-full max-w-3xl'}><button className={BTN+' mb-3'} onClick={()=>{setZoom(null);setRegras(false);}}>Fechar</button>{zoom?<CardGrimorio c={zoom}/>:<RegrasGrimorios/>}</div></div>}
   </div>;
 }
