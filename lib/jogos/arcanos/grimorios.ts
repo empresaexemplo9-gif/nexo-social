@@ -3,16 +3,16 @@ import type { Elemento } from './cartas';
 
 export type Funcao = 'tank' | 'mago' | 'suporte' | 'guerreiro' | 'arqueiro';
 export type MiraNova = 'alvo' | 'si' | 'aliados' | 'inimigos';
-export type EfeitoNovo = { tipo: 'dano' | 'cura' | 'escudo' | 'atordoamento' | 'congelamento' | 'enraizamento' | 'desorientacao' | 'vulnerabilidade' | 'regeneracao' | 'queimadura' | 'purificar' | 'bonus' | 'evasao' | 'determinacao' | 'removerEscudo'; valor: number; mira: MiraNova; maxAlvos?: number };
+export type EfeitoNovo = { tipo: 'reviver' | 'dano' | 'cura' | 'escudo' | 'atordoamento' | 'congelamento' | 'enraizamento' | 'desorientacao' | 'vulnerabilidade' | 'regeneracao' | 'queimadura' | 'purificar' | 'bonus' | 'evasao' | 'determinacao' | 'removerEscudo'; valor: number; mira: MiraNova; maxAlvos?: number };
 export type Gatilho = 'declararFeitico' | 'declararAtaque' | 'conjurarMagia' | 'conjurarFeitico' | 'receberEscudo' | 'receberDano' | 'causarDano' | 'curar' | 'purificar' | 'inicio';
-export type Condicao = 'sempre' | 'alvoEscudo' | 'alvoSemEscudo' | 'alvoFerido' | 'alvoVidaCheia' | 'alvoMeiaVida' | 'alvoControlado' | 'alvoTank' | 'siEscudo' | 'siSemEscudo' | 'siFerido' | 'siMeiaVida' | 'siVidaCheia' | 'custo4' | 'absorcao' | 'letal' | 'reacao' | 'enraiza' | 'cura' | 'turnoInimigo';
-export interface Especial { nome: string; texto: string; gatilho: Gatilho; condicao: Condicao; limite: 'turno' | 'partida'; operacao: 'dano' | 'cura' | 'escudo' | 'bonus' | 'removerEscudo'; valor: number; destino: 'si' | 'alvo' | 'aliadoFerido' }
+export type Condicao = 'purifica' | 'sempre' | 'alvoEscudo' | 'alvoSemEscudo' | 'alvoFerido' | 'alvoVidaCheia' | 'alvoMeiaVida' | 'alvoControlado' | 'alvoTank' | 'siEscudo' | 'siSemEscudo' | 'siFerido' | 'siMeiaVida' | 'siVidaCheia' | 'custo4' | 'absorcao' | 'letal' | 'reacao' | 'enraiza' | 'cura' | 'turnoInimigo';
+export interface Especial { nome: string; texto: string; gatilho: Gatilho; condicao: Condicao; limite: 'turno' | 'partida'; operacao: 'reviver' | 'dano' | 'cura' | 'escudo' | 'bonus' | 'removerEscudo'; valor: number; destino: 'si' | 'alvo' | 'aliadoFerido' | 'aliadoMorto' }
 export interface ArteNova { src: string; colunas?: number; linhas?: number; posicao?: number; proporcao?: number }
 export interface CartaNova {
   id: string; nome: string; elemento: Elemento; tipo: 'personagem' | 'magia' | 'feitico' | 'mana';
   custo: number; copias: number; texto: string; arte: ArteNova;
-  funcao?: Funcao; vida?: number; ataque?: number; especial?: Especial;
-  conjurador?: string; alvo?: 'aliado' | 'inimigo' | 'si' | 'grupo'; reacao?: boolean;
+  funcao?: Funcao; vida?: number; ataque?: number; especial?: Especial; habilidades?: Especial[];
+  conjurador?: string; alvo?: 'aliado' | 'aliadoMorto' | 'inimigo' | 'si' | 'grupo'; reacao?: boolean;
   efeitos: EfeitoNovo[]; cargas?: 1 | 2;
 }
 export interface Grimorio { elemento: Elemento; nome: string; estrategia: string; cartas: CartaNova[] }
@@ -31,9 +31,11 @@ export function pilhaNova(el: Elemento, mana = false): string[] {
 }
 export const REGRAS_NOVAS = {
   maoInicial: 5, manaInicial: 2, ataquesPorTurno: 2, manaMaxima: 12,
-  magiasFeiticos: 48, cartasDeMana: 24, essencias: 16, nucleos: 8,
+  magiasFeiticos: 52, cartasDeMana: 24, essencias: 16, nucleos: 8,
 };
 export const GLOSSARIO_NOVO: Record<string, string> = {
+  reviver: 'Devolve um personagem eliminado ao campo, uma única vez por personagem. Preserva usos de habilidades e remove estados anteriores. Pode alcançar aliados de outro grimório enquanto a partida continua; não alcança quem desistiu.',
+  exaustao: 'Após reviver, impede ataques, conjurações e habilidades até o início do próximo turno do dono.',
   atordoamento: 'Impede ataques e conjurações até o fim do próximo turno do dono.',
   congelamento: 'Impede ataques e conjurações até o fim do próximo turno do dono. Dano posterior, mesmo absorvido pelo escudo, quebra o gelo.',
   enraizamento: 'Impede ataques básicos até o fim do próximo turno do dono; permite conjurações.',

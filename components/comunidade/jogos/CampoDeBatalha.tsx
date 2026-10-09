@@ -21,7 +21,7 @@ const CENARIOS: Record<Elemento, string> = {
 };
 const FUNCOES: Record<string, string> = { tank: 'Tank', mago: 'Mago', suporte: 'Suporte', guerreiro: 'Guerreiro', arqueiro: 'Arqueiro' };
 const SIMBOLOS: Record<string, string> = { tank: '⛨', mago: '✦', suporte: '✚', guerreiro: '⚔', arqueiro: '➶' };
-const ROTULOS: Record<string, string> = { atordoamento: 'Atordoado', congelamento: 'Congelado', enraizamento: 'Enraizado', desorientacao: 'Desorientado', vulnerabilidade: 'Vulnerável', regeneracao: 'Regeneração', queimadura: 'Queimadura', evasao: 'Evasão', determinacao: 'Determinação', tenacidade: 'Tenacidade' };
+const ROTULOS: Record<string, string> = { exaustao: 'Exausto', atordoamento: 'Atordoado', congelamento: 'Congelado', enraizamento: 'Enraizado', desorientacao: 'Desorientado', vulnerabilidade: 'Vulnerável', regeneracao: 'Regeneração', queimadura: 'Queimadura', evasao: 'Evasão', determinacao: 'Determinação', tenacidade: 'Tenacidade' };
 const FRENTE = [6, 0, 2, 1, 7], RETAGUARDA = [8, 4, 3, 5, 9];
 const TINTA = (el: Elemento) => ({ '--cor': ELEMENTOS[el].clara, '--brilho': ELEMENTOS[el].brilho, '--sombra': ELEMENTOS[el].escura } as React.CSSProperties);
 
@@ -75,11 +75,11 @@ const Unidade = memo(function Unidade({ carta, pessoa, id, alvo, escolhida, conj
   return <article ref={node => registrar(id, node)} className={`${styles.unidade} ${!vivo ? styles.eliminada : ''} ${alvo ? styles.alvo : ''} ${escolhida ? styles.escolhida : ''} ${conjurando ? styles.conjurando : ''} ${sobAtaque ? styles.sobAtaque : ''} ${congelado ? styles.congelada : ''} ${queimando ? styles.queimando : ''}`} style={TINTA(carta.elemento)} data-unidade={id}>
     <div className={styles.ficha}>
       <div className={styles.cartaNoCampo} data-carta-campo="true"><CardGrimorio c={carta} tabuleiro /></div>
-      <button className={styles.selecionarUnidade} onClick={() => vivo ? onClick(id) : onInspecionar(carta)} aria-label={`${nome}, ${vivo ? `vida ${pessoa.vida}, escudo ${pessoa.escudo}${alvo ? ', escolher alvo' : ''}` : 'eliminado'}`} aria-pressed={escolhida} />
+      <button className={styles.selecionarUnidade} onClick={() => vivo || alvo ? onClick(id) : onInspecionar(carta)} aria-label={`${nome}, ${vivo ? `vida ${pessoa.vida}, escudo ${pessoa.escudo}${alvo ? ', escolher alvo' : ''}` : alvo ? 'eliminado, escolher para reviver' : 'eliminado'}`} aria-pressed={escolhida} />
       <div className={styles.indicadoresUnidade}><span title={FUNCOES[carta.funcao!]}>{SIMBOLOS[carta.funcao!]}</span>{!!pessoa?.escudo && <span>⛨ {pessoa.escudo}</span>}{podeAtacar && <span className={styles.disponivel}>Pode atacar</span>}</div>
       <div className={styles.numeros}><span>♥ {pessoa?.vida ?? 0}<small>/{carta.vida}</small></span><span>⚔ {carta.ataque}{pessoa?.atacou ? ' ✓' : ''}</span></div>
       <div className={styles.barraVida}><i style={{ width: `${(pessoa?.vida ?? 0) / carta.vida! * 100}%` }} /></div>
-      {!vivo && <span className={styles.morto}>Eliminado</span>}
+      {!vivo && <span className={styles.morto}>{alvo ? 'Reviver' : 'Eliminado'}</span>}
     </div>
     <button className={styles.info} onClick={() => onInspecionar(carta)} aria-label={`Ver carta de ${nome}`}>i</button>
     {pessoa && <div className={styles.status}>{pessoa.efeitos.slice(0, 3).map(x => <span key={x.tipo} title={GLOSSARIO_NOVO[x.tipo]}>{ROTULOS[x.tipo] ?? x.tipo}</span>)}</div>}
@@ -138,18 +138,18 @@ export default function CampoDeBatalha({ estado: e, selecionada, segundos, onJog
   const alvos = useMemo(() => selecionada ? selecionada.tipo === 'ataque' ? alvosAtaqueNovo(e, lado) : alvosNovos(e, lado, cartaNova(selecionada.id)) : [], [e, lado, selecionada]);
   const registrar = useCallback((id: string, el: HTMLElement | null) => { if (el) referencias.current.set(id, el); else referencias.current.delete(id); }, []);
   const clicar = useCallback((id: string) => {
-    const p = combatente(e, id); if (!p) return;
     if (alvos.includes(id)) { onAlvo(id); return; }
+    const p = combatente(e, id); if (!p) return;
     if (!espectador && p.dono === lado && podeAtaqueNovo(e, p)) { onSelecionar({ tipo: 'ataque', id }); onAviso('Escolha um dos alvos iluminados para o ataque.'); }
     else onInspecionar(cartaNova(p.carta));
   }, [e, alvos, espectador, lado, onAlvo, onSelecionar, onAviso, onInspecionar]);
   const usar = (c: CartaNova) => {
     if (c.alvo === 'grupo' || c.alvo === 'si') onJogar({ t: 'jogar', lado, carta: c.id, alvo: c.alvo === 'si' ? meu.campo.find(p => p.carta === c.conjurador)?.id : undefined });
-    else { onSelecionar({ tipo: 'carta', id: c.id }); onAviso(`Escolha um ${c.alvo === 'aliado' ? 'aliado' : 'inimigo'} iluminado para ${c.nome}.`); }
+    else { onSelecionar({ tipo: 'carta', id: c.id }); onAviso(`Escolha um ${c.alvo === 'aliadoMorto' ? 'aliado eliminado' : c.alvo === 'aliado' ? 'aliado' : 'inimigo'} iluminado para ${c.nome}.`); }
   };
   const linha = (j: JogadorNovo, indices: number[], rotulo: string) => {
     const cartas = personagensDoGrimorio(j.elemento), dono = e.jogadores.indexOf(j) as LadoNovo;
-    return <div className={styles.linha} aria-label={`${j.nome}: ${rotulo}`}><span className={styles.rotuloLinha}>{rotulo}</span><div className={styles.formacao}>{indices.map(i => { const c = cartas[i], id = `${dono}:${c.id}`, p = j.campo.find(p => p.id === id); return <Unidade key={id} id={id} carta={c} pessoa={p} alvo={!!p && alvos.includes(id)} escolhida={selecionada?.id === id} conjurando={e.pendente?.conjurador === id} sobAtaque={e.pendente?.alvo === id || !!e.pendente?.alvosGrupo.includes(id)} podeAtacar={!!p && !espectador && p.dono === lado && podeAtaqueNovo(e, p)} pulsos={pulsosPorUnidade.get(id) ?? SEM_PULSOS} onClick={clicar} onInspecionar={onInspecionar} registrar={registrar} />; })}</div></div>;
+    return <div className={styles.linha} aria-label={`${j.nome}: ${rotulo}`}><span className={styles.rotuloLinha}>{rotulo}</span><div className={styles.formacao}>{indices.map(i => { const c = cartas[i], id = `${dono}:${c.id}`, p = j.campo.find(p => p.id === id); return <Unidade key={id} id={id} carta={c} pessoa={p} alvo={alvos.includes(id)} escolhida={selecionada?.id === id} conjurando={e.pendente?.conjurador === id} sobAtaque={e.pendente?.alvo === id || !!e.pendente?.alvosGrupo.includes(id)} podeAtacar={!!p && !espectador && p.dono === lado && podeAtaqueNovo(e, p)} pulsos={pulsosPorUnidade.get(id) ?? SEM_PULSOS} onClick={clicar} onInspecionar={onInspecionar} registrar={registrar} />; })}</div></div>;
   };
   const cabecalho = (j: JogadorNovo, proprio: boolean) => <div className={styles.exercito} style={TINTA(j.elemento)}><Selo elemento={j.elemento} /><div><strong>{j.nome}</strong><span>{ELEMENTOS[j.elemento].nome} · {j.campo.length} vivos{e.modo !== 'livre' ? ` · Time ${j.equipe + 1}` : ''}</span></div><div className={styles.maoOculta} aria-label={`${j.maoQtd} magias e feitiços na mão${proprio ? '' : ' oculta'}`}>{Array.from({ length: Math.min(4, j.maoQtd) }, (_, i) => <i key={i} />)}<b>{j.maoQtd}</b></div></div>;
   const podePassar = vez && (meu.comprou || !meu.baralhoQtd && !meu.reservaQtd);

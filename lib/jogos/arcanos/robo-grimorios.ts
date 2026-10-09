@@ -1,8 +1,9 @@
 import { cartaNova, type CartaNova } from './grimorios';
-import { alvosNovos, alvosAtaqueNovo, aliadosNovos, combatente, defensorNovo, manaLivreNova, podeReagirNovo, podeAtaqueNovo, podeCartaNova, type AcaoNova, type Combatente, type EstadoNovo, type LadoNovo } from './motor-grimorios';
+import { alvosNovos, alvosAtaqueNovo, aliadosNovos, combatente, alvoDaCartaNova, defensorNovo, manaLivreNova, podeReagirNovo, podeAtaqueNovo, podeCartaNova, type AcaoNova, type Combatente, type EstadoNovo, type LadoNovo } from './motor-grimorios';
 
 function valorCarta(c: CartaNova, p?: Combatente) {
   return c.efeitos.reduce((n,f)=> {
+    if(f.tipo==='reviver') return n+(p&&p.vida<=0 ? 8+f.valor : 0);
     if(f.tipo==='dano') return n+f.valor*(f.mira==='inimigos'?2.3:1)+(p&&p.vida+p.escudo<=f.valor?8:0);
     if(f.tipo==='cura') return n+Math.min(f.valor,p?p.maxima-p.vida:0)*1.3;
     if(f.tipo==='escudo') return n+Math.min(f.valor,6-(p?.escudo??0))*0.45;
@@ -43,7 +44,7 @@ export function decidirGrimorios(e: EstadoNovo, lado: LadoNovo): AcaoNova | null
     const c=cartaNova(id);
     if(c.efeitos.some((f)=>f.tipo==='bonus') && !(j.mao??[]).some((k)=> {const s=cartaNova(k);return s.tipo==='feitico'&&s.conjurador===c.conjurador&&s.custo+c.custo<=manaLivreNova(j);})) continue;
     for(const alvo of c.alvo==='grupo'?[undefined]:alvosNovos(e,lado,c)) {
-      const p=alvo?combatente(e,alvo):undefined;
+      const p=alvo?alvoDaCartaNova(e,lado,c,alvo):undefined;
       const valor=valorCarta(c,p)+(p&&c.tipo==='feitico'&&cartaNova(p.carta).funcao==='suporte'?0.7:0);
       if(valor>1.2&&(!melhor||valor>melhor.valor)) melhor={valor,acao:{t:'jogar',lado,carta:id,alvo}};
     }

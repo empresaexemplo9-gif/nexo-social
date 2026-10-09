@@ -1,6 +1,6 @@
 # Os seis grimórios do Arcanos
 
-Valores recalculados em 06/10/2026. Cada elemento possui 10 personagens únicos, 48 cartas de magia/feitiço e 24 cartas de mana (16 de uma carga e 8 de duas). Todos os personagens começam vivos no campo.
+Valores recalculados em 06/10/2026; ressurreições adicionadas em 08/10/2026. Cada elemento possui 10 personagens únicos, 52 cartas de magia/feitiço e 24 cartas de mana (16 de uma carga e 8 de duas). Todos os personagens começam vivos no campo.
 
 Os nomes recuperados de Água foram preservados. A pedido do usuário, os dez personagens de Água foram recriados como humanos, com artes coerentes nas suas magias e feitiços; os arquivos das artes anteriores foram mantidos. As seis identidades conhecidas de Fogo e suas artes foram preservadas; os nomes que não constavam do resumo foram criados nesta etapa. Terra, Ar, Luz e Escuridão são novos conjuntos autorizados nesta conversa. Não são apresentados como arquivos recuperados da aba perdida. Velira, a arqueira de Ar, recebeu uma arte corrigida a partir da referência enviada pelo usuário.
 
@@ -314,6 +314,36 @@ Mana · 16 cópias · Acrescenta 1 carga(s) à fonte de mana. A fonte se renova 
 Mana · 8 cópias · Acrescenta 2 carga(s) à fonte de mana. A fonte se renova no início do seu turno.
 
 
+
+### Brasa que Não se Apaga — habilidade adicional de Vaelor
+
+Uma vez na partida, no início do seu turno, se está com metade ou menos da vida, revive o primeiro aliado elegível no memorial com 3 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.
+
+### Retorno da Fênix Rubra
+
+magia · Mana 5 · 1 cópia · Conjurador: Alena
+
+Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Couraça das Cinzas Vivas
+
+magia · Mana 5 · 1 cópia · Conjurador: Vaelor
+
+Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Brasa da Segunda Vida
+
+magia · Mana 5 · 1 cópia · Conjurador: Alena
+
+Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Ritual do Sol Reaceso
+
+feitico · Mana 6 · 1 cópia · Conjurador: Seryth
+
+Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+
 ## Grimório de Água — Ordem da Maré Eterna
 
 Escudos, regeneração e controle por gelo.
@@ -621,6 +651,36 @@ Mana · 16 cópias · Acrescenta 1 carga(s) à fonte de mana. A fonte se renova 
 ### Coração do Oceano
 
 Mana · 8 cópias · Acrescenta 2 carga(s) à fonte de mana. A fonte se renova no início do seu turno.
+
+
+
+### Memória da Nascente — habilidade adicional de Iren
+
+Uma vez na partida, no início do seu turno, se tem escudo, revive o primeiro aliado elegível no memorial com 3 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.
+
+### Maré do Renascimento
+
+magia · Mana 5 · 1 cópia · Conjurador: Maélia
+
+Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Concha do Recomeço
+
+magia · Mana 5 · 1 cópia · Conjurador: Iren
+
+Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Nascente de Vida Nova
+
+magia · Mana 5 · 1 cópia · Conjurador: Maélia
+
+Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Ritual da Maré Eterna
+
+feitico · Mana 6 · 1 cópia · Conjurador: Lysara
+
+Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
 
 
 ## Grimório de Terra — Conclave da Pedra Viva
@@ -932,6 +992,36 @@ Mana · 16 cópias · Acrescenta 1 carga(s) à fonte de mana. A fonte se renova 
 Mana · 8 cópias · Acrescenta 2 carga(s) à fonte de mana. A fonte se renova no início do seu turno.
 
 
+
+### Semente Ancestral — habilidade adicional de Odrin
+
+Uma vez na partida, no início do seu turno, se está com vida cheia, revive o primeiro aliado elegível no memorial com 2 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.
+
+### Brotar da Última Raiz
+
+magia · Mana 5 · 1 cópia · Conjurador: Nalda
+
+Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Bastião do Rebrotar
+
+magia · Mana 5 · 1 cópia · Conjurador: Odrin
+
+Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Semente da Sobrevida
+
+magia · Mana 5 · 1 cópia · Conjurador: Nalda
+
+Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Ritual da Raiz Ancestral
+
+feitico · Mana 6 · 1 cópia · Conjurador: Edris
+
+Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+
 ## Grimório de Ar — Pacto dos Céus Errantes
 
 Evasão, desorientação e ataques precisos.
@@ -1239,6 +1329,36 @@ Mana · 16 cópias · Acrescenta 1 carga(s) à fonte de mana. A fonte se renova 
 ### Coração da Tempestade
 
 Mana · 8 cópias · Acrescenta 2 carga(s) à fonte de mana. A fonte se renova no início do seu turno.
+
+
+
+### Segundo Fôlego — habilidade adicional de Saelis
+
+Uma vez na partida, ao conjurar uma magia de purificação, revive o primeiro aliado elegível no memorial com 2 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.
+
+### Sopro de Retorno
+
+magia · Mana 5 · 1 cópia · Conjurador: Saelis
+
+Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Manto da Segunda Brisa
+
+magia · Mana 5 · 1 cópia · Conjurador: Yunor
+
+Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Respiração Renovada
+
+magia · Mana 5 · 1 cópia · Conjurador: Saelis
+
+Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Ritual do Vento Imortal
+
+feitico · Mana 6 · 1 cópia · Conjurador: Ilyss
+
+Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
 
 
 ## Grimório de Luz — Ordem do Alvorecer
@@ -1550,6 +1670,36 @@ Mana · 16 cópias · Acrescenta 1 carga(s) à fonte de mana. A fonte se renova 
 Mana · 8 cópias · Acrescenta 2 carga(s) à fonte de mana. A fonte se renova no início do seu turno.
 
 
+
+### Promessa do Alvorecer — habilidade adicional de Evelune
+
+Uma vez na partida, ao curar um aliado que tinha metade ou menos da vida, revive o primeiro aliado elegível no memorial com 2 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.
+
+### Alvorada do Retorno
+
+magia · Mana 5 · 1 cópia · Conjurador: Evelune
+
+Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Égide do Renascimento
+
+magia · Mana 5 · 1 cópia · Conjurador: Calion
+
+Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Vigília da Nova Vida
+
+magia · Mana 5 · 1 cópia · Conjurador: Evelune
+
+Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Ritual da Aurora Eterna
+
+feitico · Mana 6 · 1 cópia · Conjurador: Aurelis
+
+Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+
 ## Grimório de Escuridão — Círculo do Eclipse Silencioso
 
 Desgaste, vulnerabilidade e recuperação após dano.
@@ -1857,3 +2007,32 @@ Mana · 16 cópias · Acrescenta 1 carga(s) à fonte de mana. A fonte se renova 
 ### Coração do Eclipse
 
 Mana · 8 cópias · Acrescenta 2 carga(s) à fonte de mana. A fonte se renova no início do seu turno.
+
+
+### Pacto da Última Sombra — habilidade adicional de Othren
+
+Uma vez na partida, após resolver um feitiço, se está com metade ou menos da vida, revive o primeiro aliado elegível no memorial com 3 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.
+
+### Retorno do Véu Negro
+
+magia · Mana 5 · 1 cópia · Conjurador: Velmira
+
+Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Armadura do Além
+
+magia · Mana 5 · 1 cópia · Conjurador: Othren
+
+Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Pulso da Noite Viva
+
+magia · Mana 5 · 1 cópia · Conjurador: Velmira
+
+Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.
+
+### Ritual do Eclipse Reverso
+
+feitico · Mana 6 · 1 cópia · Conjurador: Morvyn
+
+Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.

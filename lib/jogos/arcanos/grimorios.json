@@ -182,7 +182,19 @@
           "linhas": 2,
           "posicao": 1,
           "proporcao": 1.0
-        }
+        },
+        "habilidades": [
+          {
+            "nome": "Brasa que Não se Apaga",
+            "texto": "Uma vez na partida, no início do seu turno, se está com metade ou menos da vida, revive o primeiro aliado elegível no memorial com 3 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.",
+            "gatilho": "inicio",
+            "condicao": "siMeiaVida",
+            "limite": "partida",
+            "operacao": "reviver",
+            "valor": 3,
+            "destino": "aliadoMorto"
+          }
+        ]
       },
       {
         "id": "fogo-branna",
@@ -1244,6 +1256,116 @@
         }
       },
       {
+        "id": "fogo-retorno",
+        "nome": "Retorno da Fênix Rubra",
+        "elemento": "fogo",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "fogo-alena",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 4,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/fogo/23_24_29.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1.0
+        }
+      },
+      {
+        "id": "fogo-retorno-protegido",
+        "nome": "Couraça das Cinzas Vivas",
+        "elemento": "fogo",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "fogo-vaelor",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "escudo",
+            "valor": 2,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/fogo/23_24_29.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 1,
+          "proporcao": 1.0
+        }
+      },
+      {
+        "id": "fogo-retorno-regenerador",
+        "nome": "Brasa da Segunda Vida",
+        "elemento": "fogo",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "fogo-alena",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "regeneracao",
+            "valor": 1,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/fogo/23_24_29.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1.0
+        }
+      },
+      {
+        "id": "fogo-ritual-de-retorno",
+        "nome": "Ritual do Sol Reaceso",
+        "elemento": "fogo",
+        "tipo": "feitico",
+        "custo": 6,
+        "copias": 1,
+        "conjurador": "fogo-seryth",
+        "alvo": "aliadoMorto",
+        "texto": "Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 6,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/fogo/23_24_15.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 2,
+          "proporcao": 1.0
+        }
+      },
+      {
         "id": "fogo-mana-1",
         "nome": "Essência da Forja",
         "elemento": "fogo",
@@ -1464,7 +1586,19 @@
           "linhas": 2,
           "posicao": 0,
           "proporcao": 1
-        }
+        },
+        "habilidades": [
+          {
+            "nome": "Memória da Nascente",
+            "texto": "Uma vez na partida, no início do seu turno, se tem escudo, revive o primeiro aliado elegível no memorial com 3 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.",
+            "gatilho": "inicio",
+            "condicao": "siEscudo",
+            "limite": "partida",
+            "operacao": "reviver",
+            "valor": 3,
+            "destino": "aliadoMorto"
+          }
+        ]
       },
       {
         "id": "agua-varessa",
@@ -2511,6 +2645,116 @@
         }
       },
       {
+        "id": "agua-retorno",
+        "nome": "Maré do Renascimento",
+        "elemento": "agua",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "agua-maelia",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 4,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/agua/maelia-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
+        }
+      },
+      {
+        "id": "agua-retorno-protegido",
+        "nome": "Concha do Recomeço",
+        "elemento": "agua",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "agua-iren",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "escudo",
+            "valor": 2,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/agua/iren-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
+        }
+      },
+      {
+        "id": "agua-retorno-regenerador",
+        "nome": "Nascente de Vida Nova",
+        "elemento": "agua",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "agua-maelia",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "regeneracao",
+            "valor": 1,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/agua/maelia-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
+        }
+      },
+      {
+        "id": "agua-ritual-de-retorno",
+        "nome": "Ritual da Maré Eterna",
+        "elemento": "agua",
+        "tipo": "feitico",
+        "custo": 6,
+        "copias": 1,
+        "conjurador": "agua-lysara",
+        "alvo": "aliadoMorto",
+        "texto": "Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 6,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/agua/lysara-humanos.png",
+          "colunas": 3,
+          "linhas": 2,
+          "posicao": 0,
+          "proporcao": 1
+        }
+      },
+      {
         "id": "agua-mana-1",
         "nome": "Essência da Nascente",
         "elemento": "agua",
@@ -2725,7 +2969,19 @@
           "linhas": 4,
           "posicao": 5,
           "proporcao": 0.533333
-        }
+        },
+        "habilidades": [
+          {
+            "nome": "Semente Ancestral",
+            "texto": "Uma vez na partida, no início do seu turno, se está com vida cheia, revive o primeiro aliado elegível no memorial com 2 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.",
+            "gatilho": "inicio",
+            "condicao": "siVidaCheia",
+            "limite": "partida",
+            "operacao": "reviver",
+            "valor": 2,
+            "destino": "aliadoMorto"
+          }
+        ]
       },
       {
         "id": "terra-kevara",
@@ -3787,6 +4043,116 @@
         }
       },
       {
+        "id": "terra-retorno",
+        "nome": "Brotar da Última Raiz",
+        "elemento": "terra",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "terra-nalda",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 4,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/terra/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 4,
+          "proporcao": 0.533333
+        }
+      },
+      {
+        "id": "terra-retorno-protegido",
+        "nome": "Bastião do Rebrotar",
+        "elemento": "terra",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "terra-odrin",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "escudo",
+            "valor": 2,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/terra/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 5,
+          "proporcao": 0.533333
+        }
+      },
+      {
+        "id": "terra-retorno-regenerador",
+        "nome": "Semente da Sobrevida",
+        "elemento": "terra",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "terra-nalda",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "regeneracao",
+            "valor": 1,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/terra/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 4,
+          "proporcao": 0.533333
+        }
+      },
+      {
+        "id": "terra-ritual-de-retorno",
+        "nome": "Ritual da Raiz Ancestral",
+        "elemento": "terra",
+        "tipo": "feitico",
+        "custo": 6,
+        "copias": 1,
+        "conjurador": "terra-edris",
+        "alvo": "aliadoMorto",
+        "texto": "Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 6,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/terra/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 2,
+          "proporcao": 0.533333
+        }
+      },
+      {
         "id": "terra-mana-1",
         "nome": "Essência do Vale",
         "elemento": "terra",
@@ -3977,7 +4343,19 @@
           "linhas": 4,
           "posicao": 4,
           "proporcao": 0.999643
-        }
+        },
+        "habilidades": [
+          {
+            "nome": "Segundo Fôlego",
+            "texto": "Uma vez na partida, ao conjurar uma magia de purificação, revive o primeiro aliado elegível no memorial com 2 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.",
+            "gatilho": "conjurarMagia",
+            "condicao": "purifica",
+            "limite": "partida",
+            "operacao": "reviver",
+            "valor": 2,
+            "destino": "aliadoMorto"
+          }
+        ]
       },
       {
         "id": "ar-yunor",
@@ -5071,6 +5449,116 @@
         }
       },
       {
+        "id": "ar-retorno",
+        "nome": "Sopro de Retorno",
+        "elemento": "ar",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "ar-saelis",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 4,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/ar/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 4,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "ar-retorno-protegido",
+        "nome": "Manto da Segunda Brisa",
+        "elemento": "ar",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "ar-yunor",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "escudo",
+            "valor": 2,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/ar/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 5,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "ar-retorno-regenerador",
+        "nome": "Respiração Renovada",
+        "elemento": "ar",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "ar-saelis",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "regeneracao",
+            "valor": 1,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/ar/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 4,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "ar-ritual-de-retorno",
+        "nome": "Ritual do Vento Imortal",
+        "elemento": "ar",
+        "tipo": "feitico",
+        "custo": 6,
+        "copias": 1,
+        "conjurador": "ar-ilyss",
+        "alvo": "aliadoMorto",
+        "texto": "Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 6,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/ar/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 2,
+          "proporcao": 0.999643
+        }
+      },
+      {
         "id": "ar-mana-1",
         "nome": "Essência da Brisa",
         "elemento": "ar",
@@ -5261,7 +5749,19 @@
           "linhas": 4,
           "posicao": 4,
           "proporcao": 0.999643
-        }
+        },
+        "habilidades": [
+          {
+            "nome": "Promessa do Alvorecer",
+            "texto": "Uma vez na partida, ao curar um aliado que tinha metade ou menos da vida, revive o primeiro aliado elegível no memorial com 2 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.",
+            "gatilho": "curar",
+            "condicao": "alvoMeiaVida",
+            "limite": "partida",
+            "operacao": "reviver",
+            "valor": 2,
+            "destino": "aliadoMorto"
+          }
+        ]
       },
       {
         "id": "luz-calion",
@@ -6359,6 +6859,116 @@
         }
       },
       {
+        "id": "luz-retorno",
+        "nome": "Alvorada do Retorno",
+        "elemento": "luz",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "luz-evelune",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 4,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/luz/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 4,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "luz-retorno-protegido",
+        "nome": "Égide do Renascimento",
+        "elemento": "luz",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "luz-calion",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "escudo",
+            "valor": 2,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/luz/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 5,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "luz-retorno-regenerador",
+        "nome": "Vigília da Nova Vida",
+        "elemento": "luz",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "luz-evelune",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "regeneracao",
+            "valor": 1,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/luz/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 4,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "luz-ritual-de-retorno",
+        "nome": "Ritual da Aurora Eterna",
+        "elemento": "luz",
+        "tipo": "feitico",
+        "custo": 6,
+        "copias": 1,
+        "conjurador": "luz-aurelis",
+        "alvo": "aliadoMorto",
+        "texto": "Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 6,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/luz/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 2,
+          "proporcao": 0.999643
+        }
+      },
+      {
         "id": "luz-mana-1",
         "nome": "Essência da Aurora",
         "elemento": "luz",
@@ -6579,7 +7189,19 @@
           "linhas": 4,
           "posicao": 5,
           "proporcao": 0.999643
-        }
+        },
+        "habilidades": [
+          {
+            "nome": "Pacto da Última Sombra",
+            "texto": "Uma vez na partida, após resolver um feitiço, se está com metade ou menos da vida, revive o primeiro aliado elegível no memorial com 3 de vida. O aliado retorna exausto até o início do próximo turno do dono; cada personagem só pode reviver uma vez.",
+            "gatilho": "conjurarFeitico",
+            "condicao": "siMeiaVida",
+            "limite": "partida",
+            "operacao": "reviver",
+            "valor": 3,
+            "destino": "aliadoMorto"
+          }
+        ]
       },
       {
         "id": "escuridao-zaryss",
@@ -7643,6 +8265,116 @@
           "linhas": 6,
           "posicao": 21,
           "proporcao": 1.531426
+        }
+      },
+      {
+        "id": "escuridao-retorno",
+        "nome": "Retorno do Véu Negro",
+        "elemento": "escuridao",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "escuridao-velmira",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 4 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 4,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/escuridao/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 4,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "escuridao-retorno-protegido",
+        "nome": "Armadura do Além",
+        "elemento": "escuridao",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "escuridao-othren",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e concede 2 de escudo. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "escudo",
+            "valor": 2,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/escuridao/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 5,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "escuridao-retorno-regenerador",
+        "nome": "Pulso da Noite Viva",
+        "elemento": "escuridao",
+        "tipo": "magia",
+        "custo": 5,
+        "copias": 1,
+        "conjurador": "escuridao-velmira",
+        "alvo": "aliadoMorto",
+        "texto": "Revive um aliado eliminado com 3 de vida e Regeneração: cura 1 no início dos próximos dois turnos do dono. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 3,
+            "mira": "alvo"
+          },
+          {
+            "tipo": "regeneracao",
+            "valor": 1,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/escuridao/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 4,
+          "proporcao": 0.999643
+        }
+      },
+      {
+        "id": "escuridao-ritual-de-retorno",
+        "nome": "Ritual do Eclipse Reverso",
+        "elemento": "escuridao",
+        "tipo": "feitico",
+        "custo": 6,
+        "copias": 1,
+        "conjurador": "escuridao-morvyn",
+        "alvo": "aliadoMorto",
+        "texto": "Após a janela de reação, revive um aliado eliminado com 6 de vida. Cada personagem só pode reviver uma vez na partida. Retorna sem estados anteriores e fica exausto até o início do próximo turno do dono. Preserva usos de habilidades. Pode alcançar um aliado de outro grimório; não alcança quem desistiu nem reabre uma partida encerrada.",
+        "efeitos": [
+          {
+            "tipo": "reviver",
+            "valor": 6,
+            "mira": "alvo"
+          }
+        ],
+        "arte": {
+          "src": "/jogos/arcanos/grimorios/escuridao/campeoes.png",
+          "colunas": 5,
+          "linhas": 4,
+          "posicao": 2,
+          "proporcao": 0.999643
         }
       },
       {

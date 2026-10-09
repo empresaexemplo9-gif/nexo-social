@@ -35,6 +35,19 @@ const Campo = load('components/comunidade/jogos/CampoDeBatalha.tsx', {
 const ps = [{ userId: 'ana', nome: 'Ana', elemento: 'fogo' }, { userId: 'bia', nome: 'Bia', elemento: 'agua' }];
 const props = e => ({ estado: e, segundos: 99, selecionada: null, onJogar() {}, onSelecionar() {}, onAlvo() {}, onInspecionar() {}, onAviso() {}, onCartas() {}, onRegras() {}, onSair() {} });
 
+test('seleção de ressurreição ilumina o eliminado, envia seu alvo e o retorno reaparece no mesmo campo',async()=>{
+ const e=motor.novaPartidaGrimorios(ps,0);e.jogadores[0].comprou=true;e.jogadores[0].fonte=12;
+ const p=e.jogadores[0].campo[6];p.vida=0;e.jogadores[0].campo=e.jogadores[0].campo.filter(q=>q.id!==p.id);e.jogadores[0].caidos=[p];e.jogadores[0].mortos=[p.carta];e.jogadores[0].mao=['fogo-retorno'];e.jogadores[0].maoQtd=1;
+ let alvo=null,view;const cfg={...props(e),selecionada:{tipo:'carta',id:'fogo-retorno'},onAlvo:id=>alvo=id};
+ await act(async()=>{view=create(React.createElement(Campo,cfg));});
+ try {
+  const botao=view.root.find(n=>n.type==='button'&&n.props['aria-label']==='Branna, eliminado, escolher para reviver');await act(async()=>botao.props.onClick());assert.equal(alvo,p.id);
+  assert.equal(view.root.find(n=>n.type==='button'&&n.props['aria-label']==='Usar Retorno da Fênix Rubra').props.disabled,false);
+  const r=motor.aplicarNova(e,{t:'jogar',lado:0,carta:'fogo-retorno',alvo});assert.equal(r.ok,true,r.erro);await act(async()=>view.update(React.createElement(Campo,props(r.estado))));
+  assert.equal(view.root.findAll(n=>n.type==='article'&&n.props['data-unidade']).length,20);assert.equal(view.root.findAll(n=>n.type==='button'&&n.props['aria-label']==='Branna, vida 4, escudo 0').length,1);assert.ok(view.root.findAll(n=>n.type==='span'&&n.children.includes('Exausto')).length);
+ } finally {await act(async()=>view.unmount());}
+});
+
 test('a baixa mantém sua posição no campo e impede as cartas do conjurador morto', async () => {
   const e = motor.novaPartidaGrimorios(ps, 0);
   e.jogadores[0].comprou = true; e.jogadores[0].fonte = 12;

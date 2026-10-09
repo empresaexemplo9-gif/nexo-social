@@ -62,3 +62,5 @@
 .divisoriaCampo{padding:12px 0;gap:3px}.tabuleiroCabecalho{padding-bottom:7px;margin-bottom:5px}.centro{min-height:58px;margin:5px 0;padding:6px 9px}.navegarExercitos{margin:5px 0}.outrosExercitos{padding:7px}.exercito{height:30px}.relacao{font-size:8px;margin:3px 0}.manasEmCampo{padding:5px 0;margin-top:5px}
 @media(max-width:1050px){.formacao{gap:8px}}
 @media(max-width:720px){.formacao{min-width:540px;gap:8px}.linha{overflow-x:auto;padding:5px 3px 10px;scrollbar-width:thin}.ladoRival,.ladoProprio{padding:6px 4px}.rotuloLinha{display:none}.outrosExercitos{padding:4px}.divisoriaCampo span{display:none}.numeros{font-size:9px}.disponivel{font-size:8px}}
+
+.eliminada.alvo{opacity:1;filter:none}.eliminada.alvo .ficha{opacity:1;filter:none}.eliminada.alvo .morto{color:#a7ffda;pointer-events:none}

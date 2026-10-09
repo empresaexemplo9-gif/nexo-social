@@ -15,6 +15,18 @@ const ok=r=>{assert.equal(r.ok,true,r.erro);return r.estado;};
 const preparar=modo=>{const e=m.novaPartidaGrimorios(ps,0,undefined,modo);e.jogadores.forEach(j=>{j.comprou=true;j.fonte=12;});return e;};
 const dar=(e,l,teste)=>{const c=cards.CARTAS_NOVAS.find(c=>c.elemento===ps[l].elemento&&teste(c));assert.ok(c);e.jogadores[l].mao=[c.id];e.jogadores[l].maoQtd=1;return c;};
 
+test('retorno alcança o aliado de outro elemento, inclusive eliminado, sem reviver desistente nem encerrar vitória',()=>{
+ for(const modo of ['duplas','trios']) {
+  let e=preparar(modo);const aliado=modo==='duplas'?3:2,j=e.jogadores[aliado],p=j.campo[6];
+  j.caidos=j.campo.map(q=>({...q,vida:0}));j.mortos=j.campo.map(q=>q.carta);j.campo=[];
+  const c=dar(e,0,c=>c.id==='fogo-retorno');assert.ok(m.alvosNovos(e,0,c).includes(p.id));assert.ok(!m.alvosNovos(e,1,c).includes(p.id));
+  const antesFonte=j.fonte;e=ok(m.aplicarNova(e,{t:'jogar',lado:0,carta:c.id,alvo:p.id}));assert.equal(m.combatente(e,p.id).dono,aliado);assert.equal(e.jogadores[aliado].gasta,0);assert.equal(e.jogadores[aliado].fonte,antesFonte);assert.equal(e.jogadores[0].gasta,5);assert.equal(e.vencedor,null);
+  e=ok(m.aplicarNova(e,{t:'desistir',lado:aliado}));dar(e,0,c=>c.id==='fogo-retorno');assert.ok(!m.alvosNovos(e,0,c).some(id=>id.startsWith(aliado+':')));assert.equal(m.aplicarNova(e,{t:'jogar',lado:0,carta:c.id,alvo:j.caidos[0].id}).ok,false);
+ }
+ let e=preparar('livre');for(let i=1;i<6;i++)e=ok(m.aplicarNova(e,{t:'desistir',lado:i}));assert.equal(e.vencedor,0);
+ const c=dar(e,0,c=>c.id==='fogo-retorno');assert.equal(m.aplicarNova(e,{t:'jogar',lado:0,carta:c.id,alvo:e.jogadores[1].caidos[0].id}).ok,false);
+});
+
 test('limites de jogadores, equipes completas e elementos exclusivos em todos os modos',()=>{
  for(const modo of ['livre','duplas','trios']){
   assert.throws(()=>m.novaPartidaGrimorios([{...ps[0]},{...ps[1],elemento:ps[0].elemento},...ps.slice(2)],0,undefined,modo),/grimório diferente/);

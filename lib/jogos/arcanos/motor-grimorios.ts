@@ -6,8 +6,8 @@ export type ModoNovo = 'livre' | 'duplas' | 'trios';
 export const MODOS_NOVOS: Record<ModoNovo, string> = { livre: 'Cada um por si', duplas: '3 times de 2 jogadores', trios: '2 times de 3 jogadores' };
 export type ParticipanteNovo = { userId: string; nome: string; elemento: Elemento; equipe?: number };
 export type EstadoDeEfeito = { tipo: string; valor: number; vence: number; turnoDono?: number; restantes?: number };
-export type Combatente = { id: string; carta: string; dono: LadoNovo; vida: number; maxima: number; escudo: number; atacou: boolean; bonus: number; efeitos: EstadoDeEfeito[]; usoEspecial: number; especialUsado: boolean };
-export type JogadorNovo = ParticipanteNovo & { equipe: number; turnos: number; campo: Combatente[]; mortos: string[]; mao: string[] | null; maoQtd: number; baralho: string[] | null; baralhoQtd: number; maoMana: string[] | null; maoManaQtd: number; reserva: string[] | null; reservaQtd: number; fonte: number; gasta: number; manaEmJogo: string[]; descarte: string[]; comprou: boolean; jogouMana: boolean; ataques: number };
+export type Combatente = { id: string; carta: string; dono: LadoNovo; vida: number; maxima: number; escudo: number; atacou: boolean; bonus: number; efeitos: EstadoDeEfeito[]; usoEspecial: number; especialUsado: boolean; reviveu?: boolean; habilidadesUsadas?: Record<string, number> };
+export type JogadorNovo = ParticipanteNovo & { equipe: number; turnos: number; campo: Combatente[]; mortos: string[]; caidos?: Combatente[]; desistiu?: boolean; mao: string[] | null; maoQtd: number; baralho: string[] | null; baralhoQtd: number; maoMana: string[] | null; maoManaQtd: number; reserva: string[] | null; reservaQtd: number; fonte: number; gasta: number; manaEmJogo: string[]; descarte: string[]; comprou: boolean; jogouMana: boolean; ataques: number };
 export type AcaoNova = { t: 'comprar'; lado: LadoNovo; pilha: 'magia' | 'mana' } | { t: 'mana'; lado: LadoNovo; carta: string } | { t: 'jogar'; lado: LadoNovo; carta: string; alvo?: string } | { t: 'atacar'; lado: LadoNovo; atacante: string; alvo: string } | { t: 'resolver' | 'passar' | 'desistir'; lado: LadoNovo };
 type Fotografia = { vida: number; escudo: number; maxima: number; negativo: boolean; tank: boolean };
 export type PendenteNovo = { lado: LadoNovo; conjurador: string; alvo?: string; carta?: string; basico: boolean; efeitos: EfeitoNovo[]; dano: number; fotoSi: Fotografia; fotoAlvo?: Fotografia; alvosGrupo: string[] };
@@ -28,9 +28,11 @@ export function podeReagirNovo(e: EstadoNovo, lado: LadoNovo) {
 }
 export const manaLivreNova = (j: JogadorNovo) => Math.max(0, j.fonte - j.gasta);
 export const combatente = (e: EstadoNovo, id: string) => e.jogadores.flatMap((j) => j.campo).find((p) => p.id === id && p.vida > 0);
+export const caidosAliadosNovos = (e: EstadoNovo, lado: LadoNovo) => e.jogadores.flatMap((j, i) => !j.desistiu && aliadosNovos(e,lado,i as LadoNovo) ? (j.caidos ?? []) : []).filter(p => p.vida <= 0 && !p.reviveu && !combatente(e,p.id));
+export const alvoDaCartaNova = (e: EstadoNovo, lado: LadoNovo, c: CartaNova, id: string) => c.alvo === 'aliadoMorto' ? caidosAliadosNovos(e,lado).find(p => p.id === id) : combatente(e,id);
 const negativos = new Set(['atordoamento', 'congelamento', 'enraizamento', 'desorientacao', 'vulnerabilidade', 'queimadura']);
 const tem = (p: Combatente, tipo: string) => p.efeitos.some((x) => x.tipo === tipo);
-export const impedidoNovo = (p: Combatente) => tem(p, 'atordoamento') || tem(p, 'congelamento');
+export const impedidoNovo = (p: Combatente) => tem(p, 'atordoamento') || tem(p, 'congelamento') || tem(p,'exaustao');
 const foto = (p: Combatente): Fotografia => ({ vida: p.vida, escudo: p.escudo, maxima: p.maxima, negativo: p.efeitos.some((x) => negativos.has(x.tipo)), tank: cartaNova(p.carta).funcao === 'tank' });
 function falha(s: string): never { throw new Error(s); }
 const registrar = (e: EstadoNovo, s: string) => { e.log.push(s); e.log = e.log.slice(-70); };
@@ -51,7 +53,7 @@ export function novaPartidaGrimorios(ps: ParticipanteNovo[], eu: LadoNovo | null
     const conhecido = eu === lado;
     const baralho = conhecido ? [...(deck?.baralho ?? pilhaNova(p.elemento))] : null;
     const reserva = conhecido ? [...(deck?.reserva ?? pilhaNova(p.elemento, true))] : null;
-    return { ...p, equipe: times[lado], turnos: lado === 0 ? 1 : 0, campo: personagensDoGrimorio(p.elemento).map((c) => ({ id: `${lado}:${c.id}`, carta: c.id, dono: lado as LadoNovo, vida: c.vida!, maxima: c.vida!, escudo: 0, atacou: false, bonus: 0, efeitos: [], usoEspecial: 0, especialUsado: false })), mortos: [], mao: baralho?.splice(0, REGRAS_NOVAS.maoInicial) ?? null, maoQtd: REGRAS_NOVAS.maoInicial, baralho, baralhoQtd: REGRAS_NOVAS.magiasFeiticos - REGRAS_NOVAS.maoInicial, maoMana: reserva?.splice(0, REGRAS_NOVAS.manaInicial) ?? null, maoManaQtd: REGRAS_NOVAS.manaInicial, reserva, reservaQtd: REGRAS_NOVAS.cartasDeMana - REGRAS_NOVAS.manaInicial, fonte: 0, gasta: 0, manaEmJogo: [], descarte: [], comprou: false, jogouMana: false, ataques: 0 };
+    return { ...p, equipe: times[lado], turnos: lado === 0 ? 1 : 0, campo: personagensDoGrimorio(p.elemento).map((c) => ({ id: `${lado}:${c.id}`, carta: c.id, dono: lado as LadoNovo, vida: c.vida!, maxima: c.vida!, escudo: 0, atacou: false, bonus: 0, efeitos: [], usoEspecial: 0, especialUsado: false })), mortos: [], caidos: [], mao: baralho?.splice(0, REGRAS_NOVAS.maoInicial) ?? null, maoQtd: REGRAS_NOVAS.maoInicial, baralho, baralhoQtd: REGRAS_NOVAS.magiasFeiticos - REGRAS_NOVAS.maoInicial, maoMana: reserva?.splice(0, REGRAS_NOVAS.manaInicial) ?? null, maoManaQtd: REGRAS_NOVAS.manaInicial, reserva, reservaQtd: REGRAS_NOVAS.cartasDeMana - REGRAS_NOVAS.manaInicial, fonte: 0, gasta: 0, manaEmJogo: [], descarte: [], comprou: false, jogouMana: false, ataques: 0 };
   });
   return { versao: 2, modo, jogadores, eu, ativo: 0, turno: 1, seq: 0, vencedor: null, vencedores: [], pendente: null, log: [`${MODOS_NOVOS[modo]}: os dez personagens de cada grimório começam em campo. Escolha sua compra.`] };
 }
@@ -99,15 +101,26 @@ function condicaoEspecial(e: EstadoNovo, p: Combatente, a: Especial, alvo: Comba
     case 'reacao': return !!ctx.reacao;
     case 'enraiza': return !!ctx.carta?.efeitos.some((f) => f.tipo === 'enraizamento');
     case 'cura': return !!ctx.carta?.efeitos.some((f) => f.tipo === 'cura');
+    case 'purifica': return !!ctx.carta?.efeitos.some((f) => f.tipo === 'purificar');
     case 'turnoInimigo': return !aliadosNovos(e, e.ativo, p.dono);
   }
 }
-function especial(e: EstadoNovo, p: Combatente, gatilho: Gatilho, alvo?: Combatente, ctx: Contexto = {}): number {
-  if (p.vida <= 0) return 0;
-  const a = cartaNova(p.carta).especial!;
-  if (a.gatilho !== gatilho || (a.limite === 'turno' ? p.usoEspecial === e.turno : p.especialUsado) || !condicaoEspecial(e,p,a,alvo,ctx)) return 0;
-  p.usoEspecial = e.turno; p.especialUsado = true;
-  const dest = a.destino === 'si' ? p : a.destino === 'alvo' ? alvo : campoEquipeNovo(e, p.dono, true).sort((x,y) => (y.maxima-y.vida)-(x.maxima-x.vida))[0];
+function reviver(e: EstadoNovo, p: Combatente, valor: number): boolean {
+  const j=e.jogadores[p.dono];
+  if(e.vencedor!==null || j.desistiu || !caidosAliadosNovos(e,p.dono).some(q=>q.id===p.id)) return false;
+  p.vida=Math.min(p.maxima,Math.max(1,Math.min(6,valor))); p.escudo=0; p.bonus=0; p.atacou=true; p.reviveu=true; p.efeitos=[];
+  estado(e,p,'exaustao',1);
+  j.caidos=(j.caidos??[]).filter(q=>q.id!==p.id); j.mortos=j.mortos.filter(id=>id!==p.carta); j.campo.push(p);
+  const ordem=personagensDoGrimorio(j.elemento).map(c=>c.id); j.campo.sort((a,b)=>ordem.indexOf(a.carta)-ordem.indexOf(b.carta));
+  registrar(e,`${cartaNova(p.carta).nome.split(',')[0]} voltou ao campo com ${p.vida} de vida e Exaustão.`);
+  return true;
+}
+function ativarEspecial(e: EstadoNovo, p: Combatente, a: Especial, gatilho: Gatilho, alvo: Combatente | undefined, ctx: Contexto, adicional: boolean): number {
+  const usado=adicional ? p.habilidadesUsadas?.[a.nome] : a.limite==='turno' ? p.usoEspecial || undefined : p.especialUsado ? 1 : undefined;
+  if (a.gatilho !== gatilho || (a.limite === 'turno' ? usado === e.turno : usado !== undefined) || !condicaoEspecial(e,p,a,alvo,ctx)) return 0;
+  const dest = a.destino === 'aliadoMorto' ? caidosAliadosNovos(e,p.dono)[0] : a.destino === 'si' ? p : a.destino === 'alvo' ? alvo : campoEquipeNovo(e, p.dono, true).sort((x,y) => (y.maxima-y.vida)-(x.maxima-x.vida))[0];
+  if(a.operacao==='reviver' && (!dest || !reviver(e,dest,a.valor))) return 0;
+  if(adicional) { p.habilidadesUsadas ??= {}; p.habilidadesUsadas[a.nome]=e.turno; } else { p.usoEspecial=e.turno; p.especialUsado=true; }
   registrar(e, `${cartaNova(p.carta).nome.split(',')[0]} ativou ${a.nome}.`);
   if (a.operacao === 'dano') return a.valor;
   if (!dest || dest.vida <= 0) return 0;
@@ -117,9 +130,14 @@ function especial(e: EstadoNovo, p: Combatente, gatilho: Gatilho, alvo?: Combate
   if (a.operacao === 'removerEscudo') dest.escudo = Math.max(0, dest.escudo - a.valor);
   return 0;
 }
+function especial(e: EstadoNovo, p: Combatente, gatilho: Gatilho, alvo?: Combatente, ctx: Contexto = {}): number {
+  if(p.vida<=0 || tem(p,'exaustao')) return 0;
+  const c=cartaNova(p.carta);
+  return [c.especial!,...(c.habilidades??[])].reduce((n,a,i)=>n+ativarEspecial(e,p,a,gatilho,alvo,ctx,i>0),0);
+}
 function mortes(e: EstadoNovo) {
   for (const j of e.jogadores) {
-    for (const p of j.campo.filter((x) => x.vida <= 0)) { if (!j.mortos.includes(p.carta)) j.mortos.push(p.carta); registrar(e, `${cartaNova(p.carta).nome.split(',')[0]} morreu.`); }
+    for (const p of j.campo.filter((x) => x.vida <= 0)) { if (!j.mortos.includes(p.carta)) j.mortos.push(p.carta); j.caidos ??= []; j.caidos=j.caidos.filter(q=>q.id!==p.id); j.caidos.push(p); registrar(e, `${cartaNova(p.carta).nome.split(',')[0]} morreu.`); }
     j.campo = j.campo.filter((x) => x.vida > 0);
   }
   const vivos = e.jogadores.map((j, i) => j.campo.length ? i as LadoNovo : null).filter((i): i is LadoNovo => i !== null);
@@ -144,6 +162,7 @@ function dano(e: EstadoNovo, p: Combatente, valor: number, caster?: Combatente, 
   if (caster && caster.vida > 0 && perda > 0) especial(e,caster,'causarDano',p,{...ctx,alvo:ctx.alvo ?? before,letal:p.vida<=0});
 }
 function aplicarEfeito(e: EstadoNovo, f: EfeitoNovo, alvo: Combatente, caster: Combatente, ctx: Contexto, danoBase: number) {
+  if(f.tipo==='reviver') { reviver(e,alvo,f.valor); return; }
   if (alvo.vida <= 0) return;
   switch (f.tipo) {
     case 'dano': dano(e,alvo,danoBase,caster,ctx); return;
@@ -168,6 +187,7 @@ function aplicarEfeito(e: EstadoNovo, f: EfeitoNovo, alvo: Combatente, caster: C
 }
 function conjurador(e: EstadoNovo, l: LadoNovo, c: CartaNova) { return e.jogadores[l].campo.find((p) => p.carta===c.conjurador && p.vida>0); }
 export function alvosNovos(e: EstadoNovo, lado: LadoNovo, c: CartaNova): string[] {
+  if(c.alvo==='aliadoMorto') return caidosAliadosNovos(e,lado).map(p=>p.id);
   const caster=conjurador(e,lado,c);
   if(c.alvo==='si') return caster ? [caster.id] : [];
   if(c.alvo==='grupo') return [];
@@ -189,7 +209,8 @@ export function podeCartaNova(e: EstadoNovo, lado: LadoNovo, id: string): string
   if(c.tipo!=='magia' && c.tipo!=='feitico') return 'Use uma magia ou um feitiço.';
   if(c.elemento!==j.elemento) return 'Essa carta pertence a outro elemento.';
   if(!caster) return 'O conjurador desta carta morreu.';
-  if(impedidoNovo(caster)) return 'O conjurador está atordoado ou congelado.';
+  if(impedidoNovo(caster)) return 'O conjurador está atordoado, congelado ou exausto.';
+  if(c.alvo==='aliadoMorto' && !alvosNovos(e,lado,c).length) return 'Não há aliado eliminado que possa reviver.';
   if(j.mao && !j.mao.includes(id) || j.maoQtd<=0) return 'Você não tem essa carta na mão.';
   if(manaLivreNova(j)<c.custo) return 'Mana insuficiente.';
   if(e.pendente) {
@@ -212,7 +233,7 @@ function resolver(e: EstadoNovo) {
   const p=e.pendente; if(!p) falha('Nenhum golpe pendente.');
   const caster=combatente(e,p.conjurador); if(!caster) falha('Conjurador ausente.');
   const c=p.carta?cartaNova(p.carta):undefined;
-  const alvo=p.alvo?combatente(e,p.alvo):undefined;
+  const alvo=p.alvo?(c?alvoDaCartaNova(e,p.lado,c,p.alvo):combatente(e,p.alvo)):undefined;
   const ctx: Contexto={carta:c,si:p.fotoSi,alvo:p.fotoAlvo};
   for(const f of p.efeitos) {
     const targets=f.mira==='si'?[caster]:f.mira==='alvo'?(alvo?[alvo]:[]):p.alvosGrupo.map((id)=>combatente(e,id)).filter((q):q is Combatente=>!!q && aliadosNovos(e,p.lado,q.dono)===(f.mira==='aliados'));
@@ -232,9 +253,9 @@ function passar(e: EstadoNovo) {
   do { e.ativo = ((e.ativo + 1) % e.jogadores.length) as LadoNovo; } while (!e.jogadores[e.ativo].campo.length && e.ativo !== velho);
   e.turno++;
   const j=e.jogadores[e.ativo]; j.turnos++; j.gasta=0; j.comprou=false; j.jogouMana=false; j.ataques=0;
-  for(const p of j.campo) {
+  for(const p of [...j.campo]) {
     p.atacou=false;
-    p.efeitos=p.efeitos.filter((x)=>!(['evasao','determinacao'].includes(x.tipo) && expirou(e,p,x)));
+    p.efeitos=p.efeitos.filter((x)=>!(['evasao','determinacao','exaustao'].includes(x.tipo) && expirou(e,p,x)));
     for(const x of [...p.efeitos]) if(x.restantes!==undefined) {
       if(x.tipo==='regeneracao' && p.vida>0) p.vida=Math.min(p.maxima,p.vida+x.valor);
       if(x.tipo==='queimadura' && p.vida>0) dano(e,p,x.valor);
@@ -254,6 +275,7 @@ export function aplicarNova(original: EstadoNovo, acao: AcaoNova): ResultadoNovo
     const e=structuredClone(original), j=e.jogadores[acao.lado];
     if(!j.campo.length) falha('Você foi eliminado.');
     if(acao.t==='desistir') {
+      j.desistiu=true;
       for(const p of j.campo) p.vida = 0;
       const ativo = e.ativo === acao.lado;
       const conjurando = e.pendente?.lado === acao.lado;
@@ -268,7 +290,7 @@ export function aplicarNova(original: EstadoNovo, acao: AcaoNova): ResultadoNovo
     else if(acao.t==='jogar') {
       const erro=podeCartaNova(e,acao.lado,acao.carta); if(erro) falha(erro);
       const c=cartaNova(acao.carta), caster=conjurador(e,acao.lado,c)!;
-      const alvo=c.alvo==='si'?caster:acao.alvo?combatente(e,acao.alvo):undefined;
+      const alvo=c.alvo==='si'?caster:acao.alvo?alvoDaCartaNova(e,acao.lado,c,acao.alvo):undefined;
       if(c.alvo!=='grupo' && (!alvo || !alvosNovos(e,acao.lado,c).includes(alvo.id))) falha('Escolha um alvo válido.');
       const si=foto(caster), fot=alvo?foto(alvo):undefined; const reacao=!!e.pendente || e.ativo!==acao.lado;
       gastarMao(j,c.id); j.gasta+=c.custo; j.descarte.push(c.id);
