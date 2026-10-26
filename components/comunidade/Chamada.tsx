@@ -58,12 +58,12 @@ function Quadro({
         falando ? 'shadow-[0_0_0_3px_rgba(106,140,192,0.95)]' : 'shadow-[0_0_0_1px_rgba(255,255,255,0.06)]'
       } ${className}`}
     >
-      {/* O <video> fica sempre montado: é ele que toca o áudio da pessoa. */}
+      {/* Só a imagem: o som de cada pessoa sai do <SomDaPessoa>. */}
       <video
         ref={video}
         autoPlay
         playsInline
-        muted={eu}
+        muted
         onLoadedData={() => setComImagem(true)}
         onResize={() => setComImagem(true)}
         className={`h-full w-full ${encaixe === 'contain' ? 'object-contain' : 'object-cover'} ${espelhar ? '-scale-x-100' : ''} ${
@@ -92,6 +92,26 @@ function Quadro({
       )}
     </div>
   );
+}
+
+/**
+ * A voz de uma pessoa, num <audio> só com as faixas de áudio dela.
+ *
+ * Não pode sair do <video>: numa chamada de voz a faixa de vídeo reservada
+ * nunca manda quadro, e o <video> fica esperando o primeiro quadro para
+ * começar — ninguém ouvia ninguém.
+ */
+function SomDaPessoa({ stream, aoBloquear }: { stream: MediaStream | null; aoBloquear: () => void }) {
+  const audio = useRef<HTMLAudioElement>(null);
+  const faixa = stream?.getAudioTracks()[0] ?? null;
+  useEffect(() => {
+    const a = audio.current;
+    if (!a) return;
+    a.srcObject = faixa ? new MediaStream([faixa]) : null;
+    if (faixa) a.play().catch((e) => e?.name === 'NotAllowedError' && aoBloquear());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [faixa]);
+  return <audio ref={audio} autoPlay data-som-da-chamada />;
 }
 
 function Botao({
@@ -224,6 +244,8 @@ export default function Chamada({
   const [segundos, setSegundos] = useState(0);
   const [variasCameras, setVariasCameras] = useState(false);
   const [formato, setFormato] = useState<Formato>('janela');
+  // O navegador barrou o som (sem toque na página): um toque destrava.
+  const [somBloqueado, setSomBloqueado] = useState(false);
   const mesh = useRef<ChamadaMesh | null>(null);
   const tela = useRef<HTMLDivElement>(null);
   const janela = useRef<HTMLDivElement>(null);
@@ -337,6 +359,21 @@ export default function Chamada({
     />
   );
 
+  // Fora dos quadros: trocar janela ↔ tela toda não corta a voz de ninguém.
+  const sons = (
+    <>
+      {outros.map((p) => (
+        <SomDaPessoa key={p.sessao} stream={p.stream} aoBloquear={() => setSomBloqueado(true)} />
+      ))}
+    </>
+  );
+  const destravarSom = () => {
+    setSomBloqueado(false);
+    document.querySelectorAll<HTMLAudioElement>('audio[data-som-da-chamada]').forEach((a) => {
+      void a.play().catch(() => setSomBloqueado(true));
+    });
+  };
+
   const total = outros.length + 1;
   const colunas = total <= 2 ? 'sm:grid-cols-2' : total <= 4 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3';
   const encerrada = fase === 'erro' || Boolean(m?.cheia);
@@ -354,6 +391,7 @@ export default function Chamada({
     <>
       {fase === 'na-chamada' && m && !m.cheia && (
         <>
+          {somBloqueado && <Botao onClick={destravarSom} rotulo="Tocar para ouvir" icone="volume" pequeno={pequeno} />}
           <Botao
             onClick={() => m.alternarAudio()}
             ativo={m.audio}
@@ -378,135 +416,145 @@ export default function Chamada({
   // Direto no <body>: fora de qualquer espaçamento ou empilhamento da página.
   if (formato !== 'ampliada') {
     const recolhida = formato === 'recolhida';
-    return createPortal(
-      <div
-        ref={janela}
-        role="region"
-        aria-label={`Chamada em andamento: ${titulo}`}
-        className={`fixed z-[75] flex w-[13.5rem] flex-col overflow-hidden rounded-2xl bg-[#0b0b0c] shadow-[0_18px_50px_-12px_rgba(0,0,0,0.6)] ring-1 ring-white/10 sm:w-80 ${CLARO}`}
-        style={pos ? { left: pos.x, top: pos.y } : { right: 16, bottom: 16 }}
-      >
-        <div
-          {...alca}
-          className="flex cursor-grab touch-none select-none items-center gap-2 px-3 py-2 active:cursor-grabbing"
-          title="Arraste para mudar a chamada de lugar"
-        >
-          <span className={`h-2 w-2 shrink-0 rounded-full ${fase === 'erro' ? 'bg-[#dc2626]' : 'animate-pulse bg-[#34d399]'}`} aria-hidden />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-semibold">{titulo}</p>
-            <p className="truncate text-[10px] opacity-70">{status}</p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setFormato(recolhida ? 'janela' : 'recolhida')}
-            className="rounded-lg p-1.5 opacity-80 hover:bg-white/10"
-            aria-label={recolhida ? 'Mostrar os vídeos' : 'Recolher a chamada'}
-            title={recolhida ? 'Mostrar os vídeos' : 'Recolher'}
+    return (
+      <>
+        {sons}
+        {createPortal(
+          <div
+            ref={janela}
+            role="region"
+            aria-label={`Chamada em andamento: ${titulo}`}
+            className={`fixed z-[75] flex w-[13.5rem] flex-col overflow-hidden rounded-2xl bg-[#0b0b0c] shadow-[0_18px_50px_-12px_rgba(0,0,0,0.6)] ring-1 ring-white/10 sm:w-80 ${CLARO}`}
+            style={pos ? { left: pos.x, top: pos.y } : { right: 16, bottom: 16 }}
           >
-            <Icon name={recolhida ? 'chevronDown' : 'chevronUp'} size={16} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setFormato('ampliada')}
-            className="rounded-lg p-1.5 opacity-80 hover:bg-white/10"
-            aria-label="Ampliar a chamada"
-            title="Ampliar"
-          >
-            <Icon name="maximize" size={16} />
-          </button>
-        </div>
-
-        {/* Recolhida, os vídeos saem da vista mas seguem montados: é deles que sai o som. */}
-        <div className={recolhida && !encerrada ? 'sr-only' : 'px-2'}>
-          {encerrada ? (
-            <div className="flex flex-col items-center gap-2 px-2 py-3 text-center">
-              <p className="text-xs">{avisoDeEncerrada}</p>
-              <button onClick={onSair} className="action-collage rounded-lg bg-white/15 px-3 py-1.5 text-xs hover:bg-white/25">
-                Fechar
+            <div
+              {...alca}
+              className="flex cursor-grab touch-none select-none items-center gap-2 px-3 py-2 active:cursor-grabbing"
+              title="Arraste para mudar a chamada de lugar"
+            >
+              <span className={`h-2 w-2 shrink-0 rounded-full ${fase === 'erro' ? 'bg-[#dc2626]' : 'animate-pulse bg-[#34d399]'}`} aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-xs font-semibold">{titulo}</p>
+                <p className="truncate text-[10px] opacity-70">{status}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormato(recolhida ? 'janela' : 'recolhida')}
+                className="rounded-lg p-1.5 opacity-80 hover:bg-white/10"
+                aria-label={recolhida ? 'Mostrar os vídeos' : 'Recolher a chamada'}
+                title={recolhida ? 'Mostrar os vídeos' : 'Recolher'}
+              >
+                <Icon name={recolhida ? 'chevronDown' : 'chevronUp'} size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormato('ampliada')}
+                className="rounded-lg p-1.5 opacity-80 hover:bg-white/10"
+                aria-label="Ampliar a chamada"
+                title="Ampliar"
+              >
+                <Icon name="maximize" size={16} />
               </button>
             </div>
-          ) : outros.length === 0 ? (
-            <div className="relative aspect-video">
-              {meuQuadro('h-full w-full', 'cover', true)}
-              <p className="pointer-events-none absolute inset-x-1.5 top-1.5 rounded-lg bg-black/55 px-2 py-1 text-center text-[10px]">{aguardando}</p>
-            </div>
-          ) : outros.length === 1 ? (
-            <div className="relative aspect-video">
-              {quadroDe(outros[0], 'h-full w-full', 'cover', true)}
-              <div className="absolute bottom-1.5 right-1.5 aspect-video w-1/3">{meuQuadro('h-full w-full', 'cover', true)}</div>
-            </div>
-          ) : (
-            <div className="grid max-h-[45vh] grid-cols-2 gap-1 overflow-y-auto">
-              {meuQuadro('aspect-video w-full', 'cover', true)}
-              {outros.map((p) => quadroDe(p, 'aspect-video w-full', 'cover', true))}
-            </div>
-          )}
-        </div>
 
-        {!encerrada && <div className="flex items-center justify-center gap-2 px-3 pb-3 pt-2">{controles(true)}</div>}
-      </div>,
-      document.body,
+            {/* Recolhida, os vídeos saem da vista mas seguem montados. */}
+            <div className={recolhida && !encerrada ? 'sr-only' : 'px-2'}>
+              {encerrada ? (
+                <div className="flex flex-col items-center gap-2 px-2 py-3 text-center">
+                  <p className="text-xs">{avisoDeEncerrada}</p>
+                  <button onClick={onSair} className="action-collage rounded-lg bg-white/15 px-3 py-1.5 text-xs hover:bg-white/25">
+                    Fechar
+                  </button>
+                </div>
+              ) : outros.length === 0 ? (
+                <div className="relative aspect-video">
+                  {meuQuadro('h-full w-full', 'cover', true)}
+                  <p className="pointer-events-none absolute inset-x-1.5 top-1.5 rounded-lg bg-black/55 px-2 py-1 text-center text-[10px]">{aguardando}</p>
+                </div>
+              ) : outros.length === 1 ? (
+                <div className="relative aspect-video">
+                  {quadroDe(outros[0], 'h-full w-full', 'cover', true)}
+                  <div className="absolute bottom-1.5 right-1.5 aspect-video w-1/3">{meuQuadro('h-full w-full', 'cover', true)}</div>
+                </div>
+              ) : (
+                <div className="grid max-h-[45vh] grid-cols-2 gap-1 overflow-y-auto">
+                  {meuQuadro('aspect-video w-full', 'cover', true)}
+                  {outros.map((p) => quadroDe(p, 'aspect-video w-full', 'cover', true))}
+                </div>
+              )}
+            </div>
+
+            {!encerrada && <div className="flex items-center justify-center gap-2 px-3 pb-3 pt-2">{controles(true)}</div>}
+          </div>,
+          document.body,
+        )}
+      </>
     );
   }
 
-  return createPortal(
-    <div
-      ref={tela}
-      className={`fixed inset-0 z-[75] flex flex-col bg-[#0b0b0c] ${CLARO}`}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Chamada"
-      style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
-      <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{titulo}</p>
-          <p className="text-[11px] opacity-70">{fase === 'na-chamada' ? `${status} · ponta a ponta, sem servidor de mídia` : status}</p>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <button onClick={telaCheia} className="action-collage action-collage--paper rounded-xl p-2 opacity-80 hover:bg-white/10" aria-label="Tela cheia" title="Tela cheia">
-            <Icon name="maximize" size={18} />
-          </button>
-          <button onClick={reduzir} className="action-collage action-collage--paper rounded-xl p-2 opacity-80 hover:bg-white/10" aria-label="Reduzir a chamada" title="Reduzir (volta para a janela)">
-            <Icon name="minimize" size={18} />
-          </button>
-        </div>
-      </div>
-
-      <div className="relative min-h-0 flex-1 px-3 pb-3">
-        {encerrada ? (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
-            <Icon name="alert" size={28} className="opacity-70" />
-            <p className="max-w-sm text-sm">{avisoDeEncerrada}</p>
-            <button onClick={onSair} className="action-collage rounded-xl bg-white/15 px-4 py-2 text-sm hover:bg-white/25">
-              Fechar
-            </button>
-          </div>
-        ) : outros.length === 0 ? (
-          <div className="relative h-full">
-            {meuQuadro('h-full w-full')}
-            <div className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center gap-2 text-center">
-              <span className="h-3 w-3 animate-ping rounded-full bg-[#6a8cc0]" />
-              <p className="rounded-xl bg-black/50 px-3 py-1.5 text-sm">{aguardando}</p>
+  return (
+    <>
+      {sons}
+      {createPortal(
+        <div
+          ref={tela}
+          className={`fixed inset-0 z-[75] flex flex-col bg-[#0b0b0c] ${CLARO}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Chamada"
+          style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{titulo}</p>
+              <p className="text-[11px] opacity-70">{fase === 'na-chamada' ? `${status} · ponta a ponta, sem servidor de mídia` : status}</p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button onClick={telaCheia} className="action-collage action-collage--paper rounded-xl p-2 opacity-80 hover:bg-white/10" aria-label="Tela cheia" title="Tela cheia">
+                <Icon name="maximize" size={18} />
+              </button>
+              <button onClick={reduzir} className="action-collage action-collage--paper rounded-xl p-2 opacity-80 hover:bg-white/10" aria-label="Reduzir a chamada" title="Reduzir (volta para a janela)">
+                <Icon name="minimize" size={18} />
+              </button>
             </div>
           </div>
-        ) : outros.length === 1 ? (
-          <div className="relative h-full">
-            {quadroDe(outros[0], 'h-full w-full', 'contain')}
-            {/* Você no canto (o quadro é relative; quem posiciona é o invólucro). */}
-            <div className="absolute bottom-3 right-3 aspect-[3/4] w-28 sm:aspect-video sm:w-56">{meuQuadro('h-full w-full')}</div>
-          </div>
-        ) : (
-          <div className={`grid h-full auto-rows-fr grid-cols-1 gap-2 ${colunas}`}>
-            {meuQuadro('h-full min-h-0 w-full')}
-            {outros.map((p) => quadroDe(p, 'h-full min-h-0 w-full'))}
-          </div>
-        )}
-      </div>
 
-      <div className="flex items-center justify-center gap-3 px-4 pb-4 pt-1 sm:gap-4">{controles(false)}</div>
-    </div>,
-    document.body,
+          <div className="relative min-h-0 flex-1 px-3 pb-3">
+            {encerrada ? (
+              <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                <Icon name="alert" size={28} className="opacity-70" />
+                <p className="max-w-sm text-sm">{avisoDeEncerrada}</p>
+                <button onClick={onSair} className="action-collage rounded-xl bg-white/15 px-4 py-2 text-sm hover:bg-white/25">
+                  Fechar
+                </button>
+              </div>
+            ) : outros.length === 0 ? (
+              <div className="relative h-full">
+                {meuQuadro('h-full w-full')}
+                <div className="pointer-events-none absolute inset-x-0 top-1/3 flex flex-col items-center gap-2 text-center">
+                  <span className="h-3 w-3 animate-ping rounded-full bg-[#6a8cc0]" />
+                  <p className="rounded-xl bg-black/50 px-3 py-1.5 text-sm">{aguardando}</p>
+                </div>
+              </div>
+            ) : outros.length === 1 ? (
+              <div className="relative h-full">
+                {quadroDe(outros[0], 'h-full w-full', 'contain')}
+                {/* Você no canto (o quadro é relative; quem posiciona é o invólucro). */}
+                <div className="absolute bottom-3 right-3 aspect-[3/4] w-28 sm:aspect-video sm:w-56">{meuQuadro('h-full w-full')}</div>
+              </div>
+            ) : (
+              <div className={`grid h-full auto-rows-fr grid-cols-1 gap-2 ${colunas}`}>
+                {meuQuadro('h-full min-h-0 w-full')}
+                {outros.map((p) => quadroDe(p, 'h-full min-h-0 w-full'))}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-center gap-3 px-4 pb-4 pt-1 sm:gap-4">{controles(false)}</div>
+        </div>,
+        document.body,
+      )}
+    </>
   );
 }
 

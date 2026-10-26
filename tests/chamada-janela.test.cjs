@@ -47,15 +47,26 @@ function carregar(tela) {
     exports,
     require: (n) => { if (!(n in deps)) throw Error(n); return deps[n]; },
     window,
-    document: { body: {}, fullscreenElement: null },
+    document: { body: {}, fullscreenElement: null, querySelectorAll: () => audios },
+    MediaStream: class { constructor(faixas) { this.faixas = faixas; } },
     navigator: { mediaDevices: { enumerateDevices: async () => [] } },
     setInterval, clearInterval, Promise, console,
   });
   return exports.default;
 }
 
-// A janela mede 320×240; os <video> têm o mínimo que o quadro usa.
-const nos = (el) => (el.type === 'video' ? { srcObject: null, videoWidth: 0, play: async () => {} } : { offsetWidth: 320, offsetHeight: 240, setPointerCapture() {} });
+// A janela mede 320×240; os <video> e <audio> têm o mínimo que a chamada usa.
+let tocar = async () => {};
+let audios = [];
+const nos = (el) => {
+  if (el.type === 'video') return { srcObject: null, videoWidth: 0, play: async () => {} };
+  if (el.type === 'audio') {
+    const a = { srcObject: null, play: () => tocar() };
+    audios.push(a);
+    return a;
+  }
+  return { offsetWidth: 320, offsetHeight: 240, setPointerCapture() {} };
+};
 
 // Cada chamada aberta é desmontada no fim do teste (para o cronômetro dela).
 const abertas = [];
@@ -64,6 +75,8 @@ afterEach(async () => {
     const v = abertas.pop();
     await act(async () => v.unmount());
   }
+  tocar = async () => {};
+  audios = [];
 });
 
 async function abrir(tela = { w: 1280, h: 800 }) {
@@ -153,4 +166,50 @@ test('sair encerra a chamada', async () => {
   await act(async () => botao(view, 'Sair da chamada').props.onClick());
   assert.equal(MalhaFalsa.ultima.saiu, true);
   assert.equal(saiu(), true);
+});
+
+// Alguém na chamada só com voz: a faixa de vídeo reservada nunca manda quadro.
+const voz = { kind: 'audio' };
+const pessoaSoComVoz = {
+  sessao: 's2',
+  meta: { userId: 'u2', nome: 'Bia', audio: true, video: false, desde: 1 },
+  stream: { getAudioTracks: () => [voz], getVideoTracks: () => [{ kind: 'video' }], getTracks: () => [voz] },
+  estado: 'connected', qualidade: null, retransmitido: false, falando: false,
+};
+
+async function comBia(view) {
+  await act(async () => {
+    MalhaFalsa.ultima.outros = [pessoaSoComVoz];
+    MalhaFalsa.ultima.aoMudar();
+  });
+}
+
+test('a voz de cada pessoa toca num <audio> próprio, e os <video> ficam mudos', async () => {
+  const { view } = await abrir();
+  await comBia(view);
+  // O <video> espera o primeiro quadro para tocar: numa chamada de voz ele nunca chega.
+  for (const v of view.root.findAll((n) => n.type === 'video')) assert.equal(v.props.muted, true);
+  assert.equal(view.root.findAll((n) => n.type === 'audio').length, 1);
+  assert.equal(audios.length, 1);
+  const faixas = audios[0].srcObject.faixas;
+  assert.ok(faixas.length === 1 && faixas[0] === voz, 'só a faixa de áudio');
+});
+
+test('ampliar e reduzir não corta a voz (o <audio> não é recriado)', async () => {
+  const { view } = await abrir();
+  await comBia(view);
+  await act(async () => botao(view, 'Ampliar a chamada').props.onClick());
+  await act(async () => botao(view, 'Reduzir a chamada').props.onClick());
+  assert.equal(audios.length, 1);
+});
+
+test('som barrado pelo navegador: aparece "Tocar para ouvir", e o toque destrava', async () => {
+  tocar = async () => { throw Object.assign(new Error('sem gesto'), { name: 'NotAllowedError' }); };
+  const { view } = await abrir();
+  await comBia(view);
+  const destravar = botao(view, 'Tocar para ouvir');
+  assert.ok(destravar);
+  tocar = async () => {};
+  await act(async () => destravar.props.onClick());
+  assert.equal(view.root.findAll((n) => n.type === 'button' && n.props['aria-label'] === 'Tocar para ouvir').length, 0);
 });
