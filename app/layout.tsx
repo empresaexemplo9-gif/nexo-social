@@ -15,6 +15,7 @@ import TechBackdrop from '@/components/TechBackdrop';
 import { SpotifyProvider } from '@/components/spotify/SpotifyProvider';
 import { MidiaProvider } from '@/components/midia/MidiaProvider';
 import AplicarAparencia from '@/components/AplicarAparencia';
+import { AvisoLegal } from "@/components/aviso-legal";
 
 // Barlow Condensed: títulos firmes e condensados, como nos cartazes.
 const display = Barlow_Condensed({
@@ -137,6 +138,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <SpotifyProvider>
                 <MidiaProvider>
                   {children}
+                  <AvisoLegal className="pb-20 md:pb-3" />
                   <MobileTabBar />
                   <AvisoDeChamada />
                 </MidiaProvider>
