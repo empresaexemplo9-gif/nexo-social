@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { ADMIN_EMAIL } from '@/lib/auth';
+import { TITULAR } from '@/lib/legal/titular';
 
 export const metadata = {
   title: 'Termos de Serviço — nexo.social',
@@ -47,7 +47,7 @@ export default function TermosPage() {
           </section>)}
           <section className="rounded-2xl border border-emerald-800/50 bg-emerald-950/20 p-5">
             <h2 className="mb-3 text-xl font-semibold text-zinc-50">17. Atendimento</h2>
-            <p>Para dúvidas, denúncias, revisão de decisões ou encerramento da conta, fale com a administração do nexo.social: <a className="break-all underline" href={`mailto:${ADMIN_EMAIL}?subject=Atendimento%20nexo.social`}>{ADMIN_EMAIL}</a>. Nunca envie sua senha.</p>
+            <p>Para dúvidas, denúncias, revisão de decisões ou encerramento da conta, fale com a administração do nexo.social: <a className="break-all underline" href={`mailto:${TITULAR.email}?subject=Atendimento%20nexo.social`}>{TITULAR.email}</a>. Nunca envie sua senha.</p>
           </section>
         </div>
         <footer className="mt-12 border-t border-zinc-800 pt-6 text-sm">

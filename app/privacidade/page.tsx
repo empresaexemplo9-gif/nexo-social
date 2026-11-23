@@ -1,6 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
-import { ADMIN_EMAIL } from '@/lib/auth';
+import { TITULAR } from '@/lib/legal/titular';
+
+const CONTATO_PRIVACIDADE = TITULAR.email;
 
 export const metadata = {
   title: 'Política de Privacidade — nexo.social',
@@ -109,7 +111,7 @@ const secoes = [
       <p>
         Nos termos da LGPD, você pode solicitar confirmação e acesso, correção, anonimização, bloqueio ou eliminação de
         dados desnecessários, portabilidade quando regulamentada, informação sobre compartilhamentos, revogação do
-        consentimento e revisão de decisões automatizadas, quando aplicável. Para solicitar acesso, correção ou exclusão de sua conta e dados, escreva à administração do nexo.social em <a className="underline" href={`mailto:${ADMIN_EMAIL}?subject=Privacidade%20nexo.social`}>{ADMIN_EMAIL}</a>. Não envie senhas ou documentos em comentários públicos. Podemos pedir informações para confirmar sua
+        consentimento e revisão de decisões automatizadas, quando aplicável. Para solicitar acesso, correção ou exclusão de sua conta e dados, escreva à administração do nexo.social em <a className="underline" href={`mailto:${CONTATO_PRIVACIDADE}?subject=Privacidade%20nexo.social`}>{CONTATO_PRIVACIDADE}</a>. Não envie senhas ou documentos em comentários públicos. Podemos pedir informações para confirmar sua
         identidade e manter registros da solicitação.
       </p>
     ),
@@ -129,7 +131,7 @@ const secoes = [
       <p>
         Podemos atualizar esta política para refletir mudanças no serviço, na legislação ou nas práticas de tratamento.
         Publicaremos a versão atualizada nesta página e alteraremos a data abaixo. Dúvidas, solicitações e comunicações
-        sobre privacidade devem ser encaminhadas à administração responsável pelo serviço em <a className="underline" href={`mailto:${ADMIN_EMAIL}?subject=Privacidade%20nexo.social`}>{ADMIN_EMAIL}</a>.
+        sobre privacidade devem ser encaminhadas à administração responsável pelo serviço em <a className="underline" href={`mailto:${CONTATO_PRIVACIDADE}?subject=Privacidade%20nexo.social`}>{CONTATO_PRIVACIDADE}</a>.
       </p>
     ),
   },
@@ -181,7 +183,7 @@ export default function PrivacidadePage() {
           ))}
         </div>
         <div className="mt-12 rounded-2xl border border-emerald-800/50 bg-emerald-950/20 p-5 text-sm text-emerald-200">
-          Solicitações de privacidade: envie um e-mail à administração em <a className="underline break-all" href={`mailto:${ADMIN_EMAIL}?subject=Privacidade%20nexo.social`}>{ADMIN_EMAIL}</a>.
+          Solicitações de privacidade: envie um e-mail à administração em <a className="underline break-all" href={`mailto:${CONTATO_PRIVACIDADE}?subject=Privacidade%20nexo.social`}>{CONTATO_PRIVACIDADE}</a>.
         </div>
       </main>
       <footer className="border-t border-zinc-900 py-8 text-center text-xs text-zinc-500">
